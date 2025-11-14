@@ -1,10 +1,11 @@
 # CCAK - Backend Scolarité
 
-🎓 API Laravel pour gérer la scolarité à l'UCAK :
-- Inscriptions
-- Notes
-- Documents étudiants
-- Délibérations
+🎓 Laravel API for academic management at UCAK:
+
+- Student registration
+- Grades
+- Student documents
+- Deliberations
 
 ## Stack
 - PHP 8.2 / Laravel 11
@@ -13,8 +14,7 @@
 - MinIO
 - Docker
 
-## Démarrage local
-
+## Local Setup
 ```bash
 git clone https://github.com/ccak/ccak-backend-scolarite.git
 cd ccak-backend-scolarite
