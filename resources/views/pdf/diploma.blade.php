@@ -303,7 +303,7 @@
 <body>
     <div class="diploma-container">
         @if($with_watermark ?? false)
-        <div class="watermark">UCAK UNIVERSITY</div>
+        <div class="watermark">UNIVERSITÉ UCAK</div>
         @endif
         
         <div class="background-design"></div>

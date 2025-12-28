@@ -7,7 +7,6 @@ use App\Models\Student;
 use App\Models\Enrollment;
 use App\Models\AcademicProgram;
 use App\Models\Deliberation_Result;
-use App\Enum\StudentGender;
 use App\Enum\DocumentType;
 
 class DiplomaTemplate implements DocumentTemplateInterface
@@ -340,25 +339,25 @@ class DiplomaTemplate implements DocumentTemplateInterface
      * Prepare signatures
      */
     private function prepareSignatures(array $signatures): array
-    {
+    {           
         $defaultSignatures = [
             'rector' => [
-                'name' => 'Dr. Jean Dupont',
+                'name' => 'Dr. Lamine Gueye',
                 'title' => 'Recteur de l\'Université',
                 'signature_image' => storage_path('app/branding/signature_rector.png'),
             ],
             'dean' => [
-                'name' => 'Prof. Marie Laurent',
+                'name' => 'Masseck Fall',
                 'title' => 'Doyen de la Faculté',
                 'signature_image' => storage_path('app/branding/signature_dean.png'),
             ],
             'registrar' => [
-                'name' => 'M. Pierre Martin',
+                'name' => 'Khadim Mbacke',
                 'title' => 'Directeur des Services Académiques',
                 'signature_image' => storage_path('app/branding/signature_registrar.png'),
             ],
             'department_head' => [
-                'name' => 'Dr. Sophie Bernard',
+                'name' => 'Abdou Diop',
                 'title' => 'Chef de Département',
                 'signature_image' => storage_path('app/branding/signature_department_head.png'),
             ],
