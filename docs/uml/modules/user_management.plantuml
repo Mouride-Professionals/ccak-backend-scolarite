@@ -6,7 +6,6 @@ class User {
   + UUID id
   + string email (unique)
   + string password_hash
-  + enum user_type (ADMIN, FACULTY, STUDENT, STAFF)
   + boolean is_active
   + timestamp email_verified_at
   + timestamp last_login_at

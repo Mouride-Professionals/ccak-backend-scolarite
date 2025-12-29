@@ -148,7 +148,7 @@ class Student extends Model
 
         if ($lastStudent) {
             $lastNumber = (int) substr($lastStudent->student_number, -3);
-            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+            $newNumber = str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
         } else {
             $newNumber = '001';
         }

@@ -5,7 +5,6 @@ title NOTIFICATION SYSTEM MODULE
 class User {
   + UUID id
   + string email
-  + enum user_type
 }
 
 class Admin {

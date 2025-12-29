@@ -40,7 +40,6 @@ class User extends Authenticatable
         'email',
         'password',
         'keycloak_id',
-        'user_type',
         'is_active',
         'last_login_at',
     ];

@@ -5,7 +5,6 @@ title FACULTY MANAGEMENT MODULE
 class User {
   + UUID id
   + string email
-  + enum user_type
 }
 
 class Faculty_Member {

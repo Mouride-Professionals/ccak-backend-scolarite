@@ -38,7 +38,6 @@ class SemesterResultCalculationApiTest extends TestCase
             'email' => 'admin@test.com',
             'password' => 'password',
             'keycloak_id' => 'admin-123',
-            'user_type' => 'admin',
             'is_active' => true,
         ]);
         $this->admin->assignRole('ADMIN');
@@ -47,7 +46,6 @@ class SemesterResultCalculationApiTest extends TestCase
             'email' => 'faculty@test.com',
             'password' => 'password',
             'keycloak_id' => 'faculty-123',
-            'user_type' => 'faculty',
             'is_active' => true,
         ]);
         $this->faculty->assignRole('FACULTY');
@@ -56,7 +54,6 @@ class SemesterResultCalculationApiTest extends TestCase
             'email' => 'student@test.com',
             'password' => 'password',
             'keycloak_id' => 'student-123',
-            'user_type' => 'student',
             'is_active' => true,
         ]);
         $this->student->assignRole('STUDENT');

@@ -3,23 +3,25 @@
 namespace Database\Seeders;
 
 use App\Models\AcademicYear;
+use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
 use Illuminate\Database\Seeder;
 
 class AcademicYearSeeder extends Seeder
 {
+    use UsesSenegalAcademicCalendar;
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $years = [
-            '2020-2021',
-            '2021-2022',
-            '2022-2023',
-            '2023-2024',
-            '2024-2025',
-            '2025-2026',
-        ];
+        $current = $this->currentAcademicYearName();
+        [$startYear] = $this->parseAcademicYear($current);
+        $years = [];
+
+        for ($year = $startYear - 2; $year <= $startYear + 3; $year++) {
+            $years[] = sprintf('%d-%d', $year, $year + 1);
+        }
 
         foreach ($years as $year) {
             AcademicYear::firstOrCreate(['name' => $year]);

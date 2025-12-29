@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,20 +11,15 @@ use Ramsey\Uuid\Uuid;
 
 class Admin extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, UsesUuidV7;
 
-    public $incrementing = false;
-    protected $keyType = 'string';
-
+    protected $table = 'admins';
     protected $fillable = [
         'user_id',
         'full_name',
     ];
 
-    public function newUniqueId(): string
-    {
-        return Uuid::uuid7()->toString();
-    }
+
 
     public function user(): BelongsTo
     {

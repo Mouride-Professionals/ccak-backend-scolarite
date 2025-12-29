@@ -6,7 +6,7 @@ use App\Models\DeliberationResult;
 use App\Models\DeliberationSession;
 use App\Models\Student;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 
 class DeliberationResultSeeder extends Seeder
 {
@@ -35,18 +35,29 @@ class DeliberationResultSeeder extends Seeder
         foreach ($sessions as $session) {
             $numberOfResults = rand(10, 20);
             $sessionStudents = $students->random(min($numberOfResults, $students->count()));
+            $sessionDate = $session->session_date
+                ? Carbon::parse($session->session_date, 'Africa/Dakar')
+                : Carbon::now('Africa/Dakar');
 
             foreach ($sessionStudents as $student) {
                 $isWithHonors = rand(0, 1);
+                $createdAt = $sessionDate->copy()->setTime(rand(9, 16), rand(0, 59));
+                $decision = $decisions[array_rand($decisions)];
 
-                DeliberationResult::create([
-                    'deliberation_session_id' => $session->id,
-                    'student_id' => $student->id,
-                    'decision' => $decisions[array_rand($decisions)],
-                    'jury_remarks' => 'Remarks for ' . $student->full_name,
-                    'is_with_honors' => $isWithHonors,
-                    'honor_level' => $isWithHonors ? $honorLevels[array_rand($honorLevels)] : null,
-                ]);
+                DeliberationResult::firstOrCreate(
+                    [
+                        'deliberation_session_id' => $session->id,
+                        'student_id' => $student->id,
+                    ],
+                    [
+                        'decision' => $decision,
+                        'jury_remarks' => 'Remarks for ' . $student->full_name,
+                        'is_with_honors' => $isWithHonors,
+                        'honor_level' => $isWithHonors ? $honorLevels[array_rand($honorLevels)] : null,
+                        'created_at' => $createdAt,
+                        'updated_at' => $createdAt,
+                    ]
+                );
 
                 $totalResults++;
             }

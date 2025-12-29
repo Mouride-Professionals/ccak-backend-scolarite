@@ -48,7 +48,6 @@ class SemesterResultCalculationServiceTest extends TestCase
             'email' => 'admin@test.com',
             'password' => 'password',
             'keycloak_id' => 'admin-123',
-            'user_type' => 'admin',
             'is_active' => true,
         ]);
         $this->admin->assignRole('ADMIN');
