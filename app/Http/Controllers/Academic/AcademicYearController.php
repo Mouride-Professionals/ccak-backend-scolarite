@@ -3,98 +3,53 @@
 namespace App\Http\Controllers\Academic;
 
 use App\Http\Controllers\BaseApiController;
+use App\Http\Requests\Academic\StoreAcademicYearRequest;
+use App\Http\Requests\Academic\UpdateAcademicYearRequest;
 use App\Models\AcademicYear;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Response;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class AcademicYearController extends BaseApiController
 {
-
-    public function index(): JsonResponse
+    public function __construct()
     {
-        $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $academicYears,
-        ]);
+        $this->middleware('permission:academic_years.view')->only(['index', 'show']);
+        $this->middleware('permission:academic_years.create')->only('store');
+        $this->middleware('permission:academic_years.update')->only('update');
+        $this->middleware('permission:academic_years.delete')->only('destroy');
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function index()
     {
-        $academicYear = AcademicYear::find($id);
+        $years = QueryBuilder::for(AcademicYear::query())
+            ->allowedSorts(['name', 'created_at'])
+            ->defaultSort('-created_at')
+            ->get();
 
-        if (!$academicYear) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Année académique non trouvée.',
-            ], 404);
-        }
-
-        $validator = Validator::make($request->all(), AcademicYear::validationRules($id));
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $academicYear->update($request->all());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Année académique mise à jour avec succès.',
-            'data' => $academicYear->fresh(),
-        ]);
+        return $this->success($years);
     }
 
-    public function show(string $id): JsonResponse
+    public function store(StoreAcademicYearRequest $request)
     {
-        $academicYear = AcademicYear::find($id);
+        $year = AcademicYear::create($request->validated());
 
-        if (!$academicYear) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Année académique non trouvée.',
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $academicYear,
-        ]);
+        return $this->success($year, 'Academic year created', Response::HTTP_CREATED);
     }
 
-    public function store(Request $request): JsonResponse
+    public function show(AcademicYear $academicYear)
     {
-        $validator = Validator::make($request->all(), AcademicYear::validationRules());
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        // If setting as current, ensure only one current year exists
-        if ($request->is_current) {
-            AcademicYear::where('is_current', true)->update(['is_current' => false]);
-        }
-
-        $academicYear = AcademicYear::create($request->all());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Année académique créée avec succès.',
-            'data' => $academicYear,
-        ], 201);
+        return $this->success($academicYear);
     }
 
-     public function destroy(string $id): JsonResponse
+    public function update(UpdateAcademicYearRequest $request, AcademicYear $academicYear)
+    {
+        $academicYear->update($request->validated());
+
+        return $this->success($academicYear->refresh(), 'Academic year updated');
+    }
+
+   public function destroy(string $id): JsonResponse
     {
         $academicYear = AcademicYear::find($id);
 

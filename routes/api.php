@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserRoleController;
+use \App\Http\Controllers\Academic\DeliberationSessionController;
 
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\GuardianController;
@@ -44,6 +45,33 @@ Route::middleware('auth:api')->group(function () {
         ]);
     });
 
+
+    // Deliberation Sessions
+    Route::prefix('deliberation-sessions')->group(function () {
+        Route::get('/', [DeliberationSessionController::class, 'index']);
+        Route::post('/', [DeliberationSessionController::class, 'store']);
+        Route::get('{id}', [DeliberationSessionController::class, 'show']);
+        Route::put('{id}', [DeliberationSessionController::class, 'update']);
+        Route::delete('{id}', [DeliberationSessionController::class, 'destroy']);
+        Route::patch('{id}/status', [DeliberationSessionController::class, 'changeStatus']);
+    });
+    Route::post('deliberations/{deliberation_session}/start', [DeliberationSessionController::class, 'start']);
+    Route::post('deliberations/{deliberation_session}/complete', [DeliberationSessionController::class, 'complete']);
+    Route::get('deliberations/{deliberation_session}/students', [DeliberationSessionController::class, 'getStudents']);
+    Route::get('deliberations/{deliberation_session}/minutes', [DeliberationSessionController::class, 'generateMinutes']);
+
+    // Deliberation Results
+    Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
+
+   
+    // Student Deliberation History
+    Route::get('students/{student_id}/deliberations', [\App\Http\Controllers\Academic\StudentDeliberationController::class, 'history']);
+
+    Route::apiResource('deliberation-sessions', \App\Http\Controllers\Academic\DeliberationSessionController::class);
+    Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
+    Route::apiResource('faculty-members', \App\Http\Controllers\Academic\FacultyMemberController::class);
+
+  
     Route::apiResource('faculties', FacultyController::class);
     Route::apiResource('departments', DepartmentController::class);
     Route::apiResource('academic-programs', AcademicProgramController::class);

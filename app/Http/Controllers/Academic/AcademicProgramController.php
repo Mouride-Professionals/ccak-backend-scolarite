@@ -14,10 +14,10 @@ class AcademicProgramController extends BaseApiController
 {
     public function __construct()
     {
-        $this->middleware('permission:academic_programs.view')->only(['index', 'show']);
-        $this->middleware('permission:academic_programs.create')->only('store');
-        $this->middleware('permission:academic_programs.update')->only('update');
-        $this->middleware('permission:academic_programs.delete')->only('destroy');
+        // $this->middleware('permission:academic_programs.view')->only(['index', 'show']);
+        // $this->middleware('permission:academic_programs.create')->only('store');
+        // $this->middleware('permission:academic_programs.update')->only('update');
+        // $this->middleware('permission:academic_programs.delete')->only('destroy');
     }
 
 

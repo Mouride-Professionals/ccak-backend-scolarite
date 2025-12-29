@@ -1,15 +1,28 @@
 <?php
-declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\AcademicYear;
+use Illuminate\Database\Seeder;
 
 class AcademicYearSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        AcademicYear::factory()->count(20)->create();
+        $years = [
+            '2020-2021',
+            '2021-2022',
+            '2022-2023',
+            '2023-2024',
+            '2024-2025',
+            '2025-2026',
+        ];
+
+        foreach ($years as $year) {
+            AcademicYear::firstOrCreate(['name' => $year]);
+        }
     }
 }
