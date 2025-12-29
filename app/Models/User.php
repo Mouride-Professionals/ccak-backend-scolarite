@@ -98,6 +98,7 @@ class User extends Authenticatable
             'user_id' => $this->id,
             'full_name' => $this->email, // or some default name
         ]);
+    }
 
     /**
      * Transform audit data for User

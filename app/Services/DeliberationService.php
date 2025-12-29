@@ -6,6 +6,7 @@ use App\Http\Resources\Academic\DeliberationSessionResource;
 use App\Models\DeliberationResult;
 use App\Models\DeliberationSession;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -13,9 +14,10 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class DeliberationService
 {
-    public function getAll(Request $request)
+    public function getAll(Request $request): AnonymousResourceCollection
     {
-        $sessions = QueryBuilder::for(DeliberationSession::query())
+        /** @var QueryBuilder $query */
+        $query = QueryBuilder::for(DeliberationSession::query())
             ->with(['academicProgram', 'academicYear', 'president', 'juryMembers'])
             ->allowedIncludes(['academicProgram', 'academicYear', 'president', 'juryMembers', 'results'])
             ->allowedFilters([
@@ -25,19 +27,21 @@ class DeliberationService
             AllowedFilter::exact('semester'),
             ])
             ->allowedSorts(['session_date', 'created_at'])
-            ->defaultSort('-session_date')
-            ->paginate($request->input('per_page', 15));
+            ->defaultSort('-session_date');
+
+        $sessions = $query->paginate($request->input('per_page', 15));
 
         return DeliberationSessionResource::collection($sessions);
     }
 
-    public function getById($id)
+    public function getById(string $id): ?DeliberationSession
     {
         return DeliberationSession::with(['academicProgram', 'academicYear', 'president', 'results'])
             ->find($id);
     }
 
-    public function create(array $data)
+    /** @param array<string, mixed> $data */
+    public function create(array $data): DeliberationSession
     {
         return DB::transaction(function () use ($data) {
             // Créer la session
@@ -56,7 +60,8 @@ class DeliberationService
         });
     }
 
-    public function update($id, array $data)
+    /** @param array<string, mixed> $data */
+    public function update(string $id, array $data): ?DeliberationSession
     {
         $session = DeliberationSession::find($id);
 
@@ -78,7 +83,7 @@ class DeliberationService
         });
     }
 
-    public function delete($id)
+    public function delete(string $id): bool
     {
         $session = DeliberationSession::find($id);
 
@@ -89,7 +94,7 @@ class DeliberationService
         return $session->delete();
     }
 
-    public function changeStatus($id, $status)
+    public function changeStatus(string $id, string $status): ?DeliberationSession
     {
         $session = DeliberationSession::find($id);
 
@@ -117,6 +122,8 @@ class DeliberationService
 
     /**
      * Fetch eligible students for a deliberation session
+     *
+     * @return Collection<int, array<string, mixed>>
      */
     public function fetchEligibleStudents(DeliberationSession $session): Collection
     {
@@ -128,6 +135,7 @@ class DeliberationService
     /**
      * Apply decision rules based on student results
      */
+    /** @param array<string, mixed> $studentResults */
     public function applyDecisionRules(array $studentResults): string
     {
         // TODO: Implémenter les règles de décision
@@ -138,6 +146,7 @@ class DeliberationService
     /**
      * Check if student qualifies for compensation
      */
+    /** @param array<string, mixed> $studentResults */
     public function checkCompensation(array $studentResults): bool
     {
         // TODO: Implémenter la logique de compensation
@@ -159,6 +168,8 @@ class DeliberationService
 
     /**
      * Calculate student progression
+     *
+     * @return array<string, mixed>
      */
     public function calculateProgression(string $studentId, DeliberationSession $session): array
     {
@@ -172,6 +183,8 @@ class DeliberationService
 
     /**
      * Generate recommendations for jury
+     *
+     * @return array<string, mixed>
      */
     public function generateRecommendations(string $studentId, DeliberationSession $session): array
     {
@@ -185,6 +198,8 @@ class DeliberationService
 
     /**
      * Start a deliberation session
+     *
+     * @return array<string, mixed>
      */
     public function startDeliberation(DeliberationSession $session): array
     {

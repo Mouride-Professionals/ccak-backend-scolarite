@@ -6,8 +6,7 @@ use App\Contracts\Templates\DocumentTemplateInterface;
 use App\Models\Student;
 use App\Models\Enrollment;
 use App\Models\AcademicProgram;
-use App\Models\Deliberation_Result;
-use App\Enum\DocumentType;
+use App\Models\DeliberationResult;
 
 class DiplomaTemplate implements DocumentTemplateInterface
 {
@@ -30,13 +29,14 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * @inheritDoc
      */
+    /** @return array<string, mixed> */
     public function getRequiredData(): array
     {
         return [
             'student' => 'required', // Student model instance
             'enrollment' => 'required', // Enrollment model instance
             'academic_program' => 'required', // AcademicProgram model instance
-            'deliberation_result' => 'required', // Deliberation_Result model instance
+            'deliberation_result' => 'required', // DeliberationResult model instance
             'signatures' => [
                 'rector' => [
                     'name',
@@ -61,6 +61,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * @inheritDoc
      */
+    /** @param array<string, mixed> $data */
     public function validateData(array $data): bool
     {
         $requiredFields = $this->getRequiredData();
@@ -73,17 +74,17 @@ class DiplomaTemplate implements DocumentTemplateInterface
         }
         
         // Check student is graduated
-        if ($data['student']->status->value !== 'GRADUATED') {
+        if ($data['student']->status !== Student::STATUS_GRADUATED) {
             return false;
         }
         
         // Check enrollment is completed
-        if ($data['enrollment']->status->value !== 'COMPLETED') {
+        if ($data['enrollment']->status !== Enrollment::STATUS_COMPLETED) {
             return false;
         }
         
         // Check deliberation result is positive
-        if (!in_array($data['deliberation_result']->decision->value, ['ADMITTED', 'ADMITTED_COMPENSATION'])) {
+        if (!in_array($data['deliberation_result']->decision, ['ADMITTED', 'ADMITTED_COMPENSATION'], true)) {
             return false;
         }
         
@@ -98,6 +99,10 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * @inheritDoc
      */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     public function processData(array $data): array
     {
         /** @var Student $student */
@@ -109,7 +114,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
         /** @var AcademicProgram $academicProgram */
         $academicProgram = $data['academic_program'];
         
-        /** @var Deliberation_Result $deliberationResult */
+        /** @var DeliberationResult $deliberationResult */
         $deliberationResult = $data['deliberation_result'];
         
         $processed = $data;
@@ -134,14 +139,14 @@ class DiplomaTemplate implements DocumentTemplateInterface
         // Determine honors level
         $processed['honors_level'] = $this->determineHonorsLevel(
             $processed['gpa'],
-            $deliberationResult->is_with_honors ? $deliberationResult->honor_level->value : null
+            $deliberationResult->is_with_honors ? $deliberationResult->honor_level : null
         );
         
         // Generate diploma title
         $processed['diploma_title'] = $this->generateDiplomaTitle($academicProgram);
         
         // Generate degree level in French
-        $processed['degree_level_fr'] = $this->getFrenchDegreeLevel($academicProgram->level->value);
+        $processed['degree_level_fr'] = $this->getFrenchDegreeLevel($academicProgram->level);
         
         // Prepare signatures
         $processed['signatures'] = $this->prepareSignatures($data['signatures'] ?? []);
@@ -170,7 +175,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Validate model instance
      */
-    private function validateModelInstance(string $type, $instance): bool
+    private function validateModelInstance(string $type, mixed $instance): bool
     {
         switch ($type) {
             case 'student':
@@ -180,7 +185,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
             case 'academic_program':
                 return $instance instanceof AcademicProgram;
             case 'deliberation_result':
-                return $instance instanceof Deliberation_Result;
+                return $instance instanceof DeliberationResult;
             default:
                 return false;
         }
@@ -189,6 +194,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Validate signatures data
      */
+    /** @param array<string, mixed> $signatures */
     private function validateSignatures(array $signatures): bool
     {
         $requiredSignatures = ['rector', 'dean', 'registrar', 'department_head'];
@@ -213,6 +219,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Prepare student information for the diploma
      */
+    /** @return array<string, mixed> */
     private function prepareStudentInfo(Student $student): array
     {
         return [
@@ -220,14 +227,14 @@ class DiplomaTemplate implements DocumentTemplateInterface
             'user_id' => $student->user_id,
             'full_name' => $student->full_name,
             'student_number' => $student->student_number,
-            'gender' => $student->gender->label(),
+            'gender' => $student->gender,
             'date_of_birth' => $student->date_of_birth ? $student->date_of_birth->format('d/m/Y') : 'N/A',
             'place_of_birth' => $student->place_of_birth,
             'nationality' => $student->nationality,
             'phone' => $student->phone,
             'address' => $student->address,
-            'photo_url' => $student->photo_url_full,
-            'status' => $student->status->label(),
+            'photo_url' => $student->photo_url,
+            'status' => $student->status,
             'age' => $student->date_of_birth ? $student->date_of_birth->age : null,
         ];
     }
@@ -235,14 +242,15 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Prepare academic information
      */
+    /** @return array<string, mixed> */
     private function prepareAcademicInfo(Enrollment $enrollment, AcademicProgram $academicProgram): array
     {
         return [
             'program_name' => $academicProgram->name,
-            'program_code' => $academicProgram->department->code . '-' . $academicProgram->level->value,
+            'program_code' => $academicProgram->department->code . '-' . $academicProgram->level,
             'faculty' => $academicProgram->department->faculty->name,
             'department' => $academicProgram->department->name,
-            'level' => $academicProgram->level->value,
+            'level' => $academicProgram->level,
             'duration_semesters' => $academicProgram->duration_semesters,
             'total_credits_required' => $academicProgram->total_credits_required,
             'enrollment_date' => $enrollment->enrollment_date->format('d/m/Y'),
@@ -255,11 +263,12 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Prepare deliberation information
      */
-    private function prepareDeliberationInfo(Deliberation_Result $deliberationResult): array
+    /** @return array<string, mixed> */
+    private function prepareDeliberationInfo(DeliberationResult $deliberationResult): array
     {
         return [
-            'decision' => $deliberationResult->decision->label(),
-            'honor_level' => $deliberationResult->honor_level?->label(),
+            'decision' => $deliberationResult->decision,
+            'honor_level' => $deliberationResult->honor_level,
             'is_with_honors' => $deliberationResult->is_with_honors,
             'jury_remarks' => $deliberationResult->jury_remarks,
             'deliberation_date' => $deliberationResult->created_at->format('d/m/Y'),
@@ -338,6 +347,10 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Prepare signatures
      */
+    /**
+     * @param array<string, mixed> $signatures
+     * @return array<string, mixed>
+     */
     private function prepareSignatures(array $signatures): array
     {           
         $defaultSignatures = [
@@ -381,6 +394,10 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Get validity information
      */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function getValidityInfo(array $data): array
     {
         return [
@@ -395,6 +412,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Generate reference number for ministry
      */
+    /** @param array<string, mixed> $data */
     private function generateReferenceNumber(array $data): string
     {
         $date = now()->format('Ymd');
@@ -407,14 +425,14 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Check if a date is valid
      */
-    private function isValidDate($date): bool
+    private function isValidDate(string|\DateTimeInterface $date): bool
     {
         if (empty($date)) {
             return false;
         }
         
         try {
-            new \DateTime($date);
+            new \DateTime(is_string($date) ? $date : $date->format(\DateTimeInterface::ATOM));
             return true;
         } catch (\Exception $e) {
             return false;
@@ -424,10 +442,14 @@ class DiplomaTemplate implements DocumentTemplateInterface
     /**
      * Format date in French style
      */
-    private function formatDate($date): string
+    private function formatDate(string|\DateTimeInterface $date): string
     {
         try {
-            $dateTime = new \DateTime($date);
+            if (!$this->isValidDate($date)) {
+                return (string) $date;
+            }
+
+            $dateTime = new \DateTime(is_string($date) ? $date : $date->format(\DateTimeInterface::ATOM));
             
             // French month names
             $months = [
@@ -442,7 +464,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
             
             return "le {$day} {$month} {$year}";
         } catch (\Exception $e) {
-            return $date;
+            return (string) $date;
         }
     }
 }

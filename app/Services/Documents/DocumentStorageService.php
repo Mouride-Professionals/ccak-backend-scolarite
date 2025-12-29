@@ -2,6 +2,9 @@
 
 namespace App\Services\Documents;
 
+use App\Models\Document;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -17,6 +20,15 @@ class DocumentStorageService
         'DIPLOMA' => 'diplomas',
     ];
     private const BASE_PATH = 'student_documents';
+
+    private string $disk;
+    private string $basePath;
+
+    public function __construct(?string $disk = null, ?string $basePath = null)
+    {
+        $this->disk = $disk ?? self::DISK;
+        $this->basePath = $basePath ?? self::BASE_PATH;
+    }
 
     public function storeDocument(
         string $content,
@@ -82,6 +94,7 @@ class DocumentStorageService
     /**
      * Préparer les informations de stockage
      */
+    /** @return array<string, mixed> */
     public function prepareForStorage(UploadedFile $file, string $studentId, string $documentType): array
     {
         $originalName = $this->sanitizeFileName($file->getClientOriginalName());
@@ -228,6 +241,7 @@ class DocumentStorageService
     /**
      * Nettoyer les fichiers orphelins
      */
+    /** @return array<string, mixed> */
     public function cleanupOrphanedFiles(int $olderThanDays = 30): array
     {
         $allFiles = Storage::disk($this->disk)->allFiles($this->basePath);

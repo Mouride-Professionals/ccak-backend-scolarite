@@ -6,6 +6,7 @@ final class PermissionCatalog
 {
     public const ROLES = ['ADMIN', 'STAFF', 'FACULTY', 'STUDENT'];
 
+    /** @return array<int, string> */
     public static function permissions(): array
     {
         return [
@@ -125,6 +126,7 @@ final class PermissionCatalog
         ];
     }
 
+    /** @return array<string, array<int, string>> */
     public static function rolePermissions(): array
     {
         $allPermissions = self::permissions();

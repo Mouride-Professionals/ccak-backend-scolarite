@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Notification;
+use App\Models\User;
 use App\Services\Notification\SmsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,6 +21,7 @@ class SendSmsNotificationJob implements ShouldQueue
 
     public function handle(SmsService $smsService): void
     {
+        /** @var User $user */
         $user = $this->notification->user;
 
         // Check if user has a phone number

@@ -3,13 +3,13 @@
 namespace App\Support;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 trait ApiResponse
 {
     protected function success(mixed $data = null, string $message = 'Operation successful', int $status = 200): JsonResponse
     {
-        if ($data instanceof AbstractPaginator) {
+        if ($data instanceof LengthAwarePaginator) {
             $payload = [
                 'success' => true,
                 'data' => [
@@ -32,6 +32,7 @@ trait ApiResponse
         return response()->json($payload, $status);
     }
 
+    /** @param array<string, mixed> $errors */
     protected function error(string $message, int $status = 400, array $errors = []): JsonResponse
     {
         return response()->json([

@@ -14,7 +14,7 @@ class GradeSeeder extends Seeder
 {
     public function run(): void
     {
-        $enrollments = CourseEnrollment::with(['student', 'course'])->get();
+        $enrollments = CourseEnrollment::with(['enrollment', 'course'])->get();
         $teachers = User::whereHas('roles', function ($query) {
             $query->where('name', 'TEACHER');
         })->get();

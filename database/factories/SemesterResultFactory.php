@@ -6,6 +6,7 @@ namespace Database\Factories;
 use App\Models\SemesterResult;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/** @extends Factory<SemesterResult> */
 class SemesterResultFactory extends Factory
 {
     protected $model = SemesterResult::class;

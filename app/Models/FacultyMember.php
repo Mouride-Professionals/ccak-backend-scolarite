@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FacultyMember extends Model
 {
     use HasFactory;
+    use UsesUuidV7;
 
     protected $table = 'faculty_members';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
     protected $fillable = [
         'id',
         'user_id',
@@ -33,32 +34,23 @@ class FacultyMember extends Model
         'is_active' => 'boolean',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) Str::uuid();
-            }
-        });
-    }
-
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function department()
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
 
     // Deliberation roles
-    public function presidedSessions()
+    public function presidedSessions(): HasMany
     {
         return $this->hasMany(DeliberationSession::class, 'presided_by');
     }
 
-    public function jurySessions()
+    public function jurySessions(): BelongsToMany
     {
         return $this->belongsToMany(
             DeliberationSession::class,

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-
+use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class CourseEnrollment extends Model
 {
     use HasFactory;
+    use UsesUuidV7;
 
     protected $table = 'course_enrollments';
 
@@ -43,6 +44,11 @@ class CourseEnrollment extends Model
     }
 
     // BelongsTo relationships
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class, 'student_id');
+    }
+
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class, 'enrollment_id');

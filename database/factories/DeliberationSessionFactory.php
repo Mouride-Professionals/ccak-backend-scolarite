@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
+/** @extends Factory<DeliberationSession> */
 class DeliberationSessionFactory extends Factory
 {
     protected $model = DeliberationSession::class;

@@ -14,6 +14,10 @@ class DocumentValidationService
     /**
      * Valider les données d'upload
      */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     public function validateUploadData(array $data): array
     {
         $rules = [
@@ -152,6 +156,7 @@ class DocumentValidationService
     /**
      * Messages de validation
      */
+    /** @return array<string, string> */
     private function getValidationMessages(): array
     {
         return [

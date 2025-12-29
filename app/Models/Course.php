@@ -64,6 +64,7 @@ class Course extends Model
     public function students()
     {
         return $this->belongsToMany(\App\Models\Student::class, 'course_enrollments', 'course_id', 'student_id');
+    }
     /**
      * Handle prerequisites for audit
      */

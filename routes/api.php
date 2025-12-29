@@ -18,7 +18,6 @@ use \App\Http\Controllers\Academic\DeliberationSessionController;
 
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\GuardianController;
-use App\Http\Controllers\Student\DocumentController;
 
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Notification\AnnouncementController;
@@ -63,7 +62,7 @@ Route::middleware('auth:api')->group(function () {
     // Deliberation Results
     Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
 
-   
+
     // Student Deliberation History
     Route::get('students/{student_id}/deliberations', [\App\Http\Controllers\Academic\StudentDeliberationController::class, 'history']);
 
@@ -71,7 +70,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
     Route::apiResource('faculty-members', \App\Http\Controllers\Academic\FacultyMemberController::class);
 
-  
+
     Route::apiResource('faculties', FacultyController::class);
     Route::apiResource('departments', DepartmentController::class);
     Route::apiResource('academic-programs', AcademicProgramController::class);
@@ -100,7 +99,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/{id}/dismiss', [AnnouncementController::class, 'dismiss']);
         Route::post('/{id}/publish', [AnnouncementController::class, 'publish'])->middleware('role:ADMIN');
     });
-  
+
     Route::apiResource('generated-documents', GeneratedDocumentController::class);
     Route::get('/generated-documents/verify/{documentNumber}', [GeneratedDocumentController::class, 'verify']);
     Route::apiResource('documents', DocumentController::class);

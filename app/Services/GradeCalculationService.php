@@ -32,7 +32,7 @@ class GradeCalculationService
      * Calculate the average for a single course based on all grades (CC, EXAM, TP, ORAL)
      *
      * @param string $courseEnrollmentId The course enrollment ID
-     * @return array Contains 'average', 'total_weight', 'grades_breakdown', 'is_complete'
+     * @return array<string, mixed> Contains 'average', 'total_weight', 'grades_breakdown', 'is_complete'
      */
     public function calculateCourseAverage(string $courseEnrollmentId): array
     {
@@ -88,8 +88,8 @@ class GradeCalculationService
      * Calculate semester average for a student
      *
      * @param string $studentId The student ID
-     * @param array $courseIds Array of course IDs to include in calculation
-     * @return array Contains 'semester_average', 'courses', 'total_credits', 'weighted_sum'
+     * @param array<int, string> $courseIds Array of course IDs to include in calculation
+     * @return array<string, mixed> Contains 'semester_average', 'courses', 'total_credits', 'weighted_sum'
      */
     public function calculateSemesterAverage(string $studentId, array $courseIds): array
     {
@@ -108,7 +108,7 @@ class GradeCalculationService
                 continue;
             }
 
-            $courseAvgData = $this->calculateCourseAverage($enrollment->id);
+            $courseAvgData = $this->calculateCourseAverage((string) $enrollment->id);
 
             if ($courseAvgData['average'] !== null && $courseAvgData['is_complete']) {
                 $coefficient = $course->coefficient ?? 1;
@@ -147,8 +147,8 @@ class GradeCalculationService
      * - Courses with grade < 8 cannot be compensated
      *
      * @param string $studentId The student ID
-     * @param array $courseIds Array of course IDs for the semester
-     * @return array Contains compensation details and which courses are compensated
+     * @param array<int, string> $courseIds Array of course IDs for the semester
+     * @return array<string, mixed> Contains compensation details and which courses are compensated
      */
     public function applyCompensationRules(string $studentId, array $courseIds): array
     {
@@ -211,8 +211,8 @@ class GradeCalculationService
      *
      * @param string $studentId The student ID
      * @param string|null $courseEnrollmentId Optional course enrollment ID for single course check
-     * @param array|null $courseIds Optional array of course IDs for semester check
-     * @return array Contains pass/fail status and details
+     * @param array<int, string>|null $courseIds Optional array of course IDs for semester check
+     * @return array<string, mixed> Contains pass/fail status and details
      */
     public function determinePassFail(
         string $studentId,
@@ -291,8 +291,8 @@ class GradeCalculationService
      * Calculate GPA for a student for a specific semester
      *
      * @param string $studentId The student ID
-     * @param array $courseIds Array of course IDs for the semester
-     * @return array Contains GPA and detailed calculation
+     * @param array<int, string> $courseIds Array of course IDs for the semester
+     * @return array<string, mixed> Contains GPA and detailed calculation
      */
     public function calculateGPA(string $studentId, array $courseIds): array
     {
@@ -349,8 +349,8 @@ class GradeCalculationService
      * Calculate cumulative GPA across multiple semesters
      *
      * @param string $studentId The student ID
-     * @param array $semesterCourses Array of arrays, each containing course IDs for a semester
-     * @return array Contains cumulative GPA and semester breakdown
+     * @param array<int, array<int, string>> $semesterCourses Array of arrays, each containing course IDs for a semester
+     * @return array<string, mixed> Contains cumulative GPA and semester breakdown
      */
     public function calculateCumulativeGPA(string $studentId, array $semesterCourses): array
     {
@@ -407,8 +407,8 @@ class GradeCalculationService
      * Get comprehensive grade report for a student
      *
      * @param string $studentId The student ID
-     * @param array $courseIds Array of course IDs for the semester
-     * @return array Complete grade report with all calculations
+     * @param array<int, string> $courseIds Array of course IDs for the semester
+     * @return array<string, mixed> Complete grade report with all calculations
      */
     public function getStudentGradeReport(string $studentId, array $courseIds): array
     {

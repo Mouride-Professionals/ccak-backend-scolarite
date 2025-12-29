@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
+use App\Models\Admin;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 
 class Document extends Model
@@ -45,12 +47,12 @@ class Document extends Model
         'status' => DocumentStatus::PENDING,
     ];
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class, 'student_id');
     }
 
-    public function reviewer()
+    public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
@@ -123,32 +125,32 @@ class Document extends Model
     /**
      * Scopes
      */
-    public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::PENDING);
     }
 
-    public function scopeApproved($query)
+    public function scopeApproved(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::APPROVED);
     }
 
-    public function scopeRejected($query)
+    public function scopeRejected(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::REJECTED);
     }
 
-    public function scopeOfType($query, string $type)
+    public function scopeOfType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);
     }
 
-    public function scopeForStudent($query, string $studentId)
+    public function scopeForStudent(Builder $query, string $studentId): Builder
     {
         return $query->where('student_id', $studentId);
     }
 
-    public function scopeNeedsReview($query)
+    public function scopeNeedsReview(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::PENDING)
             ->whereNull('reviewed_at');
@@ -200,4 +202,5 @@ class Document extends Model
     public function getTypeLabelAttribute(): string
     {
         return self::typeLabels()[$this->type] ?? $this->type;
+    }
 }

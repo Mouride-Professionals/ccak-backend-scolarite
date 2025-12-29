@@ -2,12 +2,14 @@
 
 namespace App\Services\Documents;
 
+use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use App\Models\Document;
 use App\Repositories\DocumentRepository;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 
 class DocumentService
 {
@@ -31,6 +33,7 @@ class DocumentService
     /**
      * Uploader un nouveau document
      */
+    /** @param array<string, mixed> $data */
     public function upload(array $data, UploadedFile $file): Document
     {
         // Valider les données
@@ -70,7 +73,7 @@ class DocumentService
         $this->notificationService->notifyUpload($document);
 
         // Log
-        \Log::info('Document uploaded successfully', [
+        Log::info('Document uploaded successfully', [
             'document_id' => $document->id,
             'student_id' => $document->student_id,
             'type' => $document->type,
@@ -98,7 +101,7 @@ class DocumentService
 
         $this->notificationService->notifyApproval($updatedDocument);
 
-        \Log::info('Document approved', [
+        Log::info('Document approved', [
             'document_id' => $documentId,
             'reviewed_by' => $reviewedBy,
         ]);
@@ -127,7 +130,7 @@ class DocumentService
 
         $this->notificationService->notifyRejection($updatedDocument, $reason);
 
-        \Log::warning('Document rejected', [
+        Log::warning('Document rejected', [
             'document_id' => $documentId,
             'reviewed_by' => $reviewedBy,
             'reason' => $reason,
@@ -139,6 +142,7 @@ class DocumentService
     /**
      * Télécharger un document
      */
+    /** @return array<string, mixed> */
     public function download(string $documentId): array
     {
         $document = $this->repository->find($documentId);
@@ -169,7 +173,7 @@ class DocumentService
         // Supprimer de la base
         $this->repository->delete($document->id);
 
-        \Log::info('Document deleted', [
+        Log::info('Document deleted', [
             'document_id' => $documentId,
             'student_id' => $document->student_id,
             'deleted_by' => $deletedBy,
@@ -182,7 +186,8 @@ class DocumentService
     /**
      * Récupérer les documents d'un étudiant avec filtres
      */
-    public function getStudentDocuments(string $studentId, array $filters = [], int $perPage = 20)
+    /** @param array<string, mixed> $filters */
+    public function getStudentDocuments(string $studentId, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = Document::where('student_id', $studentId);
 
@@ -209,7 +214,8 @@ class DocumentService
     /**
      * Récupérer les documents en attente de review
      */
-    public function getPendingDocuments(array $filters = [], int $perPage = 20)
+    /** @param array<string, mixed> $filters */
+    public function getPendingDocuments(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = Document::where('status', DocumentStatus::PENDING);
 
@@ -227,6 +233,7 @@ class DocumentService
     /**
      * Vérifier l'état des documents d'un étudiant
      */
+    /** @return array<string, mixed> */
     public function checkStudentDocumentStatus(string $studentId): array
     {
         $allDocuments = Document::where('student_id', $studentId)->get();
@@ -277,6 +284,7 @@ class DocumentService
     /**
      * Générer un rapport
      */
+    /** @param array<string, mixed> $filters */
     public function generateReport(array $filters = []): array
     {
         $query = Document::query();
@@ -327,6 +335,7 @@ class DocumentService
     /**
      * Mettre à jour les métadonnées d'un document
      */
+    /** @param array<string, mixed> $metadata */
     public function updateMetadata(string $documentId, array $metadata): Document
     {
         $document = $this->repository->find($documentId);
@@ -342,6 +351,7 @@ class DocumentService
     /**
      * Extraire les métadonnées du fichier
      */
+    /** @return array<string, mixed> */
     private function extractFileMetadata(UploadedFile $file): array
     {
         $metadata = [
@@ -381,6 +391,9 @@ class DocumentService
     /**
      * Calculer le temps moyen de review
      */
+    /**
+     * @param \Illuminate\Support\Collection<int, Document> $documents
+     */
     private function calculateAverageReviewTime($documents): ?float
     {
         $reviewedDocs = $documents->whereNotNull('reviewed_at')->whereNotNull('uploaded_at');
@@ -399,6 +412,9 @@ class DocumentService
     /**
      * Calculer le taux de rejet
      */
+    /**
+     * @param \Illuminate\Support\Collection<int, Document> $documents
+     */
     private function calculateRejectionRate($documents): float
     {
         $reviewed = $documents->whereNotNull('reviewed_at')->count();
@@ -414,6 +430,10 @@ class DocumentService
 
     /**
      * Obtenir les principaux reviewers
+     */
+    /**
+     * @param \Illuminate\Support\Collection<int, Document> $documents
+     * @return array<string, mixed>
      */
     private function getTopReviewers($documents): array
     {

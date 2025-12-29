@@ -1,7 +1,7 @@
 <?php
 
-use App\Enum\DocumentStatus;
-use App\Enum\DocumentType;
+use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

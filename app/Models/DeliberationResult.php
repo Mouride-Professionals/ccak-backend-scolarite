@@ -6,7 +6,6 @@ use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
 
 class DeliberationResult extends Model
 {
@@ -42,23 +41,12 @@ class DeliberationResult extends Model
         'is_with_honors' => 'boolean',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->{$model->getKeyName()})) {
-                $model->{$model->getKeyName()} = (string) Str::uuid();
-            }
-        });
-    }
-
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
-    public function deliberationSession()
+    public function deliberationSession(): BelongsTo
     {
         return $this->belongsTo(DeliberationSession::class, 'deliberation_session_id');
     }

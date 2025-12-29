@@ -26,6 +26,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
     /**
      * @inheritDoc
      */
+    /** @return array<string, mixed> */
     public function getRequiredData(): array
     {
         return [
@@ -43,6 +44,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
     /**
      * @inheritDoc
      */
+    /** @param array<string, mixed> $data */
     public function validateData(array $data): bool
     {
         $requiredFields = $this->getRequiredData();
@@ -76,6 +78,10 @@ class TranscriptTemplate implements DocumentTemplateInterface
      * - la moyenne pondérée (clé `average`)
      * - le total de crédits (clé `total_credits`)
      */
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     public function processData(array $data): array
     {
         $courses = isset($data['courses']) && is_array($data['courses']) ? $data['courses'] : [];
@@ -97,6 +103,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
         return '';
     }
 
+    /** @param array<int, array<string, mixed>> $courses */
     private function getAverage(array $courses): float
     {
         $totalCredits = $this->getTotalCredits($courses);
@@ -113,6 +120,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
         return $totalCredits > 0 ? round($average, 2, PHP_ROUND_HALF_UP) : 0.0;
     }
 
+    /** @param array<int, array<string, mixed>> $courses */
     private function getTotalCredits(array $courses): float
     {
         $totalCredits = 0.0;
