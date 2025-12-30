@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Notification;
+use App\Models\User;
 use App\Services\Notification\EmailService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,6 +21,7 @@ class SendEmailNotificationJob implements ShouldQueue
 
     public function handle(EmailService $emailService): void
     {
+        /** @var User $user */
         $user = $this->notification->user;
 
         if (!$user->email) {

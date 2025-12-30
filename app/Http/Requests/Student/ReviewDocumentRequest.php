@@ -11,7 +11,13 @@ class ReviewDocumentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->hasRole('ADMIN') || $this->user()->hasPermissionTo('documents.update');
+        $user = $this->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        return $user->hasRole('ADMIN') || $user->hasPermissionTo('documents.update');
     }
 
     /**

@@ -2,9 +2,8 @@
 
 namespace App\Contracts\Services;
 
-use App\Enum\DocumentType;
-use App\Enum\DocumentStatus;
-use App\Models\Generated_Document;
+use App\Enums\DocumentType;
+use App\Models\GeneratedDocument;
 use App\Models\User;
 
 interface DocumentGenerationServiceInterface
@@ -12,6 +11,7 @@ interface DocumentGenerationServiceInterface
     /**
      * Generate a new document
      */
+    /** @param array<string, mixed> $templateData */
     public function generate(
         User $student,
         DocumentType $type,
@@ -19,16 +19,17 @@ interface DocumentGenerationServiceInterface
         array $templateData,
         ?bool $withWatermark = false,
         ?bool $withQrCode = false
-    ): Generated_Document;
+    ): GeneratedDocument;
 
     /**
      * Get document by number
      */
-    public function find(string $documentNumber): ?Generated_Document;
+    public function find(string $documentNumber): ?GeneratedDocument;
 
     /**
      * Verify document authenticity
      */
+    /** @param array<string, mixed> $verificationData */
     public function verify(string $documentNumber, array $verificationData = []): bool;
 
     /**

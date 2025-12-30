@@ -15,6 +15,7 @@ class TemplateRenderer
         'DIPLOMA' => 'documents.diplomas.default',
     ];
 
+    /** @param array<string, mixed> $metadata */
     public function render(string $documentType, array $metadata = []): string
     {
         $templatePath = $this->getTemplatePath($documentType);
@@ -31,6 +32,7 @@ class TemplateRenderer
         return View::make($templatePath, $data)->render();
     }
 
+    /** @param array<string, mixed> $metadata */
     public function renderWithCustomTemplate(string $templatePath, array $metadata = []): string
     {
         if (!View::exists($templatePath)) {
@@ -44,6 +46,7 @@ class TemplateRenderer
         return View::make($templatePath, $data)->render();
     }
 
+    /** @return array<string, array<string, mixed>> */
     public function getAvailableTemplates(): array
     {
         $templates = [];
@@ -63,6 +66,7 @@ class TemplateRenderer
         return View::exists($templatePath);
     }
 
+    /** @return array<int, string> */
     public function getTemplateVariables(string $templatePath): array
     {
         if (!View::exists($templatePath)) {
@@ -79,6 +83,10 @@ class TemplateRenderer
         return self::TEMPLATE_PATHS[$documentType] ?? 'documents.default';
     }
 
+    /**
+     * @param array<string, mixed> $metadata
+     * @return array<string, mixed>
+     */
     private function prepareTemplateData(string $documentType, array $metadata): array
     {
         $baseData = [
@@ -92,6 +100,7 @@ class TemplateRenderer
         return array_merge($baseData, $metadata);
     }
 
+    /** @return array<int, string> */
     private function extractVariablesFromBlade(string $bladeContent): array
     {
         $variables = [];
@@ -117,6 +126,10 @@ class TemplateRenderer
         return array_unique($variables);
     }
 
+    /**
+     * @param array<string, mixed> $metadata
+     * @return array<string, mixed>
+     */
     public function compileTemplate(string $documentType, array $metadata): array
     {
         $templatePath = $this->getTemplatePath($documentType);

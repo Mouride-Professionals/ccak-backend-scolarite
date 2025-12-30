@@ -7,7 +7,20 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $id
+ * @property string $student_id
+ * @property string $type
+ * @property string $document_number
+ * @property string $file_path
+ * @property string $generated_by
+ * @property array|null $metadata
+ * @property \Illuminate\Support\Carbon|null $generated_at
+ * @property \Illuminate\Support\Carbon|null $issued_at
+ * @property string $status
+ */
 class GeneratedDocument extends Model
 {
     use HasFactory, HasUuids;
@@ -103,12 +116,12 @@ class GeneratedDocument extends Model
     }
 
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
-    public function generator()
+    public function generator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by');
     }

@@ -1,0 +1,28 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+
+parameters:
+    # Level 10 is the highest level.
+    level: 6
+    paths:
+        - app/
+        - database/
+        - routes/
+
+    parallel:
+        jobSize: 1
+        processTimeout: 1200.0
+        maximumNumberOfProcesses: 1
+        minimumNumberOfJobsPerProcess: 1
+        buffer: 0
+
+    excludePaths:
+        - vendor/
+        - storage/
+        - bootstrap/cache/
+
+    reportUnmatchedIgnoredErrors: true
+
+#    ignoreErrors:
+#        - '#PHPDoc tag @var#'

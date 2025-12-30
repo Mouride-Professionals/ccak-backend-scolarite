@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class AcademicYearRepository
 {
+    /** @return LengthAwarePaginator<int, AcademicYear> */
     public function paginate(int $perPage = 15): LengthAwarePaginator
     {
         return AcademicYear::query()->latest('id')->paginate($perPage);
@@ -25,11 +26,13 @@ class AcademicYearRepository
         return AcademicYear::query()->findOrFail($id);
     }
 
+    /** @param array<string, mixed> $data */
     public function create(array $data): AcademicYear
     {
         return AcademicYear::query()->create($data);
     }
 
+    /** @param array<string, mixed> $data */
     public function update(int|string $id, array $data): AcademicYear
     {
         $item = $this->find($id);

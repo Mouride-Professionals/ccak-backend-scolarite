@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 class DocumentNotificationService
 {
     private bool $enabled;
+    /** @var array<int, string> */
     private array $channels;
 
     public function __construct()
@@ -58,6 +59,7 @@ class DocumentNotificationService
     /**
      * Envoyer aux canaux configurés
      */
+    /** @param array<string, mixed> $data */
     private function sendToChannels(string $event, Document $document, array $data = []): void
     {
         foreach ($this->channels as $channel) {
@@ -76,6 +78,7 @@ class DocumentNotificationService
     /**
      * Envoyer à un canal spécifique
      */
+    /** @param array<string, mixed> $data */
     private function sendToChannel(string $channel, string $event, Document $document, array $data): void
     {
         switch ($channel) {
@@ -99,6 +102,7 @@ class DocumentNotificationService
     /**
      * Envoyer à la base de données (notifications internes)
      */
+    /** @param array<string, mixed> $data */
     private function sendToDatabase(string $event, Document $document, array $data): void
     {
         // Créer une notification dans la table notifications
@@ -111,6 +115,7 @@ class DocumentNotificationService
     /**
      * Envoyer un email
      */
+    /** @param array<string, mixed> $data */
     private function sendEmail(string $event, Document $document, array $data): void
     {
         // TODO: Implémenter l'envoi d'email
@@ -120,6 +125,7 @@ class DocumentNotificationService
     /**
      * Envoyer un SMS
      */
+    /** @param array<string, mixed> $data */
     private function sendSms(string $event, Document $document, array $data): void
     {
         // TODO: Implémenter l'envoi de SMS
@@ -129,6 +135,7 @@ class DocumentNotificationService
     /**
      * Journaliser la notification
      */
+    /** @param array<string, mixed> $context */
     private function log(string $message, Document $document, array $context = []): void
     {
         Log::info($message, array_merge([

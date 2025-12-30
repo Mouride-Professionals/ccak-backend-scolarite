@@ -4,6 +4,9 @@ namespace App\Services\Notification;
 
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Document;
+use App\Models\Enrollment;
+use App\Models\Grade;
 use App\Jobs\SendEmailNotificationJob;
 use App\Jobs\SendSmsNotificationJob;
 use Illuminate\Support\Collection;
@@ -12,6 +15,12 @@ class NotificationService
 {
     /**
      * Send notification to user(s)
+     */
+    /**
+     * @param array<int, string>|string $userIds
+     * @param array<int, string> $channels
+     * @param array<string, mixed> $metadata
+     * @return Collection<int, Notification>
      */
     public function send(
         array|string $userIds,
@@ -48,6 +57,7 @@ class NotificationService
     /**
      * Create notification record
      */
+    /** @param array<string, mixed> $metadata */
     protected function createNotification(
         string $userId,
         string $title,
@@ -82,7 +92,7 @@ class NotificationService
     /**
      * Send grade published notification
      */
-    public function sendGradePublished(User $user, $grade): void
+    public function sendGradePublished(User $user, Grade $grade): void
     {
         $this->send(
             $user->id,
@@ -101,7 +111,7 @@ class NotificationService
     /**
      * Send enrollment confirmed notification
      */
-    public function sendEnrollmentConfirmed(User $user, $enrollment): void
+    public function sendEnrollmentConfirmed(User $user, Enrollment $enrollment): void
     {
         $this->send(
             $user->id,
@@ -119,7 +129,7 @@ class NotificationService
     /**
      * Send document ready notification
      */
-    public function sendDocumentReady(User $user, $document): void
+    public function sendDocumentReady(User $user, Document $document): void
     {
         $this->send(
             $user->id,
@@ -143,7 +153,7 @@ class NotificationService
         $this->send(
             $user->id,
             'Bienvenue !',
-            "Bienvenue sur notre plateforme, {$user->name}.",
+            "Bienvenue sur notre plateforme, {$user->email}.",
             Notification::TYPE_WELCOME,
             ['in_app', 'email'],
             []

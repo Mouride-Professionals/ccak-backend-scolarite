@@ -6,6 +6,7 @@ namespace Database\Factories;
 use App\Models\CourseEnrollment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/** @extends Factory<CourseEnrollment> */
 class CourseEnrollmentFactory extends Factory
 {
     protected $model = CourseEnrollment::class;
@@ -16,10 +17,9 @@ class CourseEnrollmentFactory extends Factory
             'student_id' => fn() => \App\Models\Student::factory(),
             'course_id' => fn() => \App\Models\Course::factory(),
             'enrollment_id' => fn() => \App\Models\Enrollment::factory(),
-            'course_id' => fn() => \App\Models\Course::factory(),
             'academic_year_id' => fn() => \App\Models\AcademicYear::factory(),
-            'semester' => $this->faker->numberBetween(1, 9999),
-            'status' => $this->faker->sentence(),
+            'semester' => $this->faker->numberBetween(1, 12),
+            'status' => $this->faker->randomElement(\App\Models\CourseEnrollment::getStatuses()),
             'enrollment_date' => $this->faker->date('Y-m-d'),
             'drop_date' => $this->faker->date('Y-m-d'),
         ];

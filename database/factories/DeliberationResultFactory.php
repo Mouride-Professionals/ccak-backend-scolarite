@@ -7,6 +7,7 @@ use App\Models\DeliberationSession;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
+/** @extends Factory<DeliberationResult> */
 class DeliberationResultFactory extends Factory
 {
     protected $model = DeliberationResult::class;
@@ -53,7 +54,7 @@ class DeliberationResultFactory extends Factory
         ]);
     }
 
-    public function withHonors(string $level = null): static
+    public function withHonors(?string $level = null): static
     {
         return $this->state(fn (array $attributes) => [
             'decision' => DeliberationResult::DECISION_ADMITTED,

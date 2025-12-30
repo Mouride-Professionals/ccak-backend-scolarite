@@ -9,16 +9,18 @@ use App\Models\Student;
 use App\Models\AcademicYear;
 use App\Models\User;
 use App\Models\Enums\DecisionType;
+use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Support\Carbon;
 
 class SemesterResultSeeder extends Seeder
 {
+    use UsesSenegalAcademicCalendar;
+
     public function run(): void
     {
         $students = Student::all();
         $academicYears = AcademicYear::all();
-        $admins = User::whereHas('roles', function ($query) {
-            $query->where('name', 'ADMIN');
-        })->get();
+        $admins = User::role('ADMIN')->get();
 
         if ($students->isEmpty()) {
             $this->command->warn('No students found. Skipping semester results.');
@@ -31,13 +33,21 @@ class SemesterResultSeeder extends Seeder
         }
 
         if ($admins->isEmpty()) {
-            $this->command->warn('No admin users found. Skipping semester results.');
-            return;
+            $fallback = User::factory()->create([
+                'email' => 'admin.seed@ucak.sn',
+                'email_verified_at' => Carbon::now('Africa/Dakar'),
+            ]);
+            $fallback->assignRole('ADMIN');
+            $admins = collect([$fallback]);
         }
 
+        $currentYearName = $this->currentAcademicYearName();
+        $currentYear = $academicYears->firstWhere('name', $currentYearName)
+            ?? $academicYears->sortByDesc('name')->first();
+
         // Create semester results for each student
-        $students->each(function ($student) use ($academicYears, $admins) {
-            $academicYear = $academicYears->random();
+        $students->each(function (Student $student) use ($academicYears, $admins, $currentYear) {
+            $academicYear = $currentYear ?? $academicYears->random();
 
             // Create results for 1-2 semesters
             $numberOfSemesters = rand(1, 2);
@@ -53,6 +63,8 @@ class SemesterResultSeeder extends Seeder
                     : fake()->randomFloat(2, $totalCreditsEnrolled * 0.5, $totalCreditsEnrolled * 0.9);
 
                 $decision = $this->determineDecision($semesterAverage, $totalCreditsEarned, $totalCreditsEnrolled);
+                [$delibStart, $delibEnd] = $this->deliberationWindow($academicYear->name, $semester);
+                $calculatedAt = Carbon::instance(fake()->dateTimeBetween($delibStart, $delibEnd));
 
                 SemesterResult::create([
                     'student_id' => $student->id,
@@ -64,7 +76,7 @@ class SemesterResultSeeder extends Seeder
                     'semester_gpa' => $semesterGpa,
                     'decision' => $decision,
                     'calculated_by' => $admins->random()->id,
-                    'calculated_at' => now()->subDays(rand(0, 10)),
+                    'calculated_at' => $calculatedAt,
                 ]);
             }
         });

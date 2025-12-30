@@ -3,11 +3,12 @@
 namespace App\Services\Templates;
 
 use App\Contracts\Templates\DocumentTemplateInterface;
-use App\Enum\DocumentType;
+use App\Enums\DocumentType;
 use InvalidArgumentException;
 
 class TemplateManager
 {
+    /** @var array<string, DocumentTemplateInterface> */
     protected array $templates = [];
 
     public function register(DocumentType $type, DocumentTemplateInterface $template): void

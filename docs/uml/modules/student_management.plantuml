@@ -5,7 +5,6 @@ title STUDENT MANAGEMENT MODULE
 class User {
   + UUID id
   + string email
-  + enum user_type
 }
 
 class Student {

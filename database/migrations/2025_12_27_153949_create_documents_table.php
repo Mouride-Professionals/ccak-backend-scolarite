@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('documents', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->constrained('students')->onDelete('cascade');
-            $table->enum('type', ['CNI', 'BIRTH_CERT', 'BAC_DIPLOMA', 'TRANSCRIPT', 'PHOTO', 'MEDICAL']);
+            $table->enum('type', ['ATTESTATION', 'CNI', 'BIRTH_CERT', 'BAC_DIPLOMA', 'TRANSCRIPT', 'PHOTO', 'MEDICAL']);
             $table->string('file_path');
             $table->string('file_name');
             $table->enum('status', ['PENDING', 'APPROVED', 'REJECTED'])->default('PENDING');
             $table->foreignUuid('reviewed_by')->nullable()->constrained('admins')->onDelete('set null');
             $table->text('notes')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamp('uploaded_at')->useCurrent();
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();

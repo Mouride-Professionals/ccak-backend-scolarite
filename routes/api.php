@@ -17,8 +17,8 @@ use App\Http\Controllers\Admin\UserRoleController;
 use \App\Http\Controllers\Academic\DeliberationSessionController;
 
 use App\Http\Controllers\Student\StudentController;
+use App\Http\Controllers\Student\DocumentController as StudentDocumentController;
 use App\Http\Controllers\Student\GuardianController;
-use App\Http\Controllers\Student\DocumentController;
 
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Notification\AnnouncementController;
@@ -63,7 +63,7 @@ Route::middleware('auth:api')->group(function () {
     // Deliberation Results
     Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
 
-   
+
     // Student Deliberation History
     Route::get('students/{student_id}/deliberations', [\App\Http\Controllers\Academic\StudentDeliberationController::class, 'history']);
 
@@ -71,7 +71,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
     Route::apiResource('faculty-members', \App\Http\Controllers\Academic\FacultyMemberController::class);
 
-  
+
     Route::apiResource('faculties', FacultyController::class);
     Route::apiResource('departments', DepartmentController::class);
     Route::apiResource('academic-programs', AcademicProgramController::class);
@@ -100,10 +100,11 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/{id}/dismiss', [AnnouncementController::class, 'dismiss']);
         Route::post('/{id}/publish', [AnnouncementController::class, 'publish'])->middleware('role:ADMIN');
     });
-  
+
     Route::apiResource('generated-documents', GeneratedDocumentController::class);
     Route::get('/generated-documents/verify/{documentNumber}', [GeneratedDocumentController::class, 'verify']);
-    Route::apiResource('documents', DocumentController::class);
+    Route::apiResource('documents', DocumentController::class)
+        ->whereUuid('document');
     Route::prefix('documents')->group(function () {
         // Routes pour les rapports et statistiques
         Route::get('/report', [DocumentController::class, 'report']);
@@ -140,14 +141,14 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('students.guardians', GuardianController::class);
 
     // Documents: nested index/store/show/update/destroy under students and review route
-    Route::get('students/{student}/documents', [DocumentController::class, 'index']);
-    Route::post('students/{student}/documents', [DocumentController::class, 'store']);
-    Route::get('students/{student}/documents/{document}', [DocumentController::class, 'show']);
-    Route::put('students/{student}/documents/{document}', [DocumentController::class, 'update']);
-    Route::delete('students/{student}/documents/{document}', [DocumentController::class, 'destroy']);
+    Route::get('students/{student}/documents', [StudentDocumentController::class, 'index']);
+    Route::post('students/{student}/documents', [StudentDocumentController::class, 'store']);
+    Route::get('students/{student}/documents/{document}', [StudentDocumentController::class, 'show']);
+    Route::put('students/{student}/documents/{document}', [StudentDocumentController::class, 'update']);
+    Route::delete('students/{student}/documents/{document}', [StudentDocumentController::class, 'destroy']);
 
     // Review endpoint (shallow): /api/v1/documents/{id}/review
-    Route::put('documents/{document}/review', [DocumentController::class, 'review']);
+    Route::put('documents/{document}/review', [StudentDocumentController::class, 'review']);
 
     // Admin roles
     Route::get('roles', [RoleController::class, 'index']);
@@ -162,14 +163,14 @@ Route::middleware('auth:api')->group(function () {
     Route::post('grades/publish', [\App\Http\Controllers\GradeController::class, 'publish']);
 
     // Student management endpoints
-    Route::apiResource('students', \App\Http\Controllers\StudentController::class);
     Route::get('students/{student}/grades', [\App\Http\Controllers\StudentController::class, 'grades']);
 
     // Semester results management endpoints
-    Route::apiResource('semester-results', \App\Http\Controllers\SemesterResultController::class);
     Route::post('semester-results/calculate', [\App\Http\Controllers\SemesterResultController::class, 'calculate']);
     Route::get('semester-results/statistics', [\App\Http\Controllers\SemesterResultController::class, 'statistics']);
     Route::post('semester-results/recalculate/{student}', [\App\Http\Controllers\SemesterResultController::class, 'recalculateStudent']);
+    Route::apiResource('semester-results', \App\Http\Controllers\SemesterResultController::class)
+        ->whereNumber('semester_result');
     // Enrollments
     Route::get('/students/{id}/enrollments', [EnrollmentController::class, 'getByStudent']);
 
@@ -185,4 +186,3 @@ Route::middleware('auth:api')->group(function () {
     Route::get('programs/{id}/available-courses', [CourseEnrollmentController::class, 'getAvailableCoursesByProgram']);
 
 });
-

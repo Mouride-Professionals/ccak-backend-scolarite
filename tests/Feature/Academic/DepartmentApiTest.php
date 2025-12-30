@@ -32,9 +32,7 @@ class DepartmentApiTest extends TestCase
         $this->actingAsUserWithPermissions($this->permissions);
 
         $faculty = Faculty::factory()->create();
-        $head = User::factory()->create([
-            'user_type' => 'FACULTY',
-        ]);
+        $head = User::factory()->create();
 
         $payload = [
             'faculty_id' => $faculty->id,

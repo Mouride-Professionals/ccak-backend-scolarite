@@ -3,7 +3,7 @@
 namespace Tests\Feature\Documents;
 
 use App\Contracts\Templates\DocumentTemplateInterface;
-use App\Enum\DocumentType;
+use App\Enums\DocumentType;
 use App\Services\Templates\TemplateManager;
 use InvalidArgumentException;
 use Mockery;

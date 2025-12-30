@@ -17,16 +17,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-          
+
             PermissionSeeder::class,
-           AcademicYearSeeder::class,
+            AcademicYearSeeder::class,
             CourseSeeder::class,
             CourseEnrollmentSeeder::class,
             GradeSeeder::class,
             SemesterResultSeeder::class,
-          UserSeeder::class,
-          DocumentSeeder::class,
-          GeneratedDocumentSeeder::class
+            UserSeeder::class,
+            DocumentSeeder::class,
+            GeneratedDocumentSeeder::class,
             DeliberationSessionSeeder::class,
             DeliberationResultSeeder::class,
             FacultyMemberSeeder::class,
@@ -35,12 +35,8 @@ class DatabaseSeeder extends Seeder
 
         $admin = User::factory()->create([
             'email' => 'test@example.com',
-            'user_type' => 'ADMIN',
         ]);
 
         $admin->assignRole('ADMIN');
-
-      
-       
     }
 }

@@ -29,6 +29,7 @@ class SemesterResultCalculationService
      * @param User $calculatedBy
      * @return array
      */
+    /** @return array<string, mixed> */
     public function calculateSemesterResults(string $academicYearId, int $semester, User $calculatedBy): array
     {
         $academicYear = AcademicYear::findOrFail($academicYearId);
@@ -144,7 +145,8 @@ class SemesterResultCalculationService
         User $calculatedBy
     ): ?SemesterResult {
         // Get courses for this student in the semester
-        $courseIds = $this->getStudentCoursesForSemester($student->id, $academicYearId, $semester);
+        $studentId = (string) $student->id;
+        $courseIds = $this->getStudentCoursesForSemester($studentId, $academicYearId, $semester);
 
         if (empty($courseIds)) {
             Log::warning("No courses found for student", [
@@ -156,16 +158,18 @@ class SemesterResultCalculationService
         }
 
         // Use the grade calculation service to get comprehensive report
-        $gradeReport = $this->gradeCalculationService->getStudentGradeReport($student->id, $courseIds);
+        $gradeReport = $this->gradeCalculationService->getStudentGradeReport($studentId, $courseIds);
 
         // Calculate GPA for the semester
-        $gpaData = $this->gradeCalculationService->calculateGPA($student->id, $courseIds);
+        $gpaData = $this->gradeCalculationService->calculateGPA($studentId, $courseIds);
 
         // Determine decision based on the results
         $decision = $this->determineDecision($gradeReport);
 
         // Calculate credits
-        $totalCreditsEnrolled = collect($gradeReport['courses'])->sum('coefficient');
+        /** @var array<int, array<string, mixed>> $courses */
+        $courses = $gradeReport['courses'];
+        $totalCreditsEnrolled = collect($courses)->sum('coefficient');
         $totalCreditsEarned = $this->calculateCreditsEarned($gradeReport, $decision);
 
         // Check if result already exists and update or create
@@ -175,7 +179,7 @@ class SemesterResultCalculationService
             ->first();
 
         $resultData = [
-            'student_id' => $student->id,
+            'student_id' => $studentId,
             'academic_year_id' => $academicYearId,
             'semester' => $semester,
             'total_credits_enrolled' => $totalCreditsEnrolled,
@@ -216,6 +220,7 @@ class SemesterResultCalculationService
      * @param int $semester
      * @return array
      */
+    /** @return array<int, string> */
     private function getStudentCoursesForSemester(string $studentId, string $academicYearId, int $semester): array
     {
         // For now, we'll get all courses for the student
@@ -231,6 +236,7 @@ class SemesterResultCalculationService
      * @param array $gradeReport
      * @return DecisionType
      */
+    /** @param array<string, mixed> $gradeReport */
     private function determineDecision(array $gradeReport): DecisionType
     {
         $overallStatus = $gradeReport['overall_status'];
@@ -263,6 +269,7 @@ class SemesterResultCalculationService
      * @param DecisionType $decision
      * @return float
      */
+    /** @param array<string, mixed> $gradeReport */
     private function calculateCreditsEarned(array $gradeReport, DecisionType $decision): float
     {
         $totalCredits = 0;
@@ -299,6 +306,7 @@ class SemesterResultCalculationService
      * @param int $semester
      * @return array
      */
+    /** @return array<string, mixed> */
     public function getSemesterStatistics(string $academicYearId, int $semester): array
     {
         $results = SemesterResult::where('academic_year_id', $academicYearId)

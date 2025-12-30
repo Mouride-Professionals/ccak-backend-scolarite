@@ -14,10 +14,10 @@ class DepartmentController extends BaseApiController
 {
     public function __construct()
     {
-        // $this->middleware('permission:departments.view')->only(['index', 'show']);
-        // $this->middleware('permission:departments.create')->only('store');
-        // $this->middleware('permission:departments.update')->only('update');
-        // $this->middleware('permission:departments.delete')->only('destroy');
+        $this->middleware('permission:departments.view')->only(['index', 'show']);
+        $this->middleware('permission:departments.create')->only('store');
+        $this->middleware('permission:departments.update')->only('update');
+        $this->middleware('permission:departments.delete')->only('destroy');
     }
 
     public function index()

@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
+use App\Models\Admin;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 
 class Document extends Model
@@ -19,12 +21,13 @@ class Document extends Model
 
     protected $fillable = [
         'student_id',
-        'reviewed_by',
         'type',
-        'status',
         'file_path',
         'file_name',
+        'status',
+        'reviewed_by',
         'notes',
+        'metadata',
         'uploaded_at',
         'reviewed_at',
     ];
@@ -37,6 +40,7 @@ class Document extends Model
         'file_path' => 'string',
         'file_name' => 'string',
         'notes' => 'string',
+        'metadata' => 'array',
         'uploaded_at' => 'datetime',
         'reviewed_at' => 'datetime',
     ];
@@ -45,14 +49,14 @@ class Document extends Model
         'status' => DocumentStatus::PENDING,
     ];
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class, 'student_id');
     }
 
-    public function reviewer()
+    public function reviewer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reviewed_by');
+        return $this->belongsTo(Admin::class, 'reviewed_by');
     }
 
     /**
@@ -79,25 +83,19 @@ class Document extends Model
         );
     }
 
-    protected function isPending(): Attribute
+    public function isPending(): bool
     {
-        return Attribute::make(
-            get: fn () => $this->status === DocumentStatus::PENDING
-        );
+        return $this->status === DocumentStatus::PENDING;
     }
 
-    protected function isApproved(): Attribute
+    public function isApproved(): bool
     {
-        return Attribute::make(
-            get: fn () => $this->status === DocumentStatus::APPROVED
-        );
+        return $this->status === DocumentStatus::APPROVED;
     }
 
-    protected function isRejected(): Attribute
+    public function isRejected(): bool
     {
-        return Attribute::make(
-            get: fn () => $this->status === DocumentStatus::REJECTED
-        );
+        return $this->status === DocumentStatus::REJECTED;
     }
 
     protected function fileSizeHuman(): Attribute
@@ -123,32 +121,32 @@ class Document extends Model
     /**
      * Scopes
      */
-    public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::PENDING);
     }
 
-    public function scopeApproved($query)
+    public function scopeApproved(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::APPROVED);
     }
 
-    public function scopeRejected($query)
+    public function scopeRejected(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::REJECTED);
     }
 
-    public function scopeOfType($query, string $type)
+    public function scopeOfType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);
     }
 
-    public function scopeForStudent($query, string $studentId)
+    public function scopeForStudent(Builder $query, string $studentId): Builder
     {
         return $query->where('student_id', $studentId);
     }
 
-    public function scopeNeedsReview($query)
+    public function scopeNeedsReview(Builder $query): Builder
     {
         return $query->where('status', DocumentStatus::PENDING)
             ->whereNull('reviewed_at');
@@ -159,7 +157,7 @@ class Document extends Model
     public function approve(Admin $admin, ?string $notes = null): void
     {
         $this->update([
-            'status' => 'APPROVED',
+            'status' => DocumentStatus::APPROVED,
             'reviewed_by' => $admin->id,
             'reviewed_at' => now(),
             'notes' => $notes,
@@ -172,7 +170,7 @@ class Document extends Model
     public function reject(Admin $admin, string $notes): void
     {
         $this->update([
-            'status' => 'REJECTED',
+            'status' => DocumentStatus::REJECTED,
             'reviewed_by' => $admin->id,
             'reviewed_at' => now(),
             'notes' => $notes,
@@ -184,20 +182,12 @@ class Document extends Model
      */
     public static function typeLabels(): array
     {
-        return [
-            'CNI' => 'Carte Nationale d\'Identité',
-            'BIRTH_CERT' => 'Acte de Naissance',
-            'BAC_DIPLOMA' => 'Diplôme du Baccalauréat',
-            'TRANSCRIPT' => 'Relevé de Notes',
-            'PHOTO' => 'Photo d\'Identité',
-            'MEDICAL' => 'Certificat Médical',
-        ];
-    }
+        $labels = [];
 
-    /**
-     * Get the label for the current document type.
-     */
-    public function getTypeLabelAttribute(): string
-    {
-        return self::typeLabels()[$this->type] ?? $this->type;
+        foreach (DocumentType::cases() as $type) {
+            $labels[$type->value] = $type->label();
+        }
+
+        return $labels;
+    }
 }

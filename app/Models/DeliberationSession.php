@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DeliberationSession extends Model
 {
     use HasFactory;
+    use UsesUuidV7;
 
 
     protected $table = 'deliberation_sessions';
 
-    // Clé primaire de type UUID
-    protected $keyType = 'string';
-    public $incrementing = false;
 
     // Champs remplissables
     protected $fillable = [
@@ -44,18 +45,6 @@ class DeliberationSession extends Model
         'updated_at' => 'datetime',
     ];
 
-    // Génération automatique de UUID à la création
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) Str::uuid();
-            }
-        });
-    }
-
     // Optionnel : Enum pour le status
     const STATUS_SCHEDULED = 'SCHEDULED';
     const STATUS_IN_PROGRESS = 'IN_PROGRESS';
@@ -72,22 +61,22 @@ class DeliberationSession extends Model
         ];
     }
 
-    public function academicProgram()
+    public function academicProgram(): BelongsTo
     {
         return $this->belongsTo(AcademicProgram::class, 'academic_program_id');
     }
 
-    public function academicYear()
+    public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class, 'academic_year_id');
     }
 
-    public function president()
+    public function president(): BelongsTo
     {
         return $this->belongsTo(FacultyMember::class, 'presided_by');
     }
 
-    public function juryMembers()
+    public function juryMembers(): BelongsToMany
     {
         return $this->belongsToMany(
             FacultyMember::class,
@@ -97,7 +86,7 @@ class DeliberationSession extends Model
         );
     }
 
-    public function results()
+    public function results(): HasMany
     {
         return $this->hasMany(DeliberationResult::class, 'deliberation_session_id');
     }

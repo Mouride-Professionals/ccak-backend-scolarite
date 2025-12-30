@@ -30,9 +30,7 @@ class FacultyApiTest extends TestCase
     {
         $this->actingAsUserWithPermissions($this->permissions);
 
-        $dean = User::factory()->create([
-            'user_type' => 'STAFF',
-        ]);
+        $dean = User::factory()->create();
 
         $payload = [
             'name' => 'Engineering',

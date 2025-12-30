@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-
+use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,12 +12,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class CourseEnrollment extends Model
 {
     use HasFactory;
+    use UsesUuidV7;
 
     protected $table = 'course_enrollments';
 
     protected $fillable = ['student_id','enrollment_id', 'course_id', 'academic_year_id', 'semester', 'status', 'enrollment_date', 'drop_date'];
 
     protected $casts = [
+        'student_id' => 'string',
         'enrollment_id' => 'string',
         'course_id' => 'string',
         'academic_year_id' => 'string',
@@ -43,6 +45,11 @@ class CourseEnrollment extends Model
     }
 
     // BelongsTo relationships
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class, 'student_id');
+    }
+
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class, 'enrollment_id');

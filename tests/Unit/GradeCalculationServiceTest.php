@@ -3,8 +3,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Models\AcademicProgram;
+use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseUnit;
+use App\Models\Department;
+use App\Models\Enrollment;
+use App\Models\Faculty;
 use App\Models\Grade;
 use App\Models\Student;
 use App\Services\GradeCalculationService;
@@ -19,19 +25,46 @@ class GradeCalculationServiceTest extends TestCase
     private Student $student;
     private Course $course;
     private CourseEnrollment $enrollment;
+    private AcademicYear $academicYear;
+    private Enrollment $academicEnrollment;
+    private CourseUnit $courseUnit;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->service = new GradeCalculationService();
 
-        // Create test data
-        $this->student = Student::create([
+        $this->student = Student::factory()->create([
             'student_number' => 'STU001',
             'full_name' => 'Test Student',
         ]);
 
-        $this->course = Course::create([
+        $faculty = Faculty::factory()->create();
+        $department = Department::factory()->create(['faculty_id' => $faculty->id]);
+        $program = AcademicProgram::factory()->create(['department_id' => $department->id]);
+
+        $this->courseUnit = CourseUnit::factory()->create([
+            'academic_program_id' => $program->id,
+            'semester_number' => 1,
+            'credits' => 3,
+            'type' => 'OBLIGATOIRE',
+        ]);
+
+        $this->academicYear = AcademicYear::factory()->create(['name' => '2024-2025']);
+
+        $this->academicEnrollment = Enrollment::factory()->create([
+            'student_id' => $this->student->id,
+            'academic_program_id' => $program->id,
+            'academic_year_id' => $this->academicYear->id,
+            'current_semester' => 1,
+            'status' => 'ACTIVE',
+            'enrollment_date' => now()->subMonths(1)->toDateString(),
+            'registration_fee_paid' => 0,
+            'is_scholarship' => false,
+        ]);
+
+        $this->course = Course::factory()->create([
+            'course_unit_id' => $this->courseUnit->id,
             'code' => 'CS101',
             'name' => 'Introduction to Computer Science',
             'credits' => 3,
@@ -41,8 +74,47 @@ class GradeCalculationServiceTest extends TestCase
 
         $this->enrollment = CourseEnrollment::create([
             'student_id' => $this->student->id,
+            'enrollment_id' => $this->academicEnrollment->id,
             'course_id' => $this->course->id,
+            'academic_year_id' => $this->academicYear->id,
+            'semester' => 1,
+            'status' => CourseEnrollment::STATUS_ENROLLED,
+            'enrollment_date' => now()->subWeeks(2)->toDateString(),
         ]);
+    }
+
+    /**
+     * @return array{course: Course, enrollment: CourseEnrollment}
+     */
+    private function createCourseWithEnrollment(
+        string $code,
+        string $name,
+        int $credits,
+        int $coefficient
+    ): array {
+        $course = Course::factory()->create([
+            'course_unit_id' => $this->courseUnit->id,
+            'code' => $code,
+            'name' => $name,
+            'credits' => $credits,
+            'coefficient' => $coefficient,
+            'is_active' => true,
+        ]);
+
+        $enrollment = CourseEnrollment::create([
+            'student_id' => $this->student->id,
+            'enrollment_id' => $this->academicEnrollment->id,
+            'course_id' => $course->id,
+            'academic_year_id' => $this->academicYear->id,
+            'semester' => 1,
+            'status' => CourseEnrollment::STATUS_ENROLLED,
+            'enrollment_date' => now()->subWeeks(2)->toDateString(),
+        ]);
+
+        return [
+            'course' => $course,
+            'enrollment' => $enrollment,
+        ];
     }
 
     /** @test */
@@ -57,7 +129,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 15,
             'max_score' => 20,
             'weight' => 0.3,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -69,7 +141,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 16,
             'max_score' => 20,
             'weight' => 0.5,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -81,7 +153,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 18,
             'max_score' => 20,
             'weight' => 0.2,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -106,7 +178,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 80,
             'max_score' => 100,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -128,7 +200,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 15,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'DRAFT',
         ]);
 
@@ -149,7 +221,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 15,
             'max_score' => 20,
             'weight' => 0.3,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -163,18 +235,12 @@ class GradeCalculationServiceTest extends TestCase
     public function it_calculates_semester_average_with_course_coefficients()
     {
         // Create second course
-        $course2 = Course::create([
-            'code' => 'CS102',
-            'name' => 'Data Structures',
-            'credits' => 3,
-            'coefficient' => 3,
-            'is_active' => true,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course2->id,
-        ]);
+        ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
+            'CS102',
+            'Data Structures',
+            3,
+            3
+        );
 
         // Course 1: Average 15/20, Coefficient 2
         Grade::create([
@@ -185,7 +251,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 15,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -198,7 +264,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 12,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -257,18 +323,12 @@ class GradeCalculationServiceTest extends TestCase
     public function it_calculates_semester_gpa_with_credits()
     {
         // Create second course
-        $course2 = Course::create([
-            'code' => 'CS102',
-            'name' => 'Data Structures',
-            'credits' => 4,
-            'coefficient' => 3,
-            'is_active' => true,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course2->id,
-        ]);
+        ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
+            'CS102',
+            'Data Structures',
+            4,
+            3
+        );
 
         // Course 1: Average 15/20 (GPA 3.3), Coefficient 2
         Grade::create([
@@ -279,7 +339,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 15,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -292,7 +352,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 12,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -318,31 +378,19 @@ class GradeCalculationServiceTest extends TestCase
     public function it_calculates_cumulative_gpa_across_semesters()
     {
         // Setup courses for multiple semesters
-        $course2 = Course::create([
-            'code' => 'CS102',
-            'name' => 'Math',
-            'credits' => 3,
-            'coefficient' => 2,
-            'is_active' => true,
-        ]);
+        ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
+            'CS102',
+            'Math',
+            3,
+            2
+        );
 
-        $course3 = Course::create([
-            'code' => 'CS103',
-            'name' => 'Physics',
-            'credits' => 4,
-            'coefficient' => 3,
-            'is_active' => true,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course2->id,
-        ]);
-
-        $enrollment3 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course3->id,
-        ]);
+        ['course' => $course3, 'enrollment' => $enrollment3] = $this->createCourseWithEnrollment(
+            'CS103',
+            'Physics',
+            4,
+            3
+        );
 
         // Semester 1: Course 1 (15/20, coeff 2) and Course 2 (12/20, coeff 2)
         Grade::create([
@@ -353,7 +401,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 15,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -365,7 +413,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 12,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -378,7 +426,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 16,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -392,8 +440,8 @@ class GradeCalculationServiceTest extends TestCase
 
         // Semester 1 GPA: (3.3*2 + 3.0*2) / 4 = 3.15
         // Semester 2 GPA: (3.7*3) / 3 = 3.7
-        // Cumulative: (3.3*2 + 3.0*2 + 3.7*3) / 7 = 3.34
-        $this->assertEqualsWithDelta(3.343, $result['cumulative_gpa'], 0.01);
+        // Cumulative: (3.3*2 + 3.0*2 + 3.7*3) / 7 = 3.386
+        $this->assertEqualsWithDelta(3.386, $result['cumulative_gpa'], 0.01);
         $this->assertEquals(7, $result['total_credits']);
         $this->assertCount(2, $result['semesters']);
     }
@@ -402,31 +450,19 @@ class GradeCalculationServiceTest extends TestCase
     public function it_applies_compensation_rules_correctly()
     {
         // Create 3 courses
-        $course2 = Course::create([
-            'code' => 'CS102',
-            'name' => 'Math',
-            'credits' => 3,
-            'coefficient' => 2,
-            'is_active' => true,
-        ]);
+        ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
+            'CS102',
+            'Math',
+            3,
+            2
+        );
 
-        $course3 = Course::create([
-            'code' => 'CS103',
-            'name' => 'Physics',
-            'credits' => 3,
-            'coefficient' => 2,
-            'is_active' => true,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course2->id,
-        ]);
-
-        $enrollment3 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course3->id,
-        ]);
+        ['course' => $course3, 'enrollment' => $enrollment3] = $this->createCourseWithEnrollment(
+            'CS103',
+            'Physics',
+            3,
+            2
+        );
 
         // Course 1: 14/20 (Pass)
         Grade::create([
@@ -437,7 +473,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 14,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -450,7 +486,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 9,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -463,7 +499,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 7,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -488,18 +524,12 @@ class GradeCalculationServiceTest extends TestCase
     /** @test */
     public function it_does_not_compensate_when_semester_average_is_below_10()
     {
-        $course2 = Course::create([
-            'code' => 'CS102',
-            'name' => 'Math',
-            'credits' => 3,
-            'coefficient' => 1,
-            'is_active' => true,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course2->id,
-        ]);
+        ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
+            'CS102',
+            'Math',
+            3,
+            1
+        );
 
         // Course 1: 8/20
         Grade::create([
@@ -510,7 +540,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 8,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -523,7 +553,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 9,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -532,8 +562,8 @@ class GradeCalculationServiceTest extends TestCase
             [$this->course->id, $course2->id]
         );
 
-        // Semester average: (8 + 9) / 2 = 8.5 (below 10)
-        $this->assertEquals(8.5, $result['semester_average']);
+        // Semester average weighted by coefficient: (8*2 + 9*1) / 3 = 8.33 (below 10)
+        $this->assertEquals(8.33, $result['semester_average']);
         $this->assertFalse($result['can_compensate']);
         $this->assertCount(0, $result['compensated_courses']);
         $this->assertCount(2, $result['failed_courses']);
@@ -551,7 +581,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 12,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -577,7 +607,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 8,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -594,18 +624,12 @@ class GradeCalculationServiceTest extends TestCase
     /** @test */
     public function it_determines_semester_pass_fail_with_compensation()
     {
-        $course2 = Course::create([
-            'code' => 'CS102',
-            'name' => 'Math',
-            'credits' => 3,
-            'coefficient' => 1,
-            'is_active' => true,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course2->id,
-        ]);
+        ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
+            'CS102',
+            'Math',
+            3,
+            1
+        );
 
         // Course 1: 12/20 (Pass)
         Grade::create([
@@ -616,7 +640,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 12,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -629,7 +653,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 9,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -650,18 +674,12 @@ class GradeCalculationServiceTest extends TestCase
     /** @test */
     public function it_generates_complete_student_grade_report()
     {
-        $course2 = Course::create([
-            'code' => 'CS102',
-            'name' => 'Math',
-            'credits' => 3,
-            'coefficient' => 2,
-            'is_active' => true,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $course2->id,
-        ]);
+        ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
+            'CS102',
+            'Math',
+            3,
+            2
+        );
 
         // Course 1: 15/20
         Grade::create([
@@ -672,7 +690,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 15,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -685,7 +703,7 @@ class GradeCalculationServiceTest extends TestCase
             'score' => 12,
             'max_score' => 20,
             'weight' => 1.0,
-            'entered_by' => $this->student->id,
+            'entered_by' => $this->student->user_id,
             'status' => 'PUBLISHED',
         ]);
 
@@ -705,7 +723,7 @@ class GradeCalculationServiceTest extends TestCase
 
         // Semester average: (15 * 2 + 12 * 2) / 4 = 13.5
         $this->assertEquals(13.5, $result['semester_average']);
-        $this->assertEquals(3.0, $result['gpa']['gpa']);
+        $this->assertEquals(3.15, $result['gpa']['gpa']);
         $this->assertEquals('PASSED', $result['overall_status']);
         $this->assertTrue($result['passed']);
     }

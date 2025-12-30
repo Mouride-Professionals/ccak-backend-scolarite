@@ -40,7 +40,6 @@ class User extends Authenticatable
         'email',
         'password',
         'keycloak_id',
-        'user_type',
         'is_active',
         'last_login_at',
     ];
@@ -98,6 +97,7 @@ class User extends Authenticatable
             'user_id' => $this->id,
             'full_name' => $this->email, // or some default name
         ]);
+    }
 
     /**
      * Transform audit data for User

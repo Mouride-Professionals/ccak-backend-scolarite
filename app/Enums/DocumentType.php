@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum DocumentType: string
 {
+    case ATTESTATION = 'ATTESTATION';
     case CNI = 'CNI';
     case BIRTH_CERT = 'BIRTH_CERT';
     case BAC_DIPLOMA = 'BAC_DIPLOMA';
@@ -19,6 +20,7 @@ enum DocumentType: string
     public function label(): string
     {
         return match($this) {
+            self::ATTESTATION => 'Attestation',
             self::CNI => 'Carte Nationale d\'Identité',
             self::BIRTH_CERT => 'Extrait d\'Acte de Naissance',
             self::BAC_DIPLOMA => 'Diplôme du Baccalauréat',

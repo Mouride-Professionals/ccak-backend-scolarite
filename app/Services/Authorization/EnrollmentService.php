@@ -12,6 +12,8 @@ class EnrollmentService
 {
     /**
      * Validate all enrollment rules
+     *
+     * @return array<string, mixed>
      */
     public function validateEnrollment(string $studentId, string $courseId, string $academicYearId, int $semester): array
     {
@@ -67,6 +69,8 @@ class EnrollmentService
 
     /**
      * Check if student is in good academic standing
+     *
+     * @return array<string, mixed>
      */
     private function checkAcademicStanding(string $studentId): array
     {
@@ -79,7 +83,7 @@ class EnrollmentService
             ];
         }
 
-        if (!$student->is_active) {
+        if ($student->status !== Student::STATUS_ACTIVE) {
             return [
                 'eligible' => false,
                 'reason' => 'Compte étudiant inactif.',
@@ -106,6 +110,8 @@ class EnrollmentService
 
     /**
      * Check if registration fees are paid
+     *
+     * @return array<string, mixed>
     */
     private function checkFeePayment(string $studentId, string $academicYearId): array
     {
@@ -145,6 +151,8 @@ class EnrollmentService
 
     /**
      * Check if prerequisites are satisfied
+     *
+     * @return array<string, mixed>
      */
     private function checkPrerequisites(string $studentId, string $courseId): array
     {
@@ -158,9 +166,8 @@ class EnrollmentService
             ];
         }
 
-        $prerequisites = is_array($course->prerequisites)
-            ? $course->prerequisites
-            : (json_decode($course->prerequisites, true) ?? []);
+        /** @var array<int, string> $prerequisites */
+        $prerequisites = $course->prerequisites ?? [];
 
         if (empty($prerequisites)) {
             return [
@@ -201,6 +208,8 @@ class EnrollmentService
 
     /**
      * Check course capacity
+     *
+     * @return array<string, mixed>
      */
     private function checkCapacity(string $courseId, string $academicYearId, int $semester): array
     {
@@ -236,6 +245,8 @@ class EnrollmentService
 
     /**
      * Check for time conflicts with other enrolled courses
+     *
+     * @return array<string, mixed>
      */
     private function checkTimeConflicts(string $studentId, string $courseId, string $academicYearId, int $semester): array
     {
@@ -273,6 +284,8 @@ class EnrollmentService
 
     /**
      * Validate and enroll (convenience method)
+     *
+     * @return array<string, mixed>
      */
     public function validateAndEnroll(string $studentId, string $courseId, string $academicYearId, int $semester): array
     {

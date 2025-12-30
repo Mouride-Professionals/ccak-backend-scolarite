@@ -18,7 +18,23 @@ class DocumentController extends BaseApiController
 {
     public function __construct(
         private readonly DocumentService $documentService
-    ) {}
+    ) {
+        $this->middleware('permission:documents.view')->only([
+            'index',
+            'show',
+            'download',
+            'downloadFile',
+            'studentDocuments',
+            'pending',
+            'report',
+            'checkStatus',
+        ]);
+        $this->middleware('permission:documents.create')->only('store');
+        $this->middleware('permission:documents.update')->only('update');
+        $this->middleware('permission:documents.delete')->only('destroy');
+        $this->middleware('permission:documents.review')->only(['approve', 'reject']);
+        $this->middleware('permission:documents.download')->only(['download', 'downloadFile']);
+    }
 
     /**
      * Liste des documents avec filtres
@@ -63,10 +79,17 @@ class DocumentController extends BaseApiController
             $documents = $documents->latest('uploaded_at')->paginate($perPage);
         }
 
-        return $this->success(
-            DocumentResource::collection($documents),
-            'Documents récupérés avec succès'
-        );
+        return response()->json([
+            'success' => true,
+            'data' => DocumentResource::collection(collect($documents->items()))->resolve(),
+            'meta' => [
+                'current_page' => $documents->currentPage(),
+                'last_page' => $documents->lastPage(),
+                'per_page' => $documents->perPage(),
+                'total' => $documents->total(),
+            ],
+            'message' => 'Documents récupérés avec succès',
+        ]);
     }
 
     /**
@@ -135,6 +158,10 @@ class DocumentController extends BaseApiController
             // Récupérer le document
             $document = \App\Models\Document::findOrFail($documentId);
 
+            if ($document->status === \App\Enums\DocumentStatus::APPROVED) {
+                return $this->error('Document approuvé, modification interdite.', 403);
+            }
+
             // Mettre à jour uniquement les champs autorisés
             $validated = $request->validated();
 
@@ -165,9 +192,11 @@ class DocumentController extends BaseApiController
     public function approve(ReviewDocumentRequest $request, string $documentId): JsonResponse
     {
         try {
+            $admin = $request->user()?->getOrCreateAdmin();
+
             $document = $this->documentService->approve(
                 $documentId,
-                $request->user()->id, // Ou l'ID du reviewer
+                $admin?->id ?? '',
                 $request->input('notes')
             );
 
@@ -192,9 +221,11 @@ class DocumentController extends BaseApiController
         ]);
 
         try {
+            $admin = $request->user()?->getOrCreateAdmin();
+
             $document = $this->documentService->reject(
                 $documentId,
-                $request->user()->id, // Ou l'ID du reviewer
+                $admin?->id ?? '',
                 $request->input('reason')
             );
 
@@ -248,6 +279,7 @@ class DocumentController extends BaseApiController
                 [
                     'Content-Type' => $fileInfo['mime_type'],
                     'Content-Length' => strlen($fileInfo['content']),
+                    'Content-Disposition' => 'attachment; filename="' . $fileInfo['original_name'] . '"',
                 ]
             );
         } catch (\Exception $e) {
@@ -335,7 +367,7 @@ class DocumentController extends BaseApiController
         $documents = $this->documentService->getPendingDocuments($filters, $perPage);
 
         return $this->success(
-            DocumentResource::collection($documents),
+            DocumentResource::collection(collect($documents->items()))->resolve(),
             'Documents en attente récupérés avec succès'
         );
     }
@@ -355,7 +387,7 @@ class DocumentController extends BaseApiController
         );
 
         return $this->success(
-            DocumentResource::collection($documents),
+            DocumentResource::collection(collect($documents->items()))->resolve(),
             'Documents de l\'étudiant récupérés avec succès'
         );
     }

@@ -25,7 +25,7 @@ class StudentNumberService
         if ($lastStudent) {
             // Extraire le numéro séquentiel (les 3 derniers caractères)
             $lastNumber = (int) substr($lastStudent->student_number, -3);
-            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+            $newNumber = str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
         } else {
             // Premier étudiant de l'année
             $newNumber = '001';

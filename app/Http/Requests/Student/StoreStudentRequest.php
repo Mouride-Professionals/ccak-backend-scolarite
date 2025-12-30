@@ -22,8 +22,6 @@ class StoreStudentRequest extends FormRequest
                 'exists:users,id',
                 Rule::unique('students', 'user_id'),
             ],
-                  'student_number' => 'required|string|max:255|unique:students,student_number',
-
             'full_name' => ['required', 'string', 'max:255'],
             'gender' => ['required', 'in:M,F'],
             'date_of_birth' => ['required', 'date', 'before:today'],

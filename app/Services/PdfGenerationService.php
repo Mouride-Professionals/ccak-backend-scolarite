@@ -4,9 +4,8 @@ namespace App\Services;
 
 use App\Contracts\Services\DocumentGenerationServiceInterface;
 use App\Contracts\Templates\DocumentTemplateInterface;
-use App\Enum\DocumentStatus;
-use App\Enum\DocumentType;
-use App\Models\Generated_Document;
+use App\Enums\DocumentType;
+use App\Models\GeneratedDocument;
 use App\Models\User;
 use App\Services\Templates\TemplateManager;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,6 +25,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         private string $storageDisk = 'documents'
     ) {}
 
+    /** @param array<string, mixed> $templateData */
     public function generate(
         User $student,
         DocumentType $type,
@@ -33,7 +33,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         array $templateData,
         ?bool $withWatermark = false,
         ?bool $withQrCode = false
-    ): Generated_Document {
+    ): GeneratedDocument {
         // Get template for document type
         $template = $this->templateManager->get($type);
 
@@ -70,20 +70,23 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         $filePath = $this->storePdf($pdf, $type, $documentNumber);
 
         // Create document record
-        $document = Generated_Document::create([
+        $document = GeneratedDocument::create([
             'student_id' => $student->id,
             'type' => $type,
             'document_number' => $documentNumber,
             'file_path' => $filePath,
             'generated_by' => $generatedBy->id,
             'metadata' => $this->prepareMetadata($processedData, $withWatermark, $withQrCode),
-            'status' => DocumentStatus::DRAFT,
+            'status' => GeneratedDocument::STATUS_DRAFT,
             'generated_at' => now(),
         ]);
 
         return $document;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function generatePdf(
         DocumentTemplateInterface $template,
         array $data,
@@ -177,6 +180,10 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         ];
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function prepareMetadata(
         array $data,
         bool $withWatermark,
@@ -194,17 +201,18 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
                 'timestamp' => now()->toISOString(),
             ],
             'data_snapshot' => [
-                'student_name' => $data['student']->name ?? null,
+                'student_email' => $data['student']->email ?? null,
                 'document_type' => $data['document_type'] ?? null,
             ],
         ];
     }
 
-    public function find(string $documentNumber): ?Generated_Document
+    public function find(string $documentNumber): ?GeneratedDocument
     {
-        return Generated_Document::where('document_number', $documentNumber)->first();
+        return GeneratedDocument::where('document_number', $documentNumber)->first();
     }
 
+    /** @param array<string, mixed> $verificationData */
     public function verify(string $documentNumber, array $verificationData = []): bool
     {
         $document = $this->find($documentNumber);
@@ -214,7 +222,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         }
 
         // Check if document is valid
-        if ($document->status !== DocumentStatus::ISSUED) {
+        if ($document->status !== GeneratedDocument::STATUS_ISSUED) {
             return false;
         }
 
@@ -231,7 +239,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
     /**
      * Issue a generated document
      */
-    public function issue(string $documentNumber): Generated_Document
+    public function issue(string $documentNumber): GeneratedDocument
     {
         $document = $this->find($documentNumber);
 
@@ -239,12 +247,12 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
             throw new \InvalidArgumentException('Document not found');
         }
 
-        if ($document->status !== DocumentStatus::DRAFT) {
+        if ($document->status !== GeneratedDocument::STATUS_DRAFT) {
             throw new \InvalidArgumentException('Document cannot be issued');
         }
 
         $document->update([
-            'status' => DocumentStatus::ISSUED,
+            'status' => GeneratedDocument::STATUS_ISSUED,
             'issued_at' => now(),
         ]);
 
@@ -254,19 +262,18 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
     /**
      * Get document download URL
      */
-    public function getDownloadUrl(Generated_Document $document): string
+    public function getDownloadUrl(GeneratedDocument $document): string
     {
-        return Storage::disk($this->storageDisk)->url($document->file_path);
+        return Storage::disk($this->storageDisk)->exists($document->file_path) ? url($document->file_path) : '';
     }
 
     /**
      * Get document as base64
      */
-    public function getAsBase64(Generated_Document $document): string
+    public function getAsBase64(GeneratedDocument $document): string
     {
         $content = Storage::disk($this->storageDisk)->get($document->file_path);
 
         return base64_encode($content);
     }
 }
-

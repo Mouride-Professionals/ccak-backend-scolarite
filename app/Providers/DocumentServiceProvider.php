@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
-use App\Enum\DocumentType;
+use App\Enums\DocumentType;
+use App\Contracts\Services\DocumentGenerationServiceInterface;
+use App\Services\PdfGenerationService;
+use App\Services\Templates\DiplomaTemplate;
 use App\Services\Templates\TemplateManager;
+use App\Services\Templates\TranscriptTemplate;
 use Illuminate\Support\ServiceProvider;
 
 class DocumentServiceProvider extends ServiceProvider
@@ -17,8 +21,8 @@ class DocumentServiceProvider extends ServiceProvider
             $manager = new TemplateManager();
 
             // Register templates
-            $manager->register(DocumentType::CERTIFICATE, new CertificateTemplate());
-            // Add more templates here
+            $manager->register(DocumentType::BAC_DIPLOMA, new DiplomaTemplate());
+            $manager->register(DocumentType::TRANSCRIPT, new TranscriptTemplate());
 
             return $manager;
         });

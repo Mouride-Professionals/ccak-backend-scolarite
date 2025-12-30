@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class StudentRepository
 {
+    /** @return LengthAwarePaginator<int, Student> */
     public function paginate(int $perPage = 15): LengthAwarePaginator
     {
         return Student::query()->latest('id')->paginate($perPage);
@@ -25,11 +26,13 @@ class StudentRepository
         return Student::query()->findOrFail($id);
     }
 
+    /** @param array<string, mixed> $data */
     public function create(array $data): Student
     {
         return Student::query()->create($data);
     }
 
+    /** @param array<string, mixed> $data */
     public function update(int|string $id, array $data): Student
     {
         $item = $this->find($id);

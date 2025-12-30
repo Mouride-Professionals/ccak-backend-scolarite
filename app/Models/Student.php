@@ -4,11 +4,28 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuidV7;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property string $id
+ * @property string $user_id
+ * @property string $student_number
+ * @property string $full_name
+ * @property string $gender
+ * @property \Illuminate\Support\Carbon|null $date_of_birth
+ * @property string $place_of_birth
+ * @property string $nationality
+ * @property string $phone
+ * @property string $emergency_contact_name
+ * @property string $emergency_contact_phone
+ * @property string $address
+ * @property string $photo_url
+ * @property string $status
+ */
 class Student extends Model
 {
 
@@ -58,58 +75,45 @@ class Student extends Model
         'status' => 'string',
     ];
 
-    /**
-     * Get the user that owns the student.
-     */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function deliberationResults()
+    public function deliberationResults(): HasMany
     {
         return $this->hasMany(DeliberationResult::class);
     }
 
-    protected static function booted(): void
-    {
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) Str::uuid();
-            }
-        });
-    }
-
-    /**
-     * Get the guardians for the student.
-     */
-    public function guardians()
+    public function guardians(): HasMany
     {
         return $this->hasMany(Guardian::class);
     }
 
-    /**
-     * Get the documents for the student.
-     */
-    public function documents()
+    public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
     }
-   public function grades()
+    public function grades(): HasMany
     {
         return $this->hasMany(\App\Models\Grade::class, 'student_id');
     }
 
-    public function courseEnrollments()
+    public function courseEnrollments(): HasMany
     {
         return $this->hasMany(\App\Models\CourseEnrollment::class, 'student_id');
+    }
+
+    public function semesterResults(): HasMany
+    {
+        return $this->hasMany(\App\Models\SemesterResult::class, 'student_id');
     }
 
    
     /**
      * Scope a query to only include active students.
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'ACTIVE');
     }
@@ -117,7 +121,7 @@ class Student extends Model
     /**
      * Scope a query to only include graduated students.
      */
-    public function scopeGraduated($query)
+    public function scopeGraduated(Builder $query): Builder
     {
         return $query->where('status', 'GRADUATED');
     }
@@ -144,7 +148,7 @@ class Student extends Model
 
         if ($lastStudent) {
             $lastNumber = (int) substr($lastStudent->student_number, -3);
-            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+            $newNumber = str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
         } else {
             $newNumber = '001';
         }

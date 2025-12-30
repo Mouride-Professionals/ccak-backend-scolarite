@@ -24,6 +24,7 @@ class DocumentGenerationService
         $this->fileStorage = $fileStorage;
     }
 
+    /** @param array<string, mixed> $validatedData */
     public function generateDocument(array $validatedData, string $userId): GeneratedDocument
     {
         $documentType = $validatedData['type'];
@@ -114,6 +115,7 @@ class DocumentGenerationService
         return $pdf->output();
     }
 
+    /** @param array<string, mixed> $qrCodeData */
     private function generateQrCodeSvg(array $qrCodeData): string
     {
         $verificationUrl = $this->getVerificationUrl($qrCodeData['document_number']);
@@ -124,6 +126,7 @@ class DocumentGenerationService
             ->generate($verificationUrl);
     }
 
+    /** @return array<string, mixed> */
     private function generateQrCodeData(string $documentNumber, string $studentId, string $documentType): array
     {
         return [
@@ -160,6 +163,7 @@ class DocumentGenerationService
         ]);
     }
 
+    /** @return array<string, mixed> */
     private function getStudentData(string $studentId): array
     {
         $year = now()->year;

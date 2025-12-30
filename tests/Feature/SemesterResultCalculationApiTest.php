@@ -3,9 +3,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseUnit;
+use App\Models\Department;
+use App\Models\Enrollment;
+use App\Models\Faculty;
 use App\Models\Grade;
 use App\Models\Student;
 use App\Models\User;
@@ -23,6 +28,8 @@ class SemesterResultCalculationApiTest extends TestCase
     private User $faculty;
     private User $student;
     private AcademicYear $academicYear;
+    private AcademicProgram $academicProgram;
+    private CourseUnit $courseUnit;
 
     protected function setUp(): void
     {
@@ -38,7 +45,6 @@ class SemesterResultCalculationApiTest extends TestCase
             'email' => 'admin@test.com',
             'password' => 'password',
             'keycloak_id' => 'admin-123',
-            'user_type' => 'admin',
             'is_active' => true,
         ]);
         $this->admin->assignRole('ADMIN');
@@ -47,7 +53,6 @@ class SemesterResultCalculationApiTest extends TestCase
             'email' => 'faculty@test.com',
             'password' => 'password',
             'keycloak_id' => 'faculty-123',
-            'user_type' => 'faculty',
             'is_active' => true,
         ]);
         $this->faculty->assignRole('FACULTY');
@@ -56,12 +61,77 @@ class SemesterResultCalculationApiTest extends TestCase
             'email' => 'student@test.com',
             'password' => 'password',
             'keycloak_id' => 'student-123',
-            'user_type' => 'student',
             'is_active' => true,
         ]);
         $this->student->assignRole('STUDENT');
 
         $this->academicYear = AcademicYear::create(['name' => '2023-2024']);
+
+        $faculty = Faculty::factory()->create();
+        $department = Department::factory()->create(['faculty_id' => $faculty->id]);
+        $this->academicProgram = AcademicProgram::factory()->create(['department_id' => $department->id]);
+        $this->courseUnit = CourseUnit::factory()->create([
+            'academic_program_id' => $this->academicProgram->id,
+            'semester_number' => 1,
+            'credits' => 3,
+            'type' => 'OBLIGATOIRE',
+        ]);
+    }
+
+    private function getEnrollmentForStudent(Student $student, int $semester = 1): Enrollment
+    {
+        return Enrollment::firstOrCreate(
+            [
+                'student_id' => $student->id,
+                'academic_program_id' => $this->academicProgram->id,
+                'academic_year_id' => $this->academicYear->id,
+            ],
+            [
+                'current_semester' => $semester,
+                'status' => 'ACTIVE',
+                'enrollment_date' => now()->subMonths(1)->toDateString(),
+                'registration_fee_paid' => 0,
+                'is_scholarship' => false,
+            ]
+        );
+    }
+
+    /**
+     * @return array{course: Course, enrollment: CourseEnrollment}
+     */
+    private function createCourseWithEnrollment(
+        Student $student,
+        string $code,
+        string $name,
+        int $credits,
+        int $coefficient,
+        int $semester = 1
+    ): array {
+        $course = Course::factory()->create([
+            'course_unit_id' => $this->courseUnit->id,
+            'code' => $code,
+            'name' => $name,
+            'credits' => $credits,
+            'coefficient' => $coefficient,
+            'is_active' => true,
+        ]);
+
+        $enrollment = $this->getEnrollmentForStudent($student, $semester);
+
+        $courseEnrollment = CourseEnrollment::create([
+            'student_id' => $student->id,
+            'enrollment_id' => $enrollment->id,
+            'course_id' => $course->id,
+            'academic_year_id' => $this->academicYear->id,
+            'semester' => $semester,
+            'status' => CourseEnrollment::STATUS_ENROLLED,
+            'enrollment_date' => now()->subWeeks(2)->toDateString(),
+        ]);
+
+        return [
+            'course' => $course,
+            'enrollment' => $courseEnrollment,
+        ];
     }
 
     /** @test */
@@ -70,7 +140,7 @@ class SemesterResultCalculationApiTest extends TestCase
         Queue::fake();
 
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson('/api/semester-results/calculate', [
+            ->postJson('/api/v1/semester-results/calculate', [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
                 'async' => true,
@@ -103,23 +173,18 @@ class SemesterResultCalculationApiTest extends TestCase
     public function admin_can_trigger_semester_calculation_synchronously()
     {
         // Create test student and course data
-        $student = Student::create([
+        $student = Student::factory()->create([
             'student_number' => 'STU001',
             'full_name' => 'Test Student',
         ]);
 
-        $course = Course::create([
-            'code' => 'CS101',
-            'name' => 'Computer Science',
-            'credits' => 3,
-            'coefficient' => 2,
-            'is_active' => true,
-        ]);
-
-        $enrollment = CourseEnrollment::create([
-            'student_id' => $student->id,
-            'course_id' => $course->id,
-        ]);
+        ['course' => $course, 'enrollment' => $enrollment] = $this->createCourseWithEnrollment(
+            $student,
+            'CS101',
+            'Computer Science',
+            3,
+            2
+        );
 
         Grade::create([
             'course_enrollment_id' => $enrollment->id,
@@ -134,7 +199,7 @@ class SemesterResultCalculationApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson('/api/semester-results/calculate', [
+            ->postJson('/api/v1/semester-results/calculate', [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
                 'async' => false,
@@ -174,7 +239,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function non_admin_cannot_trigger_semester_calculation()
     {
         $response = $this->actingAs($this->faculty, 'api')
-            ->postJson('/api/semester-results/calculate', [
+            ->postJson('/api/v1/semester-results/calculate', [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]);
@@ -190,7 +255,7 @@ class SemesterResultCalculationApiTest extends TestCase
     /** @test */
     public function unauthenticated_user_cannot_trigger_semester_calculation()
     {
-        $response = $this->postJson('/api/semester-results/calculate', [
+        $response = $this->postJson('/api/v1/semester-results/calculate', [
             'academic_year_id' => $this->academicYear->id,
             'semester' => 1,
         ]);
@@ -202,7 +267,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function semester_calculation_validates_required_fields()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson('/api/semester-results/calculate', []);
+            ->postJson('/api/v1/semester-results/calculate', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['academic_year_id', 'semester']);
@@ -212,7 +277,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function semester_calculation_validates_academic_year_exists()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson('/api/semester-results/calculate', [
+            ->postJson('/api/v1/semester-results/calculate', [
                 'academic_year_id' => 'non-existent-id',
                 'semester' => 1,
             ]);
@@ -225,7 +290,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function semester_calculation_validates_semester_range()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson('/api/semester-results/calculate', [
+            ->postJson('/api/v1/semester-results/calculate', [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 3, // Invalid semester
             ]);
@@ -238,7 +303,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function admin_can_get_semester_statistics()
     {
         // Create test semester result
-        $student = Student::create([
+        $student = Student::factory()->create([
             'student_number' => 'STU001',
             'full_name' => 'Test Student',
         ]);
@@ -257,7 +322,7 @@ class SemesterResultCalculationApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin, 'api')
-            ->getJson('/api/semester-results/statistics?' . http_build_query([
+            ->getJson('/api/v1/semester-results/statistics?' . http_build_query([
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]));
@@ -292,23 +357,18 @@ class SemesterResultCalculationApiTest extends TestCase
     /** @test */
     public function admin_can_recalculate_specific_student()
     {
-        $student = Student::create([
+        $student = Student::factory()->create([
             'student_number' => 'STU001',
             'full_name' => 'Test Student',
         ]);
 
-        $course = Course::create([
-            'code' => 'CS101',
-            'name' => 'Computer Science',
-            'credits' => 3,
-            'coefficient' => 2,
-            'is_active' => true,
-        ]);
-
-        $enrollment = CourseEnrollment::create([
-            'student_id' => $student->id,
-            'course_id' => $course->id,
-        ]);
+        ['course' => $course, 'enrollment' => $enrollment] = $this->createCourseWithEnrollment(
+            $student,
+            'CS101',
+            'Computer Science',
+            3,
+            2
+        );
 
         Grade::create([
             'course_enrollment_id' => $enrollment->id,
@@ -323,7 +383,7 @@ class SemesterResultCalculationApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson("/api/semester-results/recalculate/{$student->id}", [
+            ->postJson("/api/v1/semester-results/recalculate/{$student->id}", [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]);
@@ -353,13 +413,13 @@ class SemesterResultCalculationApiTest extends TestCase
     /** @test */
     public function non_admin_cannot_recalculate_student()
     {
-        $student = Student::create([
+        $student = Student::factory()->create([
             'student_number' => 'STU001',
             'full_name' => 'Test Student',
         ]);
 
         $response = $this->actingAs($this->faculty, 'api')
-            ->postJson("/api/semester-results/recalculate/{$student->id}", [
+            ->postJson("/api/v1/semester-results/recalculate/{$student->id}", [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]);
@@ -375,7 +435,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function recalculate_returns_error_for_non_existent_student()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson("/api/semester-results/recalculate/non-existent-id", [
+            ->postJson("/api/v1/semester-results/recalculate/non-existent-id", [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]);
@@ -387,7 +447,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function statistics_validates_required_parameters()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->getJson('/api/semester-results/statistics');
+            ->getJson('/api/v1/semester-results/statistics');
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['academic_year_id', 'semester']);
@@ -397,7 +457,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function statistics_returns_empty_data_for_no_results()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->getJson('/api/semester-results/statistics?' . http_build_query([
+            ->getJson('/api/v1/semester-results/statistics?' . http_build_query([
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]));
@@ -420,7 +480,7 @@ class SemesterResultCalculationApiTest extends TestCase
         Queue::fake();
 
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson('/api/semester-results/calculate', [
+            ->postJson('/api/v1/semester-results/calculate', [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
                 // async parameter not provided, should default to true

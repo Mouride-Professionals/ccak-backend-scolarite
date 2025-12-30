@@ -15,9 +15,15 @@ class UpdateStudentRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-              'student_number' => ['sometimes','string','max:255', \Illuminate\Validation\Rule::unique('students', 'student_number')->ignore($id)],
+        $studentId = $this->route('student');
 
+        return [
+            'student_number' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('students', 'student_number')->ignore($studentId),
+            ],
             'full_name' => ['sometimes', 'required', 'string', 'max:255'],
             'gender' => ['sometimes', 'required', 'in:M,F'],
             'date_of_birth' => ['sometimes', 'required', 'date', 'before:today'],

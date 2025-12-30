@@ -8,6 +8,8 @@ use App\Http\Requests\Student\StoreDocumentRequest;
 use App\Models\Admin;
 use App\Models\Document;
 use App\Models\Student;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -138,6 +140,10 @@ class DocumentController extends BaseApiController
                 $document->load('student', 'reviewer'),
                 'Document revu avec succès.'
             );
+        } catch (AuthorizationException $e) {
+            throw $e;
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Document non trouvé.', 404);
         } catch (\Exception $e) {
             return $this->error('Erreur lors de la revue du document.', 500);
         }

@@ -15,7 +15,6 @@ class UserObserver
         Log::channel('audit')->info('User created', [
             'user_id' => $user->id,
             'email' => $user->email,
-            'user_type' => $user->user_type,
             'by_user' => auth()->id() ?? 'system',
         ]);
     }

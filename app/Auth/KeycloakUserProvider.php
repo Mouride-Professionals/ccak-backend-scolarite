@@ -20,16 +20,6 @@ class KeycloakUserProvider extends EloquentUserProvider
             return null;
         }
 
-        $userType = $this->resolveUserType($claims);
-
-        // If Keycloak token doesn't contain a recognized role, fall back to
-        // a sensible default so the application can still provision a user.
-        // This avoids throwing a UserNotFoundException when tokens lack role
-        // claims in development or third-party tokens.
-        if (! $userType) {
-            $userType = env('KEYCLOAK_DEFAULT_USER_TYPE', 'STUDENT');
-        }
-
         $email = $claims['email'] ?? null;
         $defaultEmail = $email ?: sprintf('%s@keycloak.local', Str::slug($sub));
 
@@ -38,7 +28,6 @@ class KeycloakUserProvider extends EloquentUserProvider
             ['keycloak_id' => $sub],
             [
                 'email' => $defaultEmail,
-                'user_type' => $userType,
                 'is_active' => true,
             ]
         );
@@ -47,10 +36,6 @@ class KeycloakUserProvider extends EloquentUserProvider
 
         if ($email && $user->email !== $email) {
             $user->email = $email;
-        }
-
-        if ($user->user_type !== $userType) {
-            $user->user_type = $userType;
         }
 
         $user->save();
@@ -84,18 +69,6 @@ class KeycloakUserProvider extends EloquentUserProvider
         if ($roles !== $currentRoles) {
             $user->syncRoles($roles);
         }
-    }
-
-    private function resolveUserType(array $claims): ?string
-    {
-        $allowedRoles = $this->getAllowedRoles();
-        if (empty($allowedRoles)) {
-            return null;
-        }
-
-        $allowedRolesSet = array_fill_keys($allowedRoles, true);
-        $roles = $this->extractAllowedRoles($claims, $allowedRolesSet);
-        return $roles[0] ?? null;
     }
 
     private function extractAllowedRoles(array $claims, array $allowedRolesSet): array
