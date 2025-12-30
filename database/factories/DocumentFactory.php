@@ -5,6 +5,8 @@ namespace Database\Factories;
 
 use App\Models\Document;
 use App\Models\Student;
+use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,10 +23,10 @@ class DocumentFactory extends Factory
     {
         return [
             'student_id' => Student::factory(),
-            'type' => $this->faker->randomElement(array_keys(Document::typeLabels())),
+            'type' => $this->faker->randomElement(DocumentType::values()),
             'file_path' => 'documents/' . $this->faker->uuid() . '.pdf',
             'file_name' => $this->faker->word() . '.pdf',
-            'status' => $this->faker->randomElement(['PENDING', 'APPROVED', 'REJECTED']),
+            'status' => DocumentStatus::PENDING->value,
             'uploaded_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
         ];
     }

@@ -4,6 +4,7 @@ namespace Tests\Feature\Document;
 
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
+use App\Models\Admin;
 use App\Models\Document;
 use App\Models\Student;
 use App\Models\User;
@@ -37,7 +38,8 @@ class DocumentApiTest extends TestCase
         parent::setUp();
         $this->student = Student::factory()->create();
         Storage::fake('documents');
-        $this->withoutMiddleware(Authenticate::class);
+        $user = $this->actingAsUserWithPermissions($this->permissions);
+        $this->actingAs($user, 'api');
     }
 
     #[Test]
@@ -104,7 +106,7 @@ class DocumentApiTest extends TestCase
 
         // Vérifier que le fichier a été stocké
         $document = Document::first();
-        Storage::disk('documents')->assertExists($document->file_path);
+        $this->assertTrue(Storage::disk('documents')->exists($document->file_path));
     }
 
     #[Test]
@@ -188,10 +190,10 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function admin_cannot_approve_already_approved_document(): void
     {
-
+        $admin = Admin::factory()->create();
         $document = Document::factory()->approved()->create([
             'student_id' => $this->student->id,
-            'reviewed_by' => User::factory()->create()->id,
+            'reviewed_by' => $admin->id,
         ]);
 
         $response = $this->postJson("/api/v1/documents/$document->id/approve");
@@ -236,7 +238,7 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function student_cannot_review_documents(): void
     {
-
+        $this->actingAs(User::factory()->create(), 'api');
 
         $document = Document::factory()->pending()->create([
             'student_id' => $this->student->id,
@@ -250,11 +252,11 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_can_download_document_info(): void
     {
-
-
         $document = Document::factory()->create([
             'student_id' => $this->student->id,
         ]);
+
+        Storage::disk('documents')->put($document->file_path, 'PDF content');
 
         $response = $this->getJson("/api/v1/documents/$document->id/download");
 
@@ -291,7 +293,7 @@ class DocumentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertHeader('Content-Type', 'application/pdf')
-            ->assertHeader('Content-Disposition', "attachment; filename=\"{$fileName}\"");
+            ->assertHeader('Content-Disposition', "attachment; filename={$fileName}");
     }
 
     #[Test]
@@ -348,7 +350,7 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function student_cannot_delete_approved_document(): void
     {
-
+        $this->actingAs(User::factory()->create(), 'api');
 
         $document = Document::factory()->approved()->create([
             'student_id' => $this->student->id,
@@ -562,6 +564,8 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_requires_authentication_for_protected_endpoints(): void
     {
+        $this->app['auth']->forgetGuards();
+
         // Tester sans authentification
         $response = $this->getJson('/api/v1/documents');
 
@@ -571,6 +575,8 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_enforces_permissions(): void
     {
+        $this->actingAs(User::factory()->create(), 'api');
+
         $response = $this->getJson('/api/v1/documents');
         $response->assertStatus(403);
     }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Factories;
@@ -24,7 +25,7 @@ class StudentFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'student_number' => "UCAK{$year}" . str_pad($sequence++, 3, '0', STR_PAD_LEFT),
+            'student_number' => "UCAK{$year}" . str_pad((string)$sequence++, 3, '0', STR_PAD_LEFT),
             'full_name' => $this->faker->name(),
             'gender' => $this->faker->randomElement(['M', 'F']),
             'date_of_birth' => $this->faker->dateTimeBetween('-25 years', '-18 years'),
@@ -37,5 +38,19 @@ class StudentFactory extends Factory
             'photo_url' => $this->faker->imageUrl(),
             'status' => $this->faker->randomElement(Student::getStatuses()),
         ];
+    }
+
+    public function active(): static
+    {
+        return $this->state(fn() => [
+            'status' => Student::STATUS_ACTIVE,
+        ]);
+    }
+
+    public function graduated(): static
+    {
+        return $this->state(fn() => [
+            'status' => Student::STATUS_GRADUATED,
+        ]);
     }
 }

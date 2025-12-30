@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class SemesterResultController extends BaseApiController
 {
@@ -134,7 +135,7 @@ class SemesterResultController extends BaseApiController
         try {
             $statistics = $this->calculationService->getSemesterStatistics(
                 $validated['academic_year_id'],
-                $validated['semester']
+                (int) $validated['semester']
             );
 
             return $this->success($statistics, 'Semester statistics retrieved successfully');
@@ -177,6 +178,8 @@ class SemesterResultController extends BaseApiController
                 return $this->error('Could not recalculate semester result for this student', 422, ['student' => ['No courses found or calculation failed']]);
             }
 
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Student not found.', 404);
         } catch (\Exception $e) {
             return $this->error('Failed to recalculate student result: ' . $e->getMessage(), 500, ['calculation' => [$e->getMessage()]]);
         }

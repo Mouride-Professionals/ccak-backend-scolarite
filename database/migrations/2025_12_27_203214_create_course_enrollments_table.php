@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('course_enrollments', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->uuid('student_id');
             $table->uuid('enrollment_id');
             $table->uuid('course_id');
             $table->uuid('academic_year_id');
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->date('drop_date')->nullable();
             $table->timestamps();
 
+            $table->foreign('student_id')->references('id')->on('students')->cascadeOnDelete();
             $table->foreign('enrollment_id')->references('id')->on('enrollments')->cascadeOnDelete();
             $table->foreign('course_id')->references('id')->on('courses')->cascadeOnDelete();
             $table->foreign('academic_year_id')->references('id')->on('academic_years')->cascadeOnDelete();

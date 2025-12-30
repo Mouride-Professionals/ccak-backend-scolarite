@@ -3,9 +3,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseUnit;
+use App\Models\Department;
+use App\Models\Enrollment;
+use App\Models\Faculty;
 use App\Models\Grade;
 use App\Models\Student;
 use App\Models\User;
@@ -29,6 +34,8 @@ class SemesterResultCalculationServiceTest extends TestCase
     private AcademicYear $academicYear;
     private Course $course1;
     private Course $course2;
+    private Enrollment $academicEnrollment;
+    private CourseUnit $courseUnit;
 
     protected function setUp(): void
     {
@@ -53,16 +60,37 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->admin->assignRole('ADMIN');
 
         // Create test data
-        $this->student = Student::create([
+        $this->student = Student::factory()->create([
             'student_number' => 'STU001',
             'full_name' => 'Test Student',
         ]);
 
-        $this->academicYear = AcademicYear::create([
-            'name' => '2023-2024',
+        $faculty = Faculty::factory()->create();
+        $department = Department::factory()->create(['faculty_id' => $faculty->id]);
+        $program = AcademicProgram::factory()->create(['department_id' => $department->id]);
+
+        $this->courseUnit = CourseUnit::factory()->create([
+            'academic_program_id' => $program->id,
+            'semester_number' => 1,
+            'credits' => 3,
+            'type' => 'OBLIGATOIRE',
         ]);
 
-        $this->course1 = Course::create([
+        $this->academicYear = AcademicYear::factory()->create(['name' => '2023-2024']);
+
+        $this->academicEnrollment = Enrollment::factory()->create([
+            'student_id' => $this->student->id,
+            'academic_program_id' => $program->id,
+            'academic_year_id' => $this->academicYear->id,
+            'current_semester' => 1,
+            'status' => 'ACTIVE',
+            'enrollment_date' => now()->subMonths(1)->toDateString(),
+            'registration_fee_paid' => 0,
+            'is_scholarship' => false,
+        ]);
+
+        $this->course1 = Course::factory()->create([
+            'course_unit_id' => $this->courseUnit->id,
             'code' => 'CS101',
             'name' => 'Introduction to Computer Science',
             'credits' => 3,
@@ -70,7 +98,8 @@ class SemesterResultCalculationServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->course2 = Course::create([
+        $this->course2 = Course::factory()->create([
+            'course_unit_id' => $this->courseUnit->id,
             'code' => 'MATH101',
             'name' => 'Mathematics',
             'credits' => 4,
@@ -79,19 +108,25 @@ class SemesterResultCalculationServiceTest extends TestCase
         ]);
     }
 
+    private function createCourseEnrollment(Course $course, int $semester = 1): CourseEnrollment
+    {
+        return CourseEnrollment::create([
+            'student_id' => $this->student->id,
+            'enrollment_id' => $this->academicEnrollment->id,
+            'course_id' => $course->id,
+            'academic_year_id' => $this->academicYear->id,
+            'semester' => $semester,
+            'status' => CourseEnrollment::STATUS_ENROLLED,
+            'enrollment_date' => now()->subWeeks(2)->toDateString(),
+        ]);
+    }
+
     /** @test */
     public function it_calculates_semester_results_successfully()
     {
         // Create course enrollments
-        $enrollment1 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course1->id,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course2->id,
-        ]);
+        $enrollment1 = $this->createCourseEnrollment($this->course1);
+        $enrollment2 = $this->createCourseEnrollment($this->course2);
 
         // Create passing grades
         Grade::create([
@@ -145,15 +180,8 @@ class SemesterResultCalculationServiceTest extends TestCase
     public function it_calculates_student_result_with_compensation()
     {
         // Create course enrollments
-        $enrollment1 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course1->id,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course2->id,
-        ]);
+        $enrollment1 = $this->createCourseEnrollment($this->course1);
+        $enrollment2 = $this->createCourseEnrollment($this->course2);
 
         // Create grades: one passing, one compensable
         Grade::create([
@@ -196,15 +224,8 @@ class SemesterResultCalculationServiceTest extends TestCase
     /** @test */
     public function it_determines_failed_decision_correctly()
     {
-        $enrollment1 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course1->id,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course2->id,
-        ]);
+        $enrollment1 = $this->createCourseEnrollment($this->course1);
+        $enrollment2 = $this->createCourseEnrollment($this->course2);
 
         // Create failing grades
         Grade::create([
@@ -247,15 +268,8 @@ class SemesterResultCalculationServiceTest extends TestCase
     /** @test */
     public function it_determines_resit_required_correctly()
     {
-        $enrollment1 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course1->id,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course2->id,
-        ]);
+        $enrollment1 = $this->createCourseEnrollment($this->course1);
+        $enrollment2 = $this->createCourseEnrollment($this->course2);
 
         // Create grades that lead to resit (failed but decent average)
         Grade::create([
@@ -296,10 +310,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     /** @test */
     public function it_updates_existing_semester_result()
     {
-        $enrollment = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course1->id,
-        ]);
+        $enrollment = $this->createCourseEnrollment($this->course1);
 
         Grade::create([
             'course_enrollment_id' => $enrollment->id,
@@ -339,7 +350,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     public function it_calculates_semester_statistics_correctly()
     {
         // Create multiple students with different results
-        $student2 = Student::create([
+        $student2 = Student::factory()->create([
             'student_number' => 'STU002',
             'full_name' => 'Test Student 2',
         ]);
@@ -393,7 +404,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         );
 
         $this->assertFalse($result['success']);
-        $this->assertStringContains('No students found', $result['message']);
+        $this->assertStringContainsString('No students found', $result['message']);
         $this->assertEquals(0, $result['data']['students_processed']);
         $this->assertEquals(0, $result['data']['results_created']);
     }
@@ -413,15 +424,8 @@ class SemesterResultCalculationServiceTest extends TestCase
     public function it_calculates_credits_earned_correctly_for_compensation()
     {
         // This tests the private method through public interface
-        $enrollment1 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course1->id,
-        ]);
-
-        $enrollment2 = CourseEnrollment::create([
-            'student_id' => $this->student->id,
-            'course_id' => $this->course2->id,
-        ]);
+        $enrollment1 = $this->createCourseEnrollment($this->course1);
+        $enrollment2 = $this->createCourseEnrollment($this->course2);
 
         // One passing, one compensable
         Grade::create([

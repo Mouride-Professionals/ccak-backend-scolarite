@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Auth\AuthenticationException;
 use KeycloakGuard\Exceptions\TokenException;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 
@@ -71,5 +72,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $exception->getMessage() ?: 'Unauthorized.',
                 'errors' => [],
             ], $exception->getStatusCode());
+        });
+
+        $exceptions->renderable(function (AuthenticationException $exception, Request $request) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage() ?: 'Unauthenticated.',
+                'errors' => [],
+            ], 401);
         });
     })->create();

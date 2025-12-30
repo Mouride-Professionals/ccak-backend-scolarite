@@ -18,8 +18,8 @@ class CourseEnrollmentFactory extends Factory
             'course_id' => fn() => \App\Models\Course::factory(),
             'enrollment_id' => fn() => \App\Models\Enrollment::factory(),
             'academic_year_id' => fn() => \App\Models\AcademicYear::factory(),
-            'semester' => $this->faker->numberBetween(1, 9999),
-            'status' => $this->faker->sentence(),
+            'semester' => $this->faker->numberBetween(1, 12),
+            'status' => $this->faker->randomElement(\App\Models\CourseEnrollment::getStatuses()),
             'enrollment_date' => $this->faker->date('Y-m-d'),
             'drop_date' => $this->faker->date('Y-m-d'),
         ];

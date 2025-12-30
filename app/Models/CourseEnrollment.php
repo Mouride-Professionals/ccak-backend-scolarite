@@ -19,6 +19,7 @@ class CourseEnrollment extends Model
     protected $fillable = ['student_id','enrollment_id', 'course_id', 'academic_year_id', 'semester', 'status', 'enrollment_date', 'drop_date'];
 
     protected $casts = [
+        'student_id' => 'string',
         'enrollment_id' => 'string',
         'course_id' => 'string',
         'academic_year_id' => 'string',

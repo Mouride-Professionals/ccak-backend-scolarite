@@ -5,6 +5,8 @@ namespace Tests\Unit\Models;
 use App\Models\Admin;
 use App\Models\Document;
 use App\Models\Student;
+use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -38,7 +40,7 @@ class DocumentTest extends TestCase
         $pendingDocuments = Document::pending()->get();
 
         $this->assertCount(1, $pendingDocuments);
-        $this->assertEquals('PENDING', $pendingDocuments->first()->status);
+        $this->assertEquals(DocumentStatus::PENDING, $pendingDocuments->first()->status);
     }
 
     public function test_approved_scope(): void
@@ -49,7 +51,7 @@ class DocumentTest extends TestCase
         $approvedDocuments = Document::approved()->get();
 
         $this->assertCount(1, $approvedDocuments);
-        $this->assertEquals('APPROVED', $approvedDocuments->first()->status);
+        $this->assertEquals(DocumentStatus::APPROVED, $approvedDocuments->first()->status);
     }
 
     public function test_rejected_scope(): void
@@ -60,7 +62,7 @@ class DocumentTest extends TestCase
         $rejectedDocuments = Document::rejected()->get();
 
         $this->assertCount(1, $rejectedDocuments);
-        $this->assertEquals('REJECTED', $rejectedDocuments->first()->status);
+        $this->assertEquals(DocumentStatus::REJECTED, $rejectedDocuments->first()->status);
     }
 
     public function test_of_type_scope(): void
@@ -71,7 +73,7 @@ class DocumentTest extends TestCase
         $cniDocuments = Document::ofType('CNI')->get();
 
         $this->assertCount(1, $cniDocuments);
-        $this->assertEquals('CNI', $cniDocuments->first()->type);
+        $this->assertEquals(DocumentType::CNI, $cniDocuments->first()->type);
     }
 
     public function test_is_pending_method(): void
@@ -108,7 +110,7 @@ class DocumentTest extends TestCase
 
         $document->approve($admin, 'Approved successfully');
 
-        $this->assertEquals('APPROVED', $document->status);
+        $this->assertEquals(DocumentStatus::APPROVED, $document->status);
         $this->assertEquals($admin->id, $document->reviewed_by);
         $this->assertEquals('Approved successfully', $document->notes);
         $this->assertNotNull($document->reviewed_at);
@@ -121,7 +123,7 @@ class DocumentTest extends TestCase
 
         $document->reject($admin, 'Document incomplete');
 
-        $this->assertEquals('REJECTED', $document->status);
+        $this->assertEquals(DocumentStatus::REJECTED, $document->status);
         $this->assertEquals($admin->id, $document->reviewed_by);
         $this->assertEquals('Document incomplete', $document->notes);
         $this->assertNotNull($document->reviewed_at);
@@ -129,14 +131,11 @@ class DocumentTest extends TestCase
 
     public function test_type_labels(): void
     {
-        $expectedLabels = [
-            'CNI' => 'Carte Nationale d\'Identité',
-            'BIRTH_CERT' => 'Acte de Naissance',
-            'BAC_DIPLOMA' => 'Diplôme du Baccalauréat',
-            'TRANSCRIPT' => 'Relevé de Notes',
-            'PHOTO' => 'Photo d\'Identité',
-            'MEDICAL' => 'Certificat Médical',
-        ];
+        $expectedLabels = [];
+
+        foreach (DocumentType::cases() as $type) {
+            $expectedLabels[$type->value] = $type->label();
+        }
 
         $this->assertEquals($expectedLabels, Document::typeLabels());
     }
@@ -145,7 +144,7 @@ class DocumentTest extends TestCase
     {
         $document = Document::factory()->create(['type' => 'CNI']);
 
-        $this->assertEquals('Carte Nationale d\'Identité', $document->type_label);
+        $this->assertEquals(DocumentType::CNI->label(), $document->type_label);
     }
 
     public function test_fillable_attributes(): void
@@ -158,6 +157,7 @@ class DocumentTest extends TestCase
             'status',
             'reviewed_by',
             'notes',
+            'metadata',
             'uploaded_at',
             'reviewed_at',
         ];

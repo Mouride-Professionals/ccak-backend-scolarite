@@ -30,6 +30,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'allowed_extensions' => [
+        'ATTESTATION' => ['pdf'],
         'CNI' => ['pdf', 'jpg', 'jpeg', 'png'],
         'BIRTH_CERT' => ['pdf', 'jpg', 'jpeg'],
         'BAC_DIPLOMA' => ['pdf'],
@@ -44,6 +45,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'max_sizes' => [
+        'ATTESTATION' => 5120, // 5MB
         'CNI' => 2048,      // 2MB
         'BIRTH_CERT' => 2048, // 2MB
         'BAC_DIPLOMA' => 5120, // 5MB

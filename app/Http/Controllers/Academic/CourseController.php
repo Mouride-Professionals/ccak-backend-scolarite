@@ -16,10 +16,10 @@ class CourseController extends BaseApiController
 {
     public function __construct()
     {
-        // $this->middleware('permission:courses.view')->only(['index', 'show']);
-        // $this->middleware('permission:courses.create')->only('store');
-        // $this->middleware('permission:courses.update')->only('update');
-        // $this->middleware('permission:courses.delete')->only('destroy');
+        $this->middleware('permission:courses.view')->only(['index', 'show']);
+        $this->middleware('permission:courses.create')->only('store');
+        $this->middleware('permission:courses.update')->only('update');
+        $this->middleware('permission:courses.delete')->only('destroy');
     }
 
     public function index()

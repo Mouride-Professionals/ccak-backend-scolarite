@@ -47,7 +47,7 @@ class DocumentValidationService
         }
 
         $rules = [
-            'file' => [
+            'document_file' => [
                 'required',
                 'file',
                 'mimes:' . implode(',', $type->allowedExtensions()),
@@ -57,15 +57,15 @@ class DocumentValidationService
 
         // Règles supplémentaires pour les images
         if (in_array($file->getClientOriginalExtension(), ['jpg', 'jpeg', 'png'])) {
-            $rules['file'][] = 'image';
+            $rules['document_file'][] = 'image';
 
             // Dimensions minimales pour les photos d'identité
             if ($type === DocumentType::PHOTO) {
-                $rules['file'][] = 'dimensions:min_width=300,min_height=300,ratio=3/4';
+                $rules['document_file'][] = 'dimensions:min_width=300,min_height=300';
             }
         }
 
-        $validator = Validator::make(['file' => $file], $rules, $this->getValidationMessages());
+        $validator = Validator::make(['document_file' => $file], $rules, $this->getValidationMessages());
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
@@ -164,12 +164,12 @@ class DocumentValidationService
             'student_id.uuid' => 'L\'identifiant de l\'étudiant doit être un UUID valide',
             'type.required' => 'Le type de document est requis',
             'type.in' => 'Le type de document n\'est pas valide',
-            'file.required' => 'Un fichier est requis',
-            'file.file' => 'Le fichier n\'est pas valide',
-            'file.mimes' => 'Type de fichier non autorisé',
-            'file.max' => 'Le fichier est trop volumineux',
-            'file.image' => 'Le fichier doit être une image',
-            'file.dimensions' => 'Les dimensions de l\'image ne sont pas valides',
+            'document_file.required' => 'Un fichier est requis',
+            'document_file.file' => 'Le fichier n\'est pas valide',
+            'document_file.mimes' => 'Type de fichier non autorisé',
+            'document_file.max' => 'Le fichier est trop volumineux',
+            'document_file.image' => 'Le fichier doit être une image',
+            'document_file.dimensions' => 'Les dimensions de l\'image ne sont pas valides',
         ];
     }
 }

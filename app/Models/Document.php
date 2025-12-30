@@ -21,12 +21,13 @@ class Document extends Model
 
     protected $fillable = [
         'student_id',
-        'reviewed_by',
         'type',
-        'status',
         'file_path',
         'file_name',
+        'status',
+        'reviewed_by',
         'notes',
+        'metadata',
         'uploaded_at',
         'reviewed_at',
     ];
@@ -39,6 +40,7 @@ class Document extends Model
         'file_path' => 'string',
         'file_name' => 'string',
         'notes' => 'string',
+        'metadata' => 'array',
         'uploaded_at' => 'datetime',
         'reviewed_at' => 'datetime',
     ];
@@ -54,7 +56,7 @@ class Document extends Model
 
     public function reviewer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reviewed_by');
+        return $this->belongsTo(Admin::class, 'reviewed_by');
     }
 
     /**
@@ -81,25 +83,19 @@ class Document extends Model
         );
     }
 
-    protected function isPending(): Attribute
+    public function isPending(): bool
     {
-        return Attribute::make(
-            get: fn () => $this->status === DocumentStatus::PENDING
-        );
+        return $this->status === DocumentStatus::PENDING;
     }
 
-    protected function isApproved(): Attribute
+    public function isApproved(): bool
     {
-        return Attribute::make(
-            get: fn () => $this->status === DocumentStatus::APPROVED
-        );
+        return $this->status === DocumentStatus::APPROVED;
     }
 
-    protected function isRejected(): Attribute
+    public function isRejected(): bool
     {
-        return Attribute::make(
-            get: fn () => $this->status === DocumentStatus::REJECTED
-        );
+        return $this->status === DocumentStatus::REJECTED;
     }
 
     protected function fileSizeHuman(): Attribute
@@ -161,7 +157,7 @@ class Document extends Model
     public function approve(Admin $admin, ?string $notes = null): void
     {
         $this->update([
-            'status' => 'APPROVED',
+            'status' => DocumentStatus::APPROVED,
             'reviewed_by' => $admin->id,
             'reviewed_at' => now(),
             'notes' => $notes,
@@ -174,7 +170,7 @@ class Document extends Model
     public function reject(Admin $admin, string $notes): void
     {
         $this->update([
-            'status' => 'REJECTED',
+            'status' => DocumentStatus::REJECTED,
             'reviewed_by' => $admin->id,
             'reviewed_at' => now(),
             'notes' => $notes,
@@ -186,21 +182,12 @@ class Document extends Model
      */
     public static function typeLabels(): array
     {
-        return [
-            'CNI' => 'Carte Nationale d\'Identité',
-            'BIRTH_CERT' => 'Acte de Naissance',
-            'BAC_DIPLOMA' => 'Diplôme du Baccalauréat',
-            'TRANSCRIPT' => 'Relevé de Notes',
-            'PHOTO' => 'Photo d\'Identité',
-            'MEDICAL' => 'Certificat Médical',
-        ];
-    }
+        $labels = [];
 
-    /**
-     * Get the label for the current document type.
-     */
-    public function getTypeLabelAttribute(): string
-    {
-        return self::typeLabels()[$this->type] ?? $this->type;
+        foreach (DocumentType::cases() as $type) {
+            $labels[$type->value] = $type->label();
+        }
+
+        return $labels;
     }
 }
