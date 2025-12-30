@@ -10,6 +10,7 @@ RUN apk add --no-cache \
         icu-dev \
         libzip-dev \
         libpq-dev \
+        mariadb-connector-c-dev \
         oniguruma-dev \
         libjpeg-turbo-dev \
         libpng-dev \
@@ -21,6 +22,7 @@ RUN apk add --no-cache \
         gd \
         intl \
         pcntl \
+        pdo_mysql \
         pdo_pgsql \
         zip \
     && pecl install redis \
