@@ -87,7 +87,7 @@ class Announcement extends Model
         });
     }
 
-    public function scopeNotDismissedBy($query, int $userId)
+    public function scopeNotDismissedBy($query, string $userId)
     {
         return $query->whereDoesntHave('dismissedBy', function ($q) use ($userId) {
             $q->where('user_id', $userId);
@@ -115,7 +115,7 @@ class Announcement extends Model
         ]);
     }
 
-    public function dismissFor(int $userId): void
+    public function dismissFor(string $userId): void
     {
         $this->dismissedBy()->attach($userId, [
             'dismissed_at' => now(),
