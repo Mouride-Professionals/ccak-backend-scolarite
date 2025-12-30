@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Audit;
 
 use App\Http\Controllers\Controller;
 use OwenIt\Auditing\Models\Audit;
