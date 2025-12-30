@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Authorization;
 
 use App\Models\Student;
 use App\Models\Course;

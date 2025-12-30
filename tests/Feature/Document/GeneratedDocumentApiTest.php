@@ -1,6 +1,6 @@
 <?php
 
-namespace Document;
+namespace Tests\Feature\Document;
 
 use App\Models\GeneratedDocument;
 use App\Models\Student;
