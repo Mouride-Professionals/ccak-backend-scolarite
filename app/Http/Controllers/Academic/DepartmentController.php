@@ -6,7 +6,9 @@ use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreDepartmentRequest;
 use App\Http\Requests\Academic\UpdateDepartmentRequest;
 use App\Models\Department;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -20,7 +22,7 @@ class DepartmentController extends BaseApiController
         $this->middleware('permission:departments.delete')->only('destroy');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $departments = QueryBuilder::for(Department::query())
             ->with(['faculty', 'head', 'programs'])
@@ -38,14 +40,15 @@ class DepartmentController extends BaseApiController
             ])
             ->allowedSorts(['name', 'code', 'created_at'])
             ->defaultSort('name')
-            ->get();
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
         return $this->success($departments);
     }
 
     public function store(StoreDepartmentRequest $request)
     {
-        $department = Department::create($request->validated());
+        $department = DB::transaction(fn() => Department::create($request->validated()));
 
         return $this->success($department->load(['faculty', 'head', 'programs']), 'Department created', Response::HTTP_CREATED);
     }
@@ -57,14 +60,14 @@ class DepartmentController extends BaseApiController
 
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
-        $department->update($request->validated());
+        DB::transaction(fn() => $department->update($request->validated()));
 
         return $this->success($department->refresh()->load(['faculty', 'head', 'programs']), 'Department updated');
     }
 
     public function destroy(Department $department)
     {
-        $department->delete();
+        DB::transaction(fn() => $department->delete());
 
         return $this->success(null, 'Department deleted');
     }

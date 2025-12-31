@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Academic;
 
 use Illuminate\Http\Request;
 use App\Services\DeliberationResultService;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseApiController;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+use App\Models\DeliberationResult;
 
-class DeliberationResultController extends Controller
+class DeliberationResultController extends BaseApiController
 {
     public function __construct(
         protected DeliberationResultService $service)
@@ -20,7 +24,21 @@ class DeliberationResultController extends Controller
 
     public function index()
     {
-        return response()->json($this->service->getAll());
+        $results = QueryBuilder::for(DeliberationResult::query())
+            ->with(['student', 'deliberationSession'])
+            ->allowedIncludes(['student', 'deliberationSession'])
+            ->allowedFilters([
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::exact('deliberation_session_id'),
+                AllowedFilter::exact('decision'),
+                AllowedFilter::exact('is_with_honors'),
+            ])
+            ->allowedSorts(['created_at'])
+            ->defaultSort('-created_at')
+            ->paginate(request()->integer('per_page') ?? 15)
+            ->appends(request()->query());
+
+        return $this->success($results, 'Deliberation results retrieved successfully');
     }
 
     public function store(Request $request)
@@ -32,15 +50,15 @@ class DeliberationResultController extends Controller
             'is_with_honors' => 'sometimes|boolean',
         ]);
 
-        $result = $this->service->create($data);
+        $result = DB::transaction(fn() => $this->service->create($data));
 
-        return response()->json($result, 201);
+        return $this->success($result, 'Deliberation result created', 201);
     }
 
     public function show($id)
     {
         $result = $this->service->getById($id);
-        return $result ? response()->json($result) : response()->json(['message' => 'Not found'], 404);
+        return $result ? $this->success($result) : $this->error('Not found', 404);
     }
 
     public function update(Request $request, $id)
@@ -49,15 +67,15 @@ class DeliberationResultController extends Controller
             'decision', 'is_with_honors'
         ]);
 
-        $result = $this->service->update($id, $data);
+        $result = DB::transaction(fn() => $this->service->update($id, $data));
 
-        return $result ? response()->json($result) : response()->json(['message' => 'Not found'], 404);
+        return $result ? $this->success($result) : $this->error('Not found', 404);
     }
 
     public function destroy($id)
     {
         return $this->service->delete($id)
-            ? response()->json(['message' => 'Deleted'])
-            : response()->json(['message' => 'Not found'], 404);
+            ? $this->success(null, 'Deleted')
+            : $this->error('Not found', 404);
     }
 }

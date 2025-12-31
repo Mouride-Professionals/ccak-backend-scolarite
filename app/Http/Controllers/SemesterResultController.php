@@ -7,14 +7,15 @@ use App\Repositories\SemesterResultRepository;
 use App\Http\Requests\SemesterResult\StoreSemesterResultRequest;
 use App\Http\Requests\SemesterResult\UpdateSemesterResultRequest;
 use App\Http\Resources\SemesterResultResource;
-use App\Http\Resources\SemesterResultCollection;
 use App\Services\SemesterResultCalculationService;
 use App\Jobs\CalculateSemesterResultsJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class SemesterResultController extends BaseApiController
 {
@@ -22,22 +23,35 @@ class SemesterResultController extends BaseApiController
         private readonly SemesterResultRepository $repository,
         private readonly SemesterResultCalculationService $calculationService
     ) {
-        // $this->middleware('permission:semester_results.view')->only(['index', 'show', 'statistics']);
-        // $this->middleware('permission:semester_results.create')->only('store');
-        // $this->middleware('permission:semester_results.update')->only('update');
-        // $this->middleware('permission:semester_results.delete')->only('destroy');
-        // $this->middleware('permission:semester_results.calculate')->only(['calculate', 'recalculateStudent']);
+        $this->middleware('permission:semester_results.view')->only(['index', 'show', 'statistics']);
+        $this->middleware('permission:semester_results.create')->only('store');
+        $this->middleware('permission:semester_results.update')->only('update');
+        $this->middleware('permission:semester_results.delete')->only('destroy');
+        $this->middleware('permission:semester_results.calculate')->only(['calculate', 'recalculateStudent']);
     }
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = (int) ($request->integer('per_page') ?: 15);
-        return $this->success($this->repository->paginate($perPage), 'Semester results retrieved successfully');
+        $results = QueryBuilder::for(\App\Models\SemesterResult::query())
+            ->with(['student', 'academicYear', 'calculatedBy'])
+            ->allowedIncludes(['student', 'academicYear', 'calculatedBy'])
+            ->allowedFilters([
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('semester'),
+                AllowedFilter::exact('decision'),
+            ])
+            ->allowedSorts(['semester_average', 'semester_gpa', 'created_at'])
+            ->defaultSort('-created_at')
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
+
+        return $this->success($results, 'Semester results retrieved successfully');
     }
 
     public function store(StoreSemesterResultRequest $request): JsonResponse
     {
-        $item = $this->repository->create($request->validated());
+        $item = DB::transaction(fn() => $this->repository->create($request->validated()));
         return $this->success(new SemesterResultResource($item), 'Semester result created successfully', 201);
     }
 
@@ -48,13 +62,13 @@ class SemesterResultController extends BaseApiController
 
     public function update(UpdateSemesterResultRequest $request, int|string $semesterResult): JsonResponse
     {
-        $item = $this->repository->update($semesterResult, $request->validated());
+        $item = DB::transaction(fn() => $this->repository->update($semesterResult, $request->validated()));
         return $this->success(new SemesterResultResource($item), 'Semester result updated successfully');
     }
 
     public function destroy(int|string $semesterResult): JsonResponse
     {
-        $this->repository->delete($semesterResult);
+        DB::transaction(fn() => $this->repository->delete($semesterResult));
         return $this->success(null, 'Semester result deleted successfully', 204);
     }
 

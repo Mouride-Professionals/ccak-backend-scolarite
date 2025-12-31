@@ -6,7 +6,10 @@ use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreAcademicYearRequest;
 use App\Http\Requests\Academic\UpdateAcademicYearRequest;
 use App\Models\AcademicYear;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -20,19 +23,24 @@ class AcademicYearController extends BaseApiController
         $this->middleware('permission:academic_years.delete')->only('destroy');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $years = QueryBuilder::for(AcademicYear::query())
+            ->allowedFilters([
+                AllowedFilter::exact('is_current'),
+                AllowedFilter::partial('name'),
+            ])
             ->allowedSorts(['name', 'created_at'])
             ->defaultSort('-created_at')
-            ->get();
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
         return $this->success($years);
     }
 
     public function store(StoreAcademicYearRequest $request)
     {
-        $year = AcademicYear::create($request->validated());
+        $year = DB::transaction(fn() => AcademicYear::create($request->validated()));
 
         return $this->success($year, 'Academic year created', Response::HTTP_CREATED);
     }
@@ -44,56 +52,41 @@ class AcademicYearController extends BaseApiController
 
     public function update(UpdateAcademicYearRequest $request, AcademicYear $academicYear)
     {
-        $academicYear->update($request->validated());
+        DB::transaction(fn() => $academicYear->update($request->validated()));
 
         return $this->success($academicYear->refresh(), 'Academic year updated');
     }
 
-   public function destroy(string $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
         $academicYear = AcademicYear::find($id);
 
         if (!$academicYear) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Année académique non trouvée.',
-            ], 404);
+            return $this->error('Année académique non trouvée.', Response::HTTP_NOT_FOUND);
         }
 
         // Check if there are enrollments for this year
         if ($academicYear->enrollments()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Impossible de supprimer une année académique avec des inscriptions existantes.',
-            ], 422);
+            return $this->error('Impossible de supprimer cette année académique car des inscriptions y sont associées.', Response::HTTP_CONFLICT);
         }
 
-        $academicYear->delete();
+        DB::transaction(fn() => $academicYear->delete());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Année académique supprimée avec succès.',
-        ]);
+        return $this->success(null, 'Année académique supprimée avec succès.');
     }
 
     /**
      * Get the current academic year
-    */
+     */
     public function current(): JsonResponse
     {
         $currentYear = AcademicYear::getCurrentYear();
 
         if (!$currentYear) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Aucune année académique actuelle n\'est définie.',
-            ], 404);
+            return $this->error('Aucune année académique actuelle définie.', Response::HTTP_NOT_FOUND);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $currentYear,
-        ]);
+        return $this->success($currentYear);
     }
 
     /**
@@ -104,22 +97,14 @@ class AcademicYearController extends BaseApiController
         $academicYear = AcademicYear::find($id);
 
         if (!$academicYear) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Année académique non trouvée.',
-            ], 404);
+            return $this->error('Année académique non trouvée.', Response::HTTP_NOT_FOUND);
         }
 
-        // Remove current status from all other years
-        AcademicYear::where('id', '!=', $id)->update(['is_current' => false]);
+        DB::transaction(function () use ($academicYear, $id) {
+            AcademicYear::where('id', '!=', $id)->update(['is_current' => false]);
+            $academicYear->update(['is_current' => true]);
+        });
 
-        // Set this year as current
-        $academicYear->update(['is_current' => true]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Année académique définie comme actuelle.',
-            'data' => $academicYear->fresh(),
-        ]);
+        return $this->success($academicYear->fresh(), 'Année académique définie comme actuelle.');
     }
 }

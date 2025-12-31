@@ -7,32 +7,54 @@ use App\Repositories\CourseEnrollmentRepository;
 use App\Http\Requests\CourseEnrollment\StoreCourseEnrollmentRequest;
 use App\Http\Requests\CourseEnrollment\UpdateCourseEnrollmentRequest;
 use App\Http\Resources\CourseEnrollmentResource;
-use App\Http\Resources\CourseEnrollmentCollection;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\Enrollment;
-use Faker\Provider\Base;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class CourseEnrollmentController extends BaseApiController
 {
-    public function __construct(private readonly CourseEnrollmentRepository $repository) {}
+    public function __construct(private readonly CourseEnrollmentRepository $repository)
+    {
+        $this->middleware('permission:course_enrollments.view')->only(['index', 'show', 'getCourses', 'checkAvailability', 'getAvailableCoursesByProgram']);
+        $this->middleware('permission:course_enrollments.create')->only(['store', 'enrollCourse']);
+        $this->middleware('permission:course_enrollments.update')->only(['update', 'dropCourse']);
+        $this->middleware('permission:course_enrollments.delete')->only('destroy');
+    }
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = (int) ($request->integer('per_page') ?: 15);
-        return response()->json(new CourseEnrollmentCollection($this->repository->paginate($perPage)));
+        $courseEnrollments = QueryBuilder::for(CourseEnrollment::query())
+            ->with(['enrollment.academicYear', 'course', 'student'])
+            ->allowedIncludes(['enrollment', 'course', 'student', 'academicYear'])
+            ->allowedFilters([
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::exact('course_id'),
+                AllowedFilter::exact('enrollment_id'),
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('semester'),
+                AllowedFilter::exact('status'),
+            ])
+            ->allowedSorts(['created_at', 'semester', 'enrollment_date'])
+            ->defaultSort('-created_at')
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
+
+        return $this->success($courseEnrollments);
     }
 
     public function store(StoreCourseEnrollmentRequest $request): JsonResponse
     {
-        $item = $this->repository->create($request->validated());
+        $item = DB::transaction(fn() => $this->repository->create($request->validated()));
         return response()->json(new CourseEnrollmentResource($item), 201);
     }
 
@@ -43,7 +65,7 @@ class CourseEnrollmentController extends BaseApiController
 
     public function update(UpdateCourseEnrollmentRequest $request, int|string $courseEnrollment): JsonResponse
     {
-        $item = $this->repository->update($courseEnrollment, $request->validated());
+        $item = DB::transaction(fn() => $this->repository->update($courseEnrollment, $request->validated()));
         return response()->json(new CourseEnrollmentResource($item));
     }
 
@@ -70,7 +92,7 @@ class CourseEnrollmentController extends BaseApiController
         }
 
         // Check drop deadline (unless admin override)
-        $isAdmin = $request->user()?->is_admin ?? false;
+        $isAdmin = $request->user()?->hasRole('ADMIN') ?? false;
 
         if (!$isAdmin) {
             $dropDeadline = $this->calculateDropDeadline($courseEnrollment);
@@ -85,10 +107,12 @@ class CourseEnrollmentController extends BaseApiController
         }
 
         // Update status to DROPPED (don't delete the record)
-        $courseEnrollment->update([
-            'status' => 'DROPPED',
-            'drop_date' => Carbon::now(),
-        ]);
+        DB::transaction(function () use ($courseEnrollment) {
+            $courseEnrollment->update([
+                'status' => 'DROPPED',
+                'drop_date' => Carbon::now(),
+            ]);
+        });
 
         // Create audit log
         $this->createAuditLog($courseEnrollment, $request->user(), $isAdmin);
@@ -289,10 +313,12 @@ class CourseEnrollmentController extends BaseApiController
             ], 422);
         }
 
-        $courseEnrollment->update([
-            'status' => CourseEnrollment::STATUS_DROPPED,
-            'drop_date' => now(),
-        ]);
+        DB::transaction(function () use ($courseEnrollment) {
+            $courseEnrollment->update([
+                'status' => CourseEnrollment::STATUS_DROPPED,
+                'drop_date' => now(),
+            ]);
+        });
 
         return response()->json([
             'success' => true,
@@ -545,5 +571,17 @@ class CourseEnrollmentController extends BaseApiController
             'missing' => array_values($missingPrerequisites),
             'missing_details' => $missingDetails,
         ];
+    }
+
+    private function createAuditLog(CourseEnrollment $courseEnrollment, $user, bool $adminOverride): void
+    {
+        Log::info('Course enrollment dropped', [
+            'course_enrollment_id' => $courseEnrollment->id,
+            'enrollment_id' => $courseEnrollment->enrollment_id,
+            'course_id' => $courseEnrollment->course_id,
+            'student_id' => $courseEnrollment->enrollment?->student_id,
+            'admin_override' => $adminOverride,
+            'user_id' => $user?->id,
+        ]);
     }
 }

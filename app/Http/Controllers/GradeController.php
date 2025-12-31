@@ -7,35 +7,54 @@ use App\Repositories\GradeRepository;
 use App\Http\Requests\Grade\StoreGradeRequest;
 use App\Http\Requests\Grade\UpdateGradeRequest;
 use App\Http\Resources\GradeResource;
-use App\Http\Resources\GradeCollection;
+use App\Models\Grade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class GradeController extends BaseApiController
 {
     public function __construct(private readonly GradeRepository $repository) {
-        // $this->middleware('permission:grades.view')->only(['index', 'show']);
-        // $this->middleware('permission:grades.create')->only('store');
-        // $this->middleware('permission:grades.update')->only('update');
-        // $this->middleware('permission:grades.delete')->only('destroy');
-        // $this->middleware('permission:grades.submit')->only('submit');
-        // $this->middleware('permission:grades.validate')->only('validateGrade');
-        // $this->middleware('permission:grades.publish')->only('publish');
+        $this->middleware('permission:grades.view')->only(['index', 'show']);
+        $this->middleware('permission:grades.create')->only('store');
+        $this->middleware('permission:grades.update')->only('update');
+        $this->middleware('permission:grades.delete')->only('destroy');
+        $this->middleware('permission:grades.submit')->only('submit');
+        $this->middleware('permission:grades.validate')->only('validateGrade');
+        $this->middleware('permission:grades.publish')->only('publish');
     }
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = (int) ($request->integer('per_page') ?: 15);
-        return $this->success($this->repository->paginate($perPage), 'Grades retrieved successfully');
+        $grades = QueryBuilder::for(Grade::query())
+            ->with(['student', 'course', 'courseEnrollment', 'enteredBy'])
+            ->allowedIncludes(['student', 'course', 'courseEnrollment', 'enteredBy'])
+            ->allowedFilters([
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::exact('course_id'),
+                AllowedFilter::exact('course_enrollment_id'),
+                AllowedFilter::exact('type'),
+                AllowedFilter::exact('status'),
+            ])
+            ->allowedSorts(['entered_at', 'validated_at', 'score', 'created_at'])
+            ->defaultSort('-entered_at')
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
+
+        return $this->success($grades, 'Grades retrieved successfully');
     }
 
     public function store(StoreGradeRequest $request): JsonResponse
     {
-        $item = $this->repository->create([
-            ...$request->validated(),
-            'entered_by' => auth()->id,
-            'status' => "DRAFT",
-        ]);
+        $item = DB::transaction(function () use ($request) {
+            return $this->repository->create([
+                ...$request->validated(),
+                'entered_by' => auth()->id(),
+                'status' => 'DRAFT',
+            ]);
+        });
         return $this->success(new GradeResource($item), 'Grade created successfully', 201);
     }
 
@@ -55,7 +74,7 @@ class GradeController extends BaseApiController
         ]);
 
         // Update the grade
-        $item = $this->repository->update($grade, $request->validated());
+        $item = DB::transaction(fn() => $this->repository->update($grade, $request->validated()));
 
         // Log the audit trail
         $changes = [];
@@ -73,7 +92,7 @@ class GradeController extends BaseApiController
 
     public function destroy(int|string $grade): JsonResponse
     {
-        $this->repository->delete($grade);
+        DB::transaction(fn() => $this->repository->delete($grade));
         return $this->success(null, 'Grade deleted successfully', 204);
     }
 
@@ -97,10 +116,10 @@ class GradeController extends BaseApiController
         }
 
         // Update status to SUBMITTED
-        $item = $this->repository->update($grade, [
+        $item = DB::transaction(fn() => $this->repository->update($grade, [
             'status' => 'SUBMITTED',
-            'entered_at' => now()
-        ]);
+            'entered_at' => now(),
+        ]));
 
         // TODO: Notify admin (implement notification system)
         // event(new GradeSubmitted($item));
@@ -126,10 +145,10 @@ class GradeController extends BaseApiController
         }
 
         // Update status to VALIDATED
-        $item = $this->repository->update($grade, [
+        $item = DB::transaction(fn() => $this->repository->update($grade, [
             'status' => 'VALIDATED',
-            'validated_at' => now()
-        ]);
+            'validated_at' => now(),
+        ]));
 
         // TODO: Trigger calculation logic
         // event(new GradeValidated($item));
@@ -157,7 +176,7 @@ class GradeController extends BaseApiController
         }
 
         // Bulk update to PUBLISHED status
-        $publishedCount = $this->repository->bulkPublish($validatedGrades->pluck('id')->toArray());
+        $publishedCount = DB::transaction(fn() => $this->repository->bulkPublish($validatedGrades->pluck('id')->toArray()));
 
         // TODO: Notify students
         // event(new GradesPublished($validatedGrades));

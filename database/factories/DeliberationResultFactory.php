@@ -14,7 +14,14 @@ class DeliberationResultFactory extends Factory
 
     public function definition(): array
     {
-        $decision = $this->faker->randomElement(DeliberationResult::DECISIONS);
+        $decision = DeliberationResult::DECISIONS[array_rand(DeliberationResult::DECISIONS)];
+        $remarks = [
+            'Resultats satisfaisants',
+            'Progression encourageante',
+            'Doit renforcer les bases',
+            'Travail reguliers souhaite',
+            'Resultats insuffisants',
+        ];
 
         // Logique: si ADMITTED, peut avoir mention; sinon pas de mention
         $isWithHonors = in_array($decision, [
@@ -25,12 +32,12 @@ class DeliberationResultFactory extends Factory
         return [
             'id' => Str::uuid()->toString(),
             'deliberation_session_id' => DeliberationSession::factory(),
-            'student_id' => $this->faker->uuid,
+            'student_id' => \App\Models\Student::factory(),
             'decision' => $decision,
-            'jury_remarks' => $this->faker->optional(0.6)->paragraph(),
+            'jury_remarks' => $this->faker->optional(0.6)->passthrough($remarks[array_rand($remarks)]),
             'is_with_honors' => $isWithHonors,
             'honor_level' => $isWithHonors
-                ? $this->faker->randomElement(DeliberationResult::HONOR_LEVELS)
+                ? DeliberationResult::HONOR_LEVELS[array_rand(DeliberationResult::HONOR_LEVELS)]
                 : null,
         ];
     }
@@ -40,7 +47,7 @@ class DeliberationResultFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'decision' => DeliberationResult::DECISION_ADMITTED,
             'is_with_honors' => $this->faker->boolean(60),
-            'honor_level' => $this->faker->randomElement(DeliberationResult::HONOR_LEVELS),
+            'honor_level' => DeliberationResult::HONOR_LEVELS[array_rand(DeliberationResult::HONOR_LEVELS)],
         ]);
     }
 
@@ -59,7 +66,7 @@ class DeliberationResultFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'decision' => DeliberationResult::DECISION_ADMITTED,
             'is_with_honors' => true,
-            'honor_level' => $level ?? $this->faker->randomElement(DeliberationResult::HONOR_LEVELS),
+            'honor_level' => $level ?? DeliberationResult::HONOR_LEVELS[array_rand(DeliberationResult::HONOR_LEVELS)],
         ]);
     }
 }

@@ -3,11 +3,8 @@
 namespace App\Http\Controllers\Academic;
 
 use App\Http\Controllers\BaseApiController;
-use App\Repositories\EnrollmentRepository;
 use App\Http\Requests\Enrollment\StoreEnrollmentRequest;
 use App\Http\Requests\Enrollment\UpdateEnrollmentRequest;
-use App\Http\Resources\EnrollmentResource;
-use App\Http\Resources\EnrollmentCollection;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
@@ -16,131 +13,86 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class EnrollmentController extends BaseApiController
 {
-    public function __construct(private readonly EnrollmentRepository $repository) {}
+    public function __construct()
+    {
+        $this->middleware('permission:enrollments.view')->only(['index', 'show', 'getByStudent']);
+        $this->middleware('permission:enrollments.create')->only('store');
+        $this->middleware('permission:enrollments.update')->only('update');
+        $this->middleware('permission:enrollments.delete')->only('destroy');
+    }
 
     public function index(Request $request): JsonResponse
     {
-        $query = Enrollment::with([
-            'student', 'academicProgram', 'academicYear']);
+        $enrollments = QueryBuilder::for(Enrollment::query())
+            ->with(['student', 'academicProgram', 'academicYear'])
+            ->allowedIncludes(['student', 'academicProgram', 'academicYear'])
+            ->allowedFilters([
+                AllowedFilter::exact('status'),
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::exact('academic_program_id'),
+            ])
+            ->allowedSorts(['created_at', 'enrollment_date', 'status'])
+            ->defaultSort('-created_at')
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by academic year
-        if ($request->has('academic_year_id')) {
-            $query->where('academic_year_id', $request->academic_year_id);
-        }
-
-        // Filter by student
-        if ($request->has('student_id')) {
-            $query->where('student_id', $request->student_id);
-        }
-
-        $enrollments = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        return response()->json([
-            'success' => true,
-            'data' => $enrollments,
-        ]);
-
-        //$perPage = (int) ($request->integer('per_page') ?: 15);
-        //return response()->json(new EnrollmentCollection($this->repository->paginate($perPage)));
+        return $this->success($enrollments, 'Enrollments retrieved successfully');
     }
 
     public function store(StoreEnrollmentRequest $request): JsonResponse
     {
-        // Validation
         $validator = Validator::make($request->all(), Enrollment::validationRules());
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation.',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->error('Erreur de validation.', 422, $validator->errors()->toArray());
         }
 
         // Check if student exists and is active
         $student = Student::find($request->student_id);
         if (!$student || !$student->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Étudiant non trouvé ou inactif.',
-            ], 404);
+            return $this->error('Étudiant non trouvé ou inactif.', 404);
         }
 
         // Check if academic program exists and is active
         $program = AcademicProgram::find($request->academic_program_id);
         if (!$program || !$program->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Programme académique non trouvé ou inactif.',
-            ], 404);
+            return $this->error('Programme académique non trouvé ou inactif.', 404);
         }
 
         // Check if academic year exists and is active
         $year = AcademicYear::find($request->academic_year_id);
         if (!$year || !$year->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Année académique non trouvée ou inactive.',
-            ], 404);
+            return $this->error('Année académique non trouvée ou inactive.', 404);
         }
 
         // Check for duplicates
         if (Enrollment::isDuplicate($request->student_id, $request->academic_program_id, $request->academic_year_id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'L\'étudiant est déjà inscrit à ce programme pour cette année académique.',
-            ], 422);
+            return $this->error('L\'étudiant est déjà inscrit à ce programme pour cette année académique.', 422);
         }
 
-        // Create enrollment with transaction
-        DB::beginTransaction();
         try {
-            $enrollmentData = $request->all();
+            $enrollment = DB::transaction(function () use ($request) {
+                $enrollmentData = $request->all();
+                $enrollmentData['current_semester'] = $enrollmentData['current_semester'] ?? 1;
+                $enrollmentData['enrollment_date'] = $enrollmentData['enrollment_date'] ?? now();
+                $enrollmentData['status'] = $enrollmentData['status'] ?? Enrollment::STATUS_PENDING;
 
-            // Set initial semester if not provided
-            if (!isset($enrollmentData['current_semester'])) {
-                $enrollmentData['current_semester'] = 1;
-            }
+                return Enrollment::create($enrollmentData);
+            });
 
-            // Set enrollment date to today if not provided
-            if (!isset($enrollmentData['enrollment_date'])) {
-                $enrollmentData['enrollment_date'] = now();
-            }
-
-            // Set default status if not provided
-            if (!isset($enrollmentData['status'])) {
-                $enrollmentData['status'] = Enrollment::STATUS_PENDING;
-            }
-
-            $enrollment = Enrollment::create($enrollmentData);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Inscription créée avec succès.',
-                'data' => [
-                    'enrollment_id' => $enrollment->id,
-                    'enrollment' => $enrollment->load(['student', 'academicProgram', 'academicYear']),
-                ],
-            ], 201);
-
+            return $this->success(
+                $enrollment->load(['student', 'academicProgram', 'academicYear']),
+                'Inscription créée avec succès.',
+                201
+            );
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la création de l\'inscription.',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->error('Erreur lors de la création de l\'inscription.', 500);
         }
     }
 
@@ -154,35 +106,22 @@ class EnrollmentController extends BaseApiController
         ])->find($id);
 
         if (!$enrollment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Inscription non trouvée.',
-            ], 404);
+            return $this->error('Inscription non trouvée.', 404);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $enrollment,
-        ]);
+        return $this->success($enrollment);
     }
 
     public function update(UpdateEnrollmentRequest $request, int|string $id): JsonResponse
     {
         $enrollment = Enrollment::find($id);
         if (!$enrollment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Inscription non trouvée.',
-            ], 404);
+            return $this->error('Inscription non trouvée.', 404);
         }
         $validator = Validator::make($request->all(), Enrollment::validationRules($id));
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation.',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->error('Erreur de validation.', 422, $validator->errors()->toArray());
         }
 
         // Check for duplicates (excluding current enrollment)
@@ -192,20 +131,17 @@ class EnrollmentController extends BaseApiController
             $request->academic_year_id,
             $id
         )) {
-            return response()->json([
-                'success' => false,
-                'message' => 'L\'étudiant est déjà inscrit à ce programme pour cette année académique.',
-            ], 422);
+            return $this->error('L\'étudiant est déjà inscrit à ce programme pour cette année académique.', 422);
         }
 
+        DB::transaction(function () use ($enrollment, $request) {
+            $enrollment->update($request->all());
+        });
 
-        $enrollment->update($request->all());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Inscription mise à jour avec succès.',
-            'data' => $enrollment->fresh(['student', 'academicProgram', 'academicYear']),
-        ]);
+        return $this->success(
+            $enrollment->fresh(['student', 'academicProgram', 'academicYear']),
+            'Inscription mise à jour avec succès.'
+        );
     }
 
     public function destroy(int|string $id): JsonResponse
@@ -213,18 +149,12 @@ class EnrollmentController extends BaseApiController
         $enrollment = Enrollment::find($id);
 
         if (!$enrollment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Inscription non trouvée.',
-            ], 404);
+            return $this->error('Inscription non trouvée.', 404);
         }
 
-        $enrollment->delete();
+        DB::transaction(fn() => $enrollment->delete());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Inscription supprimée avec succès.',
-        ]);
+        return $this->success(null, 'Inscription supprimée avec succès.');
     }
 
     /**
@@ -235,33 +165,26 @@ class EnrollmentController extends BaseApiController
         $student = Student::find($studentId);
 
         if (!$student) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Étudiant non trouvé.',
-            ], 404);
+            return $this->error('Étudiant non trouvé.', 404);
         }
 
-        $query = $student->enrollments()
+        $enrollments = QueryBuilder::for($student->enrollments()->getQuery())
             ->with([
                 'academicProgram:id,name,level',
                 'academicYear:id,name,start_date,end_date',
                 'courseEnrollments.course:id,code,name,credits'
-            ]);
-
-        // Filter by academic year
-        if ($request->has('academic_year_id')) {
-            $query->where('academic_year_id', $request->academic_year_id);
-        }
-
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $enrollments = $query->orderBy('enrollment_date', 'desc')->get();
+            ])
+            ->allowedFilters([
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('status'),
+            ])
+            ->allowedSorts(['enrollment_date', 'created_at'])
+            ->defaultSort('-enrollment_date')
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
         // Format the response
-        $formattedEnrollments = $enrollments->map(function ($enrollment) {
+        $formattedEnrollments = collect($enrollments->items())->map(function ($enrollment) {
             return [
                 'id' => $enrollment->id,
                 'student' => [
@@ -302,17 +225,19 @@ class EnrollmentController extends BaseApiController
             ];
         });
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'student' => [
-                    'id' => $student->id,
-                    'student_number' => $student->student_number,
-                    'full_name' => $student->full_name,
-                    'email' => $student->email,
-                ],
-                'enrollments' => $formattedEnrollments,
-                'total_enrollments' => $formattedEnrollments->count(),
+        return $this->success([
+            'student' => [
+                'id' => $student->id,
+                'student_number' => $student->student_number,
+                'full_name' => $student->full_name,
+                'email' => $student->email,
+            ],
+            'enrollments' => $formattedEnrollments,
+            'total_enrollments' => $enrollments->total(),
+            'pagination' => [
+                'current_page' => $enrollments->currentPage(),
+                'last_page' => $enrollments->lastPage(),
+                'per_page' => $enrollments->perPage(),
             ],
         ]);
     }

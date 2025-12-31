@@ -17,17 +17,15 @@ use App\Http\Controllers\Admin\UserRoleController;
 use \App\Http\Controllers\Academic\DeliberationSessionController;
 
 use App\Http\Controllers\Student\StudentController;
-use App\Http\Controllers\Student\DocumentController as StudentDocumentController;
 use App\Http\Controllers\Student\GuardianController;
 
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Notification\AnnouncementController;
-use App\Models\Course;
 
 
 Route::middleware('auth:api')->group(function () {
     // Basic protected endpoints
-    Route::get('/user', function (Request $request) {
+    Route::get('/me', function (Request $request) {
         return response()->json([
             'success' => true,
             'data' => $request->user(),
@@ -36,25 +34,11 @@ Route::middleware('auth:api')->group(function () {
         ]);
     });
 
-    Route::get('/protected-resource', function () {
-        return response()->json([
-            'success' => true,
-            'data' => ['message' => 'This is a protected resource accessible only to authenticated Keycloak users.'],
-            'message' => 'Operation successful',
-            'meta' => null,
-        ]);
-    });
+
 
 
     // Deliberation Sessions
-    Route::prefix('deliberation-sessions')->group(function () {
-        Route::get('/', [DeliberationSessionController::class, 'index']);
-        Route::post('/', [DeliberationSessionController::class, 'store']);
-        Route::get('{id}', [DeliberationSessionController::class, 'show']);
-        Route::put('{id}', [DeliberationSessionController::class, 'update']);
-        Route::delete('{id}', [DeliberationSessionController::class, 'destroy']);
-        Route::patch('{id}/status', [DeliberationSessionController::class, 'changeStatus']);
-    });
+    Route::patch('deliberation-sessions/{id}/status', [DeliberationSessionController::class, 'changeStatus']);
     Route::post('deliberations/{deliberation_session}/start', [DeliberationSessionController::class, 'start']);
     Route::post('deliberations/{deliberation_session}/complete', [DeliberationSessionController::class, 'complete']);
     Route::get('deliberations/{deliberation_session}/students', [DeliberationSessionController::class, 'getStudents']);
@@ -63,12 +47,10 @@ Route::middleware('auth:api')->group(function () {
     // Deliberation Results
     Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
 
-
     // Student Deliberation History
     Route::get('students/{student_id}/deliberations', [\App\Http\Controllers\Academic\StudentDeliberationController::class, 'history']);
 
     Route::apiResource('deliberation-sessions', \App\Http\Controllers\Academic\DeliberationSessionController::class);
-    Route::apiResource('deliberation-results', \App\Http\Controllers\Academic\DeliberationResultController::class);
     Route::apiResource('faculty-members', \App\Http\Controllers\Academic\FacultyMemberController::class);
 
 
@@ -78,9 +60,10 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('course-units', CourseUnitController::class);
     Route::apiResource('courses', CourseController::class);
     Route::get('courses/{course}/grades', [\App\Http\Controllers\Academic\CourseController::class, 'grades']);
-    Route::apiResource('course-enrollments', \App\Http\Controllers\CourseEnrollmentController::class);
+    Route::apiResource('course-enrollments', \App\Http\Controllers\Academic\CourseEnrollmentController::class);
+    Route::apiResource('enrollments', EnrollmentController::class);
 
-   // Notifications
+    // Notifications
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index']); // NOT-008
         Route::post('/', [NotificationController::class, 'send'])->middleware('role:ADMIN'); // NOT-007
@@ -141,15 +124,6 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('students.guardians', GuardianController::class);
 
     // Documents: nested index/store/show/update/destroy under students and review route
-    Route::get('students/{student}/documents', [StudentDocumentController::class, 'index']);
-    Route::post('students/{student}/documents', [StudentDocumentController::class, 'store']);
-    Route::get('students/{student}/documents/{document}', [StudentDocumentController::class, 'show']);
-    Route::put('students/{student}/documents/{document}', [StudentDocumentController::class, 'update']);
-    Route::delete('students/{student}/documents/{document}', [StudentDocumentController::class, 'destroy']);
-
-    // Review endpoint (shallow): /api/v1/documents/{id}/review
-    Route::put('documents/{document}/review', [StudentDocumentController::class, 'review']);
-
     // Admin roles
     Route::get('roles', [RoleController::class, 'index']);
     Route::post('roles', [RoleController::class, 'store']);
@@ -163,7 +137,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('grades/publish', [\App\Http\Controllers\GradeController::class, 'publish']);
 
     // Student management endpoints
-    Route::get('students/{student}/grades', [\App\Http\Controllers\StudentController::class, 'grades']);
+    Route::get('students/{student}/grades', [StudentController::class, 'grades']);
 
     // Semester results management endpoints
     Route::post('semester-results/calculate', [\App\Http\Controllers\SemesterResultController::class, 'calculate']);
@@ -175,6 +149,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/students/{id}/enrollments', [EnrollmentController::class, 'getByStudent']);
 
     // Academic Years
+    Route::apiResource('academic-years', AcademicYearController::class);
     Route::get('/academic-years/current', [AcademicYearController::class, 'current']);
     Route::put('/academic-years/{id}/set-current', [AcademicYearController::class, 'setCurrent']);
 
@@ -184,5 +159,4 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('enrollments/{enrollmentId}/courses/{courseEnrollmentId}', [CourseEnrollmentController::class, 'dropCourse']);
     Route::get('courses/{id}/availability', [CourseEnrollmentController::class, 'checkAvailability']);
     Route::get('programs/{id}/available-courses', [CourseEnrollmentController::class, 'getAvailableCoursesByProgram']);
-
 });

@@ -33,6 +33,12 @@ class StudentSeeder extends Seeder
         'Diourbel',
         'Louga',
         'Tambacounda',
+        'Kolda',
+        'Matam',
+        'Kedougou',
+        'Sediou',
+        'Fatick',
+        'Kaffrine',
     ];
 
     /**
@@ -49,6 +55,11 @@ class StudentSeeder extends Seeder
         'Moustapha',
         'Bamba',
         'Amadou',
+        'Serigne',
+        'Babacar',
+        'Modou',
+        'Pape',
+        'Lamine',
     ];
 
     /**
@@ -65,6 +76,11 @@ class StudentSeeder extends Seeder
         'Rama',
         'Diarra',
         'Ndeye',
+        'Awa',
+        'Astou',
+        'Khady',
+        'Mame',
+        'Sira',
     ];
 
     /**
@@ -81,6 +97,11 @@ class StudentSeeder extends Seeder
         'Seck',
         'Sy',
         'Sarr',
+        'Ndoye',
+        'Faye',
+        'Kane',
+        'Ndao',
+        'Gassama',
     ];
 
     /**
@@ -92,19 +113,26 @@ class StudentSeeder extends Seeder
         $academicYearName = $this->currentAcademicYearName();
         [$enrollStart, $enrollEnd] = $this->enrollmentWindow($academicYearName);
 
-        // Créer quelques admins pour les reviews de documents
-        $admins = [];
-        for ($k = 0; $k < 5; $k++) {
+        $admins = Admin::all();
+        if ($admins->isEmpty()) {
+            $this->call(AdminSeeder::class);
+            $admins = Admin::all();
+        }
+        if ($admins->isEmpty()) {
             $gender = $faker->randomElement(['M', 'F']);
             $user = User::factory()->create([
                 'email' => $faker->unique()->safeEmail(),
                 'email_verified_at' => Carbon::now('Africa/Dakar'),
             ]);
-            $admin = Admin::create([
-                'user_id' => $user->id,
-                'full_name' => $this->pickFullName($gender),
+            if (method_exists($user, 'assignRole')) {
+                $user->assignRole('ADMIN');
+            }
+            $admins = collect([
+                Admin::create([
+                    'user_id' => $user->id,
+                    'full_name' => $this->pickFullName($gender),
+                ]),
             ]);
-            $admins[] = $admin;
         }
 
         for ($i = 0; $i < 100; $i++) {
@@ -113,6 +141,9 @@ class StudentSeeder extends Seeder
                 'email' => $faker->unique()->safeEmail(),
                 'email_verified_at' => Carbon::now('Africa/Dakar'),
             ]);
+            if (method_exists($user, 'assignRole')) {
+                $user->assignRole('STUDENT');
+            }
 
             // Créer l'étudiant
             $gender = $faker->randomElement(['M', 'F']);

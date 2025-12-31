@@ -27,7 +27,8 @@ class EnrollmentSeeder extends Seeder
         }
 
         if ($programs->isEmpty()) {
-            $programs = AcademicProgram::factory()->count(5)->create();
+            $this->call(AcademicProgramSeeder::class);
+            $programs = AcademicProgram::all();
         }
 
         if ($academicYears->isEmpty()) {

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Notification;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Notification\SendNotificationRequest;
 use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
@@ -10,34 +10,42 @@ use App\Services\Notification\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
-class NotificationController extends Controller
+class NotificationController extends BaseApiController
 {
     public function __construct(
         protected NotificationService $notificationService
-    ) {}
+    ) {
+        $this->middleware('permission:notifications.view')->only(['index', 'unreadCount']);
+        $this->middleware('permission:notifications.create')->only('send');
+        $this->middleware('permission:notifications.update')->only(['markAsRead', 'markAllAsRead']);
+        $this->middleware('permission:notifications.delete')->only('destroy');
+    }
 
     /**
      * NOT-008: Get user notifications
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Notification::query()
+        $notifications = QueryBuilder::for(Notification::query())
             ->where('user_id', $request->user()->id)
-            ->orderBy('created_at', 'desc');
+            ->allowedFilters([
+                AllowedFilter::exact('type'),
+                AllowedFilter::callback('is_read', function ($query, $value) {
+                    $isRead = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                    if ($isRead === null) {
+                        return;
+                    }
 
-        // Filter by type
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
-
-        // Filter by read/unread
-        if ($request->has('is_read')) {
-            $isRead = filter_var($request->is_read, FILTER_VALIDATE_BOOLEAN);
-            $query->where('is_read', $isRead);
-        }
-
-        $notifications = $query->paginate($request->get('per_page', 15));
+                    $query->where('is_read', $isRead);
+                }),
+            ])
+            ->allowedSorts(['created_at'])
+            ->defaultSort('-created_at')
+            ->paginate($request->get('per_page', 15))
+            ->appends($request->query());
 
         return NotificationResource::collection($notifications);
     }
@@ -56,10 +64,9 @@ class NotificationController extends Controller
             metadata: $request->metadata ?? []
         );
 
-        return response()->json([
-            'message' => 'Notifications envoyées avec succès',
+        return $this->success([
             'count' => $notifications->count(),
-        ], 201);
+        ], 'Notifications envoyées avec succès', 201);
     }
 
     /**
@@ -73,10 +80,9 @@ class NotificationController extends Controller
 
         $notification->markAsRead();
 
-        return response()->json([
-            'message' => 'Notification marquée comme lue',
+        return $this->success([
             'notification' => new NotificationResource($notification->fresh()),
-        ]);
+        ], 'Notification marquée comme lue');
     }
 
     /**
@@ -86,10 +92,9 @@ class NotificationController extends Controller
     {
         $count = $this->notificationService->markAllAsRead($request->user()->id);
 
-        return response()->json([
-            'message' => 'Toutes les notifications ont été marquées comme lues',
+        return $this->success([
             'count' => $count,
-        ]);
+        ], 'Toutes les notifications ont été marquées comme lues');
     }
 
     /**
@@ -99,9 +104,9 @@ class NotificationController extends Controller
     {
         $count = $this->notificationService->getUnreadCount($request->user()->id);
 
-        return response()->json([
+        return $this->success([
             'count' => $count,
-        ]);
+        ], 'Unread notifications count');
     }
 
     /**
@@ -115,8 +120,6 @@ class NotificationController extends Controller
 
         $notification->delete();
 
-        return response()->json([
-            'message' => 'Notification supprimée',
-        ]);
+        return $this->success(null, 'Notification supprimée');
     }
 }

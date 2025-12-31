@@ -6,7 +6,9 @@ use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreAcademicProgramRequest;
 use App\Http\Requests\Academic\UpdateAcademicProgramRequest;
 use App\Models\AcademicProgram;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -21,7 +23,7 @@ class AcademicProgramController extends BaseApiController
     }
 
 
-    public function index()
+    public function index(Request $request)
     {
         $programs = QueryBuilder::for(AcademicProgram::query())
             ->with(['department', 'courseUnits'])
@@ -40,14 +42,15 @@ class AcademicProgramController extends BaseApiController
             ])
             ->allowedSorts(['name', 'level', 'created_at'])
             ->defaultSort('name')
-            ->get();
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
         return $this->success($programs);
     }
 
     public function store(StoreAcademicProgramRequest $request)
     {
-        $program = AcademicProgram::create($request->validated());
+        $program = DB::transaction(fn() => AcademicProgram::create($request->validated()));
 
         return $this->success($program->load(['department', 'courseUnits']), 'Academic program created', Response::HTTP_CREATED);
     }
@@ -59,14 +62,14 @@ class AcademicProgramController extends BaseApiController
 
     public function update(UpdateAcademicProgramRequest $request, AcademicProgram $academicProgram)
     {
-        $academicProgram->update($request->validated());
+        DB::transaction(fn() => $academicProgram->update($request->validated()));
 
         return $this->success($academicProgram->refresh()->load(['department', 'courseUnits']), 'Academic program updated');
     }
 
     public function destroy(AcademicProgram $academicProgram)
     {
-        $academicProgram->delete();
+        DB::transaction(fn() => $academicProgram->delete());
 
         return $this->success(null, 'Academic program deleted');
     }

@@ -1,25 +1,27 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Seeders;
 
 use App\Models\Notification;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Notification>
- */
-class NotificationFactory extends Factory
+class NotificationSeeder extends Seeder
 {
-    protected $model = Notification::class;
-
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
+    public function run(): void
     {
+        $users = User::all();
+        if ($users->isEmpty()) {
+            $this->call(UserSeeder::class);
+            $users = User::all();
+        }
+
+        if ($users->isEmpty()) {
+            $this->command->warn('No users found. Skipping notifications.');
+            return;
+        }
+
         $templates = [
             [
                 'type' => Notification::TYPE_WELCOME,
@@ -52,19 +54,29 @@ class NotificationFactory extends Factory
                 'channel' => Notification::CHANNEL_IN_APP,
             ],
         ];
-        $template = $templates[array_rand($templates)];
 
-        return [
-            'user_id' => User::factory(),
-            'type' => $template['type'],
-            'channel' => $template['channel'],
-            'title' => $template['title'],
-            'message' => $template['message'],
-            'metadata' => [
-                'source' => 'factory',
-            ],
-            'is_read' => false,
-            'read_at' => null,
-        ];
+        $now = Carbon::now('Africa/Dakar');
+        $targetCount = min(50, max(12, $users->count() * 2));
+
+        for ($i = 0; $i < $targetCount; $i++) {
+            $user = $users->random();
+            $template = $templates[array_rand($templates)];
+            $createdAt = $now->copy()->subDays(rand(0, 45));
+            $isRead = (bool) rand(0, 1);
+            $readAt = $isRead ? $createdAt->copy()->addHours(rand(1, 72)) : null;
+
+            Notification::create([
+                'user_id' => $user->id,
+                'type' => $template['type'],
+                'channel' => $template['channel'],
+                'title' => $template['title'],
+                'message' => $template['message'],
+                'metadata' => ['source' => 'seed'],
+                'is_read' => $isRead,
+                'read_at' => $readAt,
+                'created_at' => $createdAt,
+                'updated_at' => $readAt ?? $createdAt,
+            ]);
+        }
     }
 }

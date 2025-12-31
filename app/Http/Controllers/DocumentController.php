@@ -8,11 +8,13 @@ use App\Http\Requests\Document\StoreDocumentRequest;
 use App\Http\Requests\Document\UpdateDocumentRequest;
 use App\Http\Requests\Document\ReviewDocumentRequest;
 use App\Http\Resources\DocumentResource;
-use App\Http\Resources\DocumentCollection;
 use App\Services\Documents\DocumentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class DocumentController extends BaseApiController
 {
@@ -42,42 +44,22 @@ class DocumentController extends BaseApiController
     public function index(Request $request): JsonResponse
     {
         $perPage = (int) ($request->integer('per_page') ?: 15);
-        $filters = $request->only(['type', 'status', 'student_id', 'date_from', 'date_to']);
-
-        // Si un student_id est spécifié, on utilise getStudentDocuments
-        if (!empty($filters['student_id'])) {
-            $documents = $this->documentService->getStudentDocuments(
-                $filters['student_id'],
-                $filters,
-                $perPage
-            );
-        }
-        // Si le statut est PENDING, on utilise getPendingDocuments
-        elseif (!empty($filters['status']) && $filters['status'] === 'PENDING') {
-            $documents = $this->documentService->getPendingDocuments($filters, $perPage);
-        }
-        // Sinon, on filtre directement
-        else {
-            $documents = \App\Models\Document::query();
-
-            if (!empty($filters['type'])) {
-                $documents->where('type', $filters['type']);
-            }
-
-            if (!empty($filters['status'])) {
-                $documents->where('status', $filters['status']);
-            }
-
-            if (!empty($filters['date_from'])) {
-                $documents->whereDate('uploaded_at', '>=', $filters['date_from']);
-            }
-
-            if (!empty($filters['date_to'])) {
-                $documents->whereDate('uploaded_at', '<=', $filters['date_to']);
-            }
-
-            $documents = $documents->latest('uploaded_at')->paginate($perPage);
-        }
+        $documents = QueryBuilder::for(\App\Models\Document::query())
+            ->allowedFilters([
+                AllowedFilter::exact('type'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::callback('date_from', function ($query, $value) {
+                    $query->whereDate('uploaded_at', '>=', $value);
+                }),
+                AllowedFilter::callback('date_to', function ($query, $value) {
+                    $query->whereDate('uploaded_at', '<=', $value);
+                }),
+            ])
+            ->allowedSorts(['uploaded_at', 'created_at', 'status'])
+            ->defaultSort('-uploaded_at')
+            ->paginate($perPage)
+            ->appends($request->query());
 
         return response()->json([
             'success' => true,
@@ -109,10 +91,12 @@ class DocumentController extends BaseApiController
         }
 
         try {
-            $document = $this->documentService->upload(
-                $request->validated(),
-                $file
-            );
+            $document = DB::transaction(function () use ($request, $file) {
+                return $this->documentService->upload(
+                    $request->validated(),
+                    $file
+                );
+            });
 
             return $this->success(
                 new DocumentResource($document),
@@ -174,8 +158,9 @@ class DocumentController extends BaseApiController
                 unset($validated['metadata']);
             }
 
-            // Mettre à jour les autres champs
-            $document->update($validated);
+            DB::transaction(function () use ($document, $validated) {
+                $document->update($validated);
+            });
 
             return $this->success(
                 new DocumentResource($document->fresh()),
@@ -194,11 +179,13 @@ class DocumentController extends BaseApiController
         try {
             $admin = $request->user()?->getOrCreateAdmin();
 
-            $document = $this->documentService->approve(
-                $documentId,
-                $admin?->id ?? '',
-                $request->input('notes')
-            );
+            $document = DB::transaction(function () use ($documentId, $admin, $request) {
+                return $this->documentService->approve(
+                    $documentId,
+                    $admin?->id ?? '',
+                    $request->input('notes')
+                );
+            });
 
             return $this->success(
                 new DocumentResource($document),
@@ -223,11 +210,13 @@ class DocumentController extends BaseApiController
         try {
             $admin = $request->user()?->getOrCreateAdmin();
 
-            $document = $this->documentService->reject(
-                $documentId,
-                $admin?->id ?? '',
-                $request->input('reason')
-            );
+            $document = DB::transaction(function () use ($documentId, $admin, $request) {
+                return $this->documentService->reject(
+                    $documentId,
+                    $admin?->id ?? '',
+                    $request->input('reason')
+                );
+            });
 
             return $this->success(
                 new DocumentResource($document),
@@ -293,10 +282,13 @@ class DocumentController extends BaseApiController
     public function destroy(string $documentId): JsonResponse
     {
         try {
-            $this->documentService->delete(
-                $documentId,
-                request()->user()->id // Ou l'ID de la personne qui supprime
-            );
+            $userId = request()->user()->id;
+            DB::transaction(function () use ($documentId, $userId) {
+                $this->documentService->delete(
+                    $documentId,
+                    $userId
+                );
+            });
 
             return $this->success(
                 null,
@@ -362,14 +354,30 @@ class DocumentController extends BaseApiController
     public function pending(Request $request): JsonResponse
     {
         $perPage = (int) ($request->integer('per_page') ?: 15);
-        $filters = $request->only(['type', 'date_from']);
+        $documents = QueryBuilder::for(\App\Models\Document::query())
+            ->where('status', \App\Enums\DocumentStatus::PENDING)
+            ->allowedFilters([
+                AllowedFilter::exact('type'),
+                AllowedFilter::callback('date_from', function ($query, $value) {
+                    $query->whereDate('uploaded_at', '>=', $value);
+                }),
+            ])
+            ->allowedSorts(['uploaded_at'])
+            ->defaultSort('-uploaded_at')
+            ->paginate($perPage)
+            ->appends($request->query());
 
-        $documents = $this->documentService->getPendingDocuments($filters, $perPage);
-
-        return $this->success(
-            DocumentResource::collection(collect($documents->items()))->resolve(),
-            'Documents en attente récupérés avec succès'
-        );
+        return response()->json([
+            'success' => true,
+            'data' => DocumentResource::collection(collect($documents->items()))->resolve(),
+            'meta' => [
+                'current_page' => $documents->currentPage(),
+                'last_page' => $documents->lastPage(),
+                'per_page' => $documents->perPage(),
+                'total' => $documents->total(),
+            ],
+            'message' => 'Documents en attente récupérés avec succès',
+        ]);
     }
 
     /**
@@ -378,17 +386,33 @@ class DocumentController extends BaseApiController
     public function studentDocuments(Request $request, string $studentId): JsonResponse
     {
         $perPage = (int) ($request->integer('per_page') ?: 15);
-        $filters = $request->only(['type', 'status', 'date_from', 'date_to']);
+        $documents = QueryBuilder::for(\App\Models\Document::query())
+            ->where('student_id', $studentId)
+            ->allowedFilters([
+                AllowedFilter::exact('type'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::callback('date_from', function ($query, $value) {
+                    $query->whereDate('uploaded_at', '>=', $value);
+                }),
+                AllowedFilter::callback('date_to', function ($query, $value) {
+                    $query->whereDate('uploaded_at', '<=', $value);
+                }),
+            ])
+            ->allowedSorts(['uploaded_at', 'created_at'])
+            ->defaultSort('-uploaded_at')
+            ->paginate($perPage)
+            ->appends($request->query());
 
-        $documents = $this->documentService->getStudentDocuments(
-            $studentId,
-            $filters,
-            $perPage
-        );
-
-        return $this->success(
-            DocumentResource::collection(collect($documents->items()))->resolve(),
-            'Documents de l\'étudiant récupérés avec succès'
-        );
+        return response()->json([
+            'success' => true,
+            'data' => DocumentResource::collection(collect($documents->items()))->resolve(),
+            'meta' => [
+                'current_page' => $documents->currentPage(),
+                'last_page' => $documents->lastPage(),
+                'per_page' => $documents->perPage(),
+                'total' => $documents->total(),
+            ],
+            'message' => 'Documents de l\'étudiant récupérés avec succès',
+        ]);
     }
 }

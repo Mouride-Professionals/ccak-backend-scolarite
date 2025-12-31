@@ -2,29 +2,36 @@
 
 namespace App\Http\Controllers\Audit;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseApiController;
 use OwenIt\Auditing\Models\Audit;
 use Illuminate\Http\Request;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
-class AuditController extends Controller
+class AuditController extends BaseApiController
 {
+    public function __construct()
+    {
+        $this->middleware('permission:audits.view')->only(['index', 'show']);
+    }
+
     /**
      * Liste de tous les audits
      */
     public function index(Request $request)
     {
-        // Filtrage optionnel par modèle ou utilisateur
-        $query = Audit::query();
+        $audits = QueryBuilder::for(Audit::query())
+            ->allowedFilters([
+                AllowedFilter::exact('auditable_type'),
+                AllowedFilter::exact('auditable_id'),
+                AllowedFilter::exact('user_id'),
+            ])
+            ->allowedSorts(['created_at'])
+            ->defaultSort('-created_at')
+            ->paginate($request->integer('per_page') ?? 50)
+            ->appends($request->query());
 
-        if ($request->has('auditable_type')) {
-            $query->where('auditable_type', $request->auditable_type);
-        }
-
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
-
-        return response()->json($query->latest()->paginate(50));
+        return $this->success($audits, 'Audits retrieved successfully');
     }
 
     /**
@@ -33,10 +40,11 @@ class AuditController extends Controller
     public function show($model, $id)
     {
         $audits = Audit::where('auditable_type', $model)
-                        ->where('auditable_id', $id)
-                        ->latest()
-                        ->get();
+            ->where('auditable_id', $id)
+            ->latest()
+            ->paginate(request()->integer('per_page') ?? 50)
+            ->appends(request()->query());
 
-        return response()->json($audits);
+        return $this->success($audits, 'Audit records retrieved successfully');
     }
 }

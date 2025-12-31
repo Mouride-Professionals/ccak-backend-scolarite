@@ -17,20 +17,26 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-
             PermissionSeeder::class,
-            AcademicYearSeeder::class,
+            FacultySeeder::class,
+            DepartmentSeeder::class,
+            AcademicProgramSeeder::class,
+            CourseUnitSeeder::class,
             CourseSeeder::class,
+            AcademicYearSeeder::class,
+            AdminSeeder::class,
+            UserSeeder::class,
+            StudentSeeder::class,
+            EnrollmentSeeder::class,
             CourseEnrollmentSeeder::class,
+            FacultyMemberSeeder::class,
             GradeSeeder::class,
             SemesterResultSeeder::class,
-            UserSeeder::class,
             DocumentSeeder::class,
             GeneratedDocumentSeeder::class,
             DeliberationSessionSeeder::class,
             DeliberationResultSeeder::class,
-            FacultyMemberSeeder::class,
-            StudentSeeder::class,
+            NotificationSeeder::class,
         ]);
 
         $admin = User::factory()->create([

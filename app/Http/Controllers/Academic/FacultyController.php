@@ -6,7 +6,9 @@ use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreFacultyRequest;
 use App\Http\Requests\Academic\UpdateFacultyRequest;
 use App\Models\Faculty;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -20,7 +22,7 @@ class FacultyController extends BaseApiController
         $this->middleware('permission:faculties.delete')->only('destroy');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $faculties = QueryBuilder::for(Faculty::query())
             ->with(['dean', 'departments'])
@@ -48,14 +50,15 @@ class FacultyController extends BaseApiController
             ])
             ->allowedSorts(['name', 'code', 'created_at'])
             ->defaultSort('name')
-            ->get();
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
         return $this->success($faculties);
     }
 
     public function store(StoreFacultyRequest $request)
     {
-        $faculty = Faculty::create($request->validated());
+        $faculty = DB::transaction(fn() => Faculty::create($request->validated()));
 
         return $this->success($faculty->load(['dean', 'departments']), 'Faculty created', Response::HTTP_CREATED);
     }
@@ -67,14 +70,14 @@ class FacultyController extends BaseApiController
 
     public function update(UpdateFacultyRequest $request, Faculty $faculty)
     {
-        $faculty->update($request->validated());
+        DB::transaction(fn() => $faculty->update($request->validated()));
 
         return $this->success($faculty->refresh()->load(['dean', 'departments']), 'Faculty updated');
     }
 
     public function destroy(Faculty $faculty)
     {
-        $faculty->delete();
+        DB::transaction(fn() => $faculty->delete());
 
         return $this->success(null, 'Faculty deleted');
     }

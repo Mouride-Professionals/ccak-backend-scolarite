@@ -7,21 +7,22 @@ use App\Models\GeneratedDocument;
 use App\Http\Requests\GeneratedDocument\StoreGeneratedDocumentRequest;
 use App\Http\Requests\GeneratedDocument\UpdateGeneratedDocumentRequest;
 use App\Http\Resources\GeneratedDocumentResource;
-use App\Http\Resources\GeneratedDocumentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class GeneratedDocumentController extends BaseApiController
 {
     public function __construct()
     {
-        $this->middleware('permission:document_requests.view')->only(['index', 'show']);
-        $this->middleware('permission:document_requests.create')->only('store');
-        $this->middleware('permission:document_requests.update')->only('update');
-        $this->middleware('permission:document_requests.delete')->only('destroy');
+        $this->middleware('permission:generated_documents.view')->only(['index', 'show']);
+        $this->middleware('permission:generated_documents.create')->only('store');
+        $this->middleware('permission:generated_documents.update')->only('update');
+        $this->middleware('permission:generated_documents.delete')->only('destroy');
     }
 
     public function index(Request $request)
@@ -29,19 +30,23 @@ class GeneratedDocumentController extends BaseApiController
         $generatedDocuments = QueryBuilder::for(GeneratedDocument::query())
             ->with(['student', 'generator'])
             ->allowedIncludes(['student', 'generator'])
-            ->allowedFilters(['type', 'status', 'student_id', 'generated_by'])
+            ->allowedFilters([
+                AllowedFilter::exact('type'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::exact('generated_by'),
+            ])
             ->allowedSorts(['generated_at', 'issued_at', 'created_at'])
             ->defaultSort('-generated_at')
-            ->get();
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
-        return $this->success(new GeneratedDocumentCollection($generatedDocuments));
+        return $this->success($generatedDocuments);
     }
 
     public function store(StoreGeneratedDocumentRequest $request): JsonResponse
     {
-        //dd($request->validated());
-        $generatedDocument = GeneratedDocument::create($request->validated());
-        // Log pour vérifier ce qui a réellement été enregistré
+        $generatedDocument = DB::transaction(fn() => GeneratedDocument::create($request->validated()));
         Log::info('GeneratedDocument created', $generatedDocument->toArray());
         return $this->success($generatedDocument->load(['student', 'generator']), 'Generated document', Response::HTTP_CREATED);
     }
@@ -53,13 +58,13 @@ class GeneratedDocumentController extends BaseApiController
 
     public function update(UpdateGeneratedDocumentRequest $request, GeneratedDocument $generatedDocument): JsonResponse
     {
-        $generatedDocument->update($request->validated());
+        DB::transaction(fn() => $generatedDocument->update($request->validated()));
         return $this->success($generatedDocument->refresh()->load(['student', 'generator']));
     }
 
     public function destroy(GeneratedDocument $generatedDocument): JsonResponse
     {
-        $generatedDocument->delete();
+        DB::transaction(fn() => $generatedDocument->delete());
         return $this->success();
     }
 

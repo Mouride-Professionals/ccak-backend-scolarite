@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -28,7 +29,16 @@ class GeneratedDocument extends Model
 
     protected $table = 'generated_documents';
 
-    protected $fillable = ['student_id', 'type', 'document_number', 'file_path', 'generated_by', 'metadata', 'generated_at', 'issued_at', 'status',
+    protected $fillable = [
+        'student_id',
+        'type',
+        'document_number',
+        'file_path',
+        'generated_by',
+        'metadata',
+        'generated_at',
+        'issued_at',
+        'status',
     ];
 
     protected $casts = [

@@ -24,9 +24,21 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        static $sequence = 1;
+        $firstNames = ['mamadou', 'aminata', 'ousmane', 'fatou', 'cheikh', 'aissatou', 'ibrahima', 'awa'];
+        $lastNames = ['ndiaye', 'diop', 'ba', 'sow', 'fall', 'gueye', 'cisse', 'seck'];
+        $domains = ['ucak.sn', 'etu.ucak.sn', 'admin.ucak.sn'];
+        $email = $firstNames[$sequence % count($firstNames)]
+            . '.'
+            . $lastNames[$sequence % count($lastNames)]
+            . $sequence
+            . '@'
+            . $domains[$sequence % count($domains)];
+        $sequence++;
+
         return [
-            'id' => fake()->uuid(),
-            'email' => fake()->unique()->safeEmail(),
+            'id' => (string) Str::uuid(),
+            'email' => $email,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),

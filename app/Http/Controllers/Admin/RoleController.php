@@ -6,7 +6,7 @@ use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Roles\StoreRoleRequest;
 use App\Http\Requests\Roles\UpdateRoleRequest;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -27,7 +27,8 @@ class RoleController extends BaseApiController
             ->allowedFilters([AllowedFilter::partial('name')])
             ->allowedSorts(['name', 'created_at'])
             ->defaultSort('name')
-            ->get();
+            ->paginate(request()->integer('per_page') ?? 15)
+            ->appends(request()->query());
 
         return $this->success($roles);
     }
@@ -36,14 +37,18 @@ class RoleController extends BaseApiController
     {
         $data = $request->validated();
 
-        $role = Role::create([
-            'name' => $data['name'],
-            'guard_name' => config('auth.defaults.guard'),
-        ]);
+        $role = DB::transaction(function () use ($data) {
+            $role = Role::create([
+                'name' => $data['name'],
+                'guard_name' => config('auth.defaults.guard'),
+            ]);
 
-        if (! empty($data['permissions'])) {
-            $role->syncPermissions($data['permissions']);
-        }
+            if (! empty($data['permissions'])) {
+                $role->syncPermissions($data['permissions']);
+            }
+
+            return $role;
+        });
 
         return $this->success($role->load('permissions'), 'Role created', Response::HTTP_CREATED);
     }
@@ -52,15 +57,17 @@ class RoleController extends BaseApiController
     {
         $data = $request->validated();
 
-        if (array_key_exists('name', $data)) {
-            $role->name = $data['name'];
-        }
+        DB::transaction(function () use ($role, $data) {
+            if (array_key_exists('name', $data)) {
+                $role->name = $data['name'];
+            }
 
-        $role->save();
+            $role->save();
 
-        if (array_key_exists('permissions', $data)) {
-            $role->syncPermissions($data['permissions'] ?? []);
-        }
+            if (array_key_exists('permissions', $data)) {
+                $role->syncPermissions($data['permissions'] ?? []);
+            }
+        });
 
         return $this->success($role->refresh()->load('permissions'), 'Role updated');
     }
