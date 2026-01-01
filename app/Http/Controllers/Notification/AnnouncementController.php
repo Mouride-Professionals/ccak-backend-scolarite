@@ -9,7 +9,6 @@ use App\Http\Resources\AnnouncementResource;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -27,7 +26,7 @@ class AnnouncementController extends BaseApiController
     /**
      * NOT-012: Get announcements
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
         $announcements = QueryBuilder::for(Announcement::query())
             ->with('creator:id,name,email')
@@ -38,13 +37,17 @@ class AnnouncementController extends BaseApiController
                 AllowedFilter::exact('priority'),
                 AllowedFilter::exact('target_audience'),
                 AllowedFilter::exact('is_draft'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['priority', 'created_at'])
             ->defaultSort(['-priority', '-created_at'])
             ->paginate($request->get('per_page', 10))
             ->appends($request->query());
 
-        return AnnouncementResource::collection($announcements);
+        return $this->success(
+            AnnouncementResource::collection($announcements),
+            'Annonces récupérées avec succès'
+        );
     }
 
     /**

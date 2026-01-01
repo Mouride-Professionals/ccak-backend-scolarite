@@ -37,6 +37,8 @@ class GradeController extends BaseApiController
                 AllowedFilter::exact('course_enrollment_id'),
                 AllowedFilter::exact('type'),
                 AllowedFilter::exact('status'),
+                AllowedFilter::scope('entered_between'),
+                AllowedFilter::scope('validated_between'),
             ])
             ->allowedSorts(['entered_at', 'validated_at', 'score', 'created_at'])
             ->defaultSort('-entered_at')

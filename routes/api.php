@@ -92,13 +92,13 @@ Route::middleware('auth:api')->group(function () {
         // Routes pour les rapports et statistiques
         Route::get('/report', [DocumentController::class, 'report']);
         Route::get('/check-status', [DocumentController::class, 'checkStatus']);
-        Route::get('/check-status/{studentId}', [DocumentController::class, 'checkStatus']);
+        Route::get('/check-status/{student}', [DocumentController::class, 'checkStatus']);
 
         // Routes pour les documents en attente
         Route::get('/pending', [DocumentController::class, 'pending']);
 
         // Routes pour les documents d'un étudiant spécifique
-        Route::get('/student/{studentId}', [DocumentController::class, 'studentDocuments'])
+        Route::get('/student/{student}', [DocumentController::class, 'studentDocuments'])
             ->name('documents.student');
 
         // Routes spécifiques à un document (complémentaires aux routes apiResource)
@@ -154,9 +154,9 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/academic-years/{id}/set-current', [AcademicYearController::class, 'setCurrent']);
 
     // Course Enrollments
-    Route::post('enrollments/{id}/courses', [CourseEnrollmentController::class, 'enrollCourse']);
-    Route::get('enrollments/{id}/courses', [CourseEnrollmentController::class, 'getCourses']);
-    Route::delete('enrollments/{enrollmentId}/courses/{courseEnrollmentId}', [CourseEnrollmentController::class, 'dropCourse']);
-    Route::get('courses/{id}/availability', [CourseEnrollmentController::class, 'checkAvailability']);
-    Route::get('programs/{id}/available-courses', [CourseEnrollmentController::class, 'getAvailableCoursesByProgram']);
+    Route::post('enrollments/{enrollment}/courses', [CourseEnrollmentController::class, 'enrollCourse']);
+    Route::get('enrollments/{enrollment}/courses', [CourseEnrollmentController::class, 'getCourses']);
+    Route::delete('enrollments/{enrollment}/courses/{courseEnrollment}', [CourseEnrollmentController::class, 'dropCourse']);
+    Route::get('courses/{course}/availability', [CourseEnrollmentController::class, 'checkAvailability']);
+    Route::get('programs/{program}/available-courses', [CourseEnrollmentController::class, 'getAvailableCoursesByProgram']);
 });

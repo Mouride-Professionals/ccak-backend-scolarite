@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Enums\DecisionType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -41,5 +42,30 @@ class SemesterResult extends Model
     public function calculatedBy()
     {
         return $this->belongsTo(\App\Models\User::class, 'calculated_by');
+    }
+
+    public function scopeCalculatedBetween(Builder $query, mixed $value): Builder
+    {
+        $from = null;
+        $to = null;
+
+        if (is_array($value)) {
+            $from = $value['from'] ?? $value[0] ?? null;
+            $to = $value['to'] ?? $value[1] ?? null;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            [$from, $to] = array_map('trim', explode(',', $value, 2));
+        } elseif (is_string($value)) {
+            $from = $value;
+        }
+
+        if ($from) {
+            $query->whereDate('calculated_at', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('calculated_at', '<=', $to);
+        }
+
+        return $query;
     }
 }

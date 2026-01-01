@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Academic;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreDepartmentRequest;
 use App\Http\Requests\Academic\UpdateDepartmentRequest;
+use App\Http\Resources\Academic\DepartmentResource;
 use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -29,40 +30,41 @@ class DepartmentController extends BaseApiController
             ->allowedIncludes(['faculty', 'head', 'programs'])
             ->allowedFilters([
                 AllowedFilter::exact('faculty_id'),
-                AllowedFilter::callback('is_active', function ($query, $value) {
-                    $isActive = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                    if ($isActive === null) {
-                        return;
-                    }
-
-                    $query->where('is_active', $isActive);
-                }),
+                AllowedFilter::scope('is_active'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['name', 'code', 'created_at'])
             ->defaultSort('name')
             ->paginate($request->integer('per_page') ?? 15)
             ->appends($request->query());
 
-        return $this->success($departments);
+        return $this->success(DepartmentResource::collection($departments));
     }
 
     public function store(StoreDepartmentRequest $request)
     {
         $department = DB::transaction(fn() => Department::create($request->validated()));
 
-        return $this->success($department->load(['faculty', 'head', 'programs']), 'Department created', Response::HTTP_CREATED);
+        return $this->success(
+            new DepartmentResource($department->load(['faculty', 'head', 'programs'])),
+            'Department created',
+            Response::HTTP_CREATED
+        );
     }
 
     public function show(Department $department)
     {
-        return $this->success($department->load(['faculty', 'head', 'programs']));
+        return $this->success(new DepartmentResource($department->load(['faculty', 'head', 'programs'])));
     }
 
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
         DB::transaction(fn() => $department->update($request->validated()));
 
-        return $this->success($department->refresh()->load(['faculty', 'head', 'programs']), 'Department updated');
+        return $this->success(
+            new DepartmentResource($department->refresh()->load(['faculty', 'head', 'programs'])),
+            'Department updated'
+        );
     }
 
     public function destroy(Department $department)

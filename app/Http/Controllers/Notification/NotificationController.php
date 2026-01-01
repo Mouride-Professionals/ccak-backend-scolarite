@@ -9,7 +9,6 @@ use App\Models\Notification;
 use App\Services\Notification\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -27,27 +26,24 @@ class NotificationController extends BaseApiController
     /**
      * NOT-008: Get user notifications
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
         $notifications = QueryBuilder::for(Notification::query())
             ->where('user_id', $request->user()->id)
             ->allowedFilters([
                 AllowedFilter::exact('type'),
-                AllowedFilter::callback('is_read', function ($query, $value) {
-                    $isRead = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                    if ($isRead === null) {
-                        return;
-                    }
-
-                    $query->where('is_read', $isRead);
-                }),
+                AllowedFilter::scope('is_read'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['created_at'])
             ->defaultSort('-created_at')
             ->paginate($request->get('per_page', 15))
             ->appends($request->query());
 
-        return NotificationResource::collection($notifications);
+        return $this->success(
+            NotificationResource::collection($notifications),
+            'Notifications récupérées avec succès'
+        );
     }
 
     /**

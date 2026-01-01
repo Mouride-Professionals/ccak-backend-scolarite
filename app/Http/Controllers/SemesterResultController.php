@@ -40,13 +40,17 @@ class SemesterResultController extends BaseApiController
                 AllowedFilter::exact('academic_year_id'),
                 AllowedFilter::exact('semester'),
                 AllowedFilter::exact('decision'),
+                AllowedFilter::scope('calculated_between'),
             ])
             ->allowedSorts(['semester_average', 'semester_gpa', 'created_at'])
             ->defaultSort('-created_at')
             ->paginate($request->integer('per_page') ?? 15)
             ->appends($request->query());
 
-        return $this->success($results, 'Semester results retrieved successfully');
+        return $this->success(
+            SemesterResultResource::collection($results),
+            'Semester results retrieved successfully'
+        );
     }
 
     public function store(StoreSemesterResultRequest $request): JsonResponse

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Notification extends Model
 {
@@ -87,6 +88,29 @@ class Notification extends Model
     public function scopeForUser($query, string $userId)
     {
         return $query->where('user_id', $userId);
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('title', 'like', "%{$term}%")
+                ->orWhere('message', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopeIsRead(Builder $query, mixed $value = true): Builder
+    {
+        $isRead = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($isRead === null) {
+            return $query;
+        }
+
+        return $query->where('is_read', $isRead);
     }
 
     // Methods

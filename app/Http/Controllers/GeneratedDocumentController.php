@@ -35,6 +35,8 @@ class GeneratedDocumentController extends BaseApiController
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('student_id'),
                 AllowedFilter::exact('generated_by'),
+                AllowedFilter::scope('generated_between'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['generated_at', 'issued_at', 'created_at'])
             ->defaultSort('-generated_at')

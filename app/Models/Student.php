@@ -34,7 +34,7 @@ class Student extends Model
 
     protected $table = 'students';
 
-  
+
 
 
 
@@ -59,7 +59,7 @@ class Student extends Model
         'status',
     ];
 
- 
+
     protected $casts = [
         'user_id' => 'string',
         'student_number' => 'string',
@@ -109,7 +109,7 @@ class Student extends Model
         return $this->hasMany(\App\Models\SemesterResult::class, 'student_id');
     }
 
-   
+
     /**
      * Scope a query to only include active students.
      */
@@ -124,6 +124,20 @@ class Student extends Model
     public function scopeGraduated(Builder $query): Builder
     {
         return $query->where('status', 'GRADUATED');
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('full_name', 'ilike', "%{$term}%")
+                ->orWhere('student_number', 'ilike', "%{$term}%")
+                ->orWhere('phone', 'ilike', "%{$term}%");
+        });
     }
 
     /**
@@ -155,7 +169,7 @@ class Student extends Model
 
         return "UCAK{$year}{$newNumber}";
     }
-   
+
 
     public const STATUS_ACTIVE = 'ACTIVE';
     public const STATUS_SUSPENDED = 'SUSPENDED';

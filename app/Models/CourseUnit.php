@@ -49,6 +49,29 @@ class CourseUnit extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeIsActive(Builder $query, mixed $value = true): Builder
+    {
+        $isActive = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($isActive === null) {
+            return $query;
+        }
+
+        return $query->where('is_active', $isActive);
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('name', 'like', "%{$term}%")
+                ->orWhere('code', 'like', "%{$term}%");
+        });
+    }
+
     /**
      * Custom audit transformation
      */

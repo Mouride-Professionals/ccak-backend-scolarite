@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Collection;
 
@@ -13,7 +14,18 @@ trait ApiResponse
     {
         $meta = null;
 
-        if ($data instanceof AbstractPaginator) {
+        if ($data instanceof ResourceCollection) {
+            $resource = $data->resource;
+            if ($resource instanceof AbstractPaginator) {
+                $meta = [
+                    'current_page' => $resource->currentPage(),
+                    'last_page' => $resource->lastPage(),
+                    'per_page' => $resource->perPage(),
+                    'total' => $resource->total(),
+                ];
+            }
+            $data = $data->resolve();
+        } elseif ($data instanceof AbstractPaginator) {
             $meta = [
                 'current_page' => $data->currentPage(),
                 'last_page' => $data->lastPage(),

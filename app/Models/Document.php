@@ -151,6 +151,44 @@ class Document extends Model
         return $query->where('status', DocumentStatus::PENDING)
             ->whereNull('reviewed_at');
     }
+
+    public function scopeUploadedBetween(Builder $query, mixed $value): Builder
+    {
+        $from = null;
+        $to = null;
+
+        if (is_array($value)) {
+            $from = $value['from'] ?? $value[0] ?? null;
+            $to = $value['to'] ?? $value[1] ?? null;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            [$from, $to] = array_map('trim', explode(',', $value, 2));
+        } elseif (is_string($value)) {
+            $from = $value;
+        }
+
+        if ($from) {
+            $query->whereDate('uploaded_at', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('uploaded_at', '<=', $to);
+        }
+
+        return $query;
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('file_name', 'like', "%{$term}%")
+                ->orWhere('notes', 'like', "%{$term}%");
+        });
+    }
        /**
      * Approve the document.
      */

@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Models\Concerns\UsesUuidV7;
 use App\Models\Enums\GradeStatus;
 use App\Models\Enums\GradeType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -50,5 +51,55 @@ class Grade extends Model
     public function enteredBy()
     {
         return $this->belongsTo(\App\Models\User::class, 'entered_by');
+    }
+
+    public function scopeEnteredBetween(Builder $query, mixed $value): Builder
+    {
+        $from = null;
+        $to = null;
+
+        if (is_array($value)) {
+            $from = $value['from'] ?? $value[0] ?? null;
+            $to = $value['to'] ?? $value[1] ?? null;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            [$from, $to] = array_map('trim', explode(',', $value, 2));
+        } elseif (is_string($value)) {
+            $from = $value;
+        }
+
+        if ($from) {
+            $query->whereDate('entered_at', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('entered_at', '<=', $to);
+        }
+
+        return $query;
+    }
+
+    public function scopeValidatedBetween(Builder $query, mixed $value): Builder
+    {
+        $from = null;
+        $to = null;
+
+        if (is_array($value)) {
+            $from = $value['from'] ?? $value[0] ?? null;
+            $to = $value['to'] ?? $value[1] ?? null;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            [$from, $to] = array_map('trim', explode(',', $value, 2));
+        } elseif (is_string($value)) {
+            $from = $value;
+        }
+
+        if ($from) {
+            $query->whereDate('validated_at', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('validated_at', '<=', $to);
+        }
+
+        return $query;
     }
 }

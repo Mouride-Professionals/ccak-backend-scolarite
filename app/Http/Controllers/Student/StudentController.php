@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Student\StoreStudentRequest;
 use App\Http\Requests\Student\UpdateStudentRequest;
+use App\Http\Resources\StudentResource;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Student\StudentNumberService;
@@ -21,11 +22,6 @@ class StudentController extends BaseApiController
     public function __construct(
         private StudentNumberService $studentNumberService
     ) {
-        // Désactiver les middlewares de permission pour les routes de test
-        if (request()->is('api/test/*')) {
-            return;
-        }
-
         $this->middleware('permission:students.view')->only(['index', 'show']);
         $this->middleware('permission:students.create')->only('store');
         $this->middleware('permission:students.update')->only('update');
@@ -43,15 +39,17 @@ class StudentController extends BaseApiController
             ->allowedIncludes(['user'])
             ->allowedFilters([
                 AllowedFilter::exact('status'),
-                AllowedFilter::partial('full_name'),
-                AllowedFilter::partial('student_number'),
+                AllowedFilter::exact('gender'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['id', 'student_number', 'full_name', 'status', 'created_at'])
             ->defaultSort('-created_at')
             ->paginate($request->get('per_page', 15));
 
-
-        return $this->success($students, 'Liste des étudiants récupérée avec succès.');
+        return $this->success(
+            StudentResource::collection($students),
+            'Liste des étudiants récupérée avec succès.'
+        );
     }
 
     /**
@@ -95,7 +93,7 @@ class StudentController extends BaseApiController
             });
 
             return $this->success(
-                $student->load('user'),
+                new StudentResource($student->load('user')),
                 'Profil étudiant créé avec succès.',
                 201
             );
@@ -107,34 +105,29 @@ class StudentController extends BaseApiController
     /**
      * Display the specified resource.
      */
-    public function show(string $id): JsonResponse
+    public function show(Student $student): JsonResponse
     {
-        try {
-            $student = Student::with(['user', 'guardians', 'documents'])->findOrFail($id);
+        $student->load(['user', 'guardians', 'documents']);
 
-            return $this->success(
-                $student,
-                'Profil étudiant récupéré avec succès.'
-            );
-        } catch (\Exception $e) {
-            return $this->error('Étudiant non trouvé.', 404);
-        }
+        return $this->success(
+            new StudentResource($student),
+            'Profil étudiant récupéré avec succès.'
+        );
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateStudentRequest $request, string $id): JsonResponse
+    public function update(UpdateStudentRequest $request, Student $student): JsonResponse
     {
         try {
-            $student = DB::transaction(function () use ($request, $id) {
-                $student = Student::findOrFail($id);
+            $student = DB::transaction(function () use ($request, $student) {
                 $student->update($request->validated());
                 return $student;
             });
 
             return $this->success(
-                $student->load('user'),
+                new StudentResource($student->load('user')),
                 'Profil étudiant mis à jour avec succès.'
             );
         } catch (\Exception $e) {
@@ -153,10 +146,8 @@ class StudentController extends BaseApiController
     /**
      * Get grades for a student
      */
-    public function grades(Request $request, string $studentId): JsonResponse
+    public function grades(Request $request, Student $student): JsonResponse
     {
-        $student = Student::findOrFail($studentId);
-
         $query = QueryBuilder::for($student->grades()->getQuery())
             ->with(['course', 'courseEnrollment'])
             ->allowedFilters([

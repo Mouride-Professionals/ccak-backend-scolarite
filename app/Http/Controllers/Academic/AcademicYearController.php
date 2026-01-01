@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Academic;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreAcademicYearRequest;
 use App\Http\Requests\Academic\UpdateAcademicYearRequest;
+use App\Http\Resources\Academic\AcademicYearResource;
 use App\Models\AcademicYear;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,33 +29,33 @@ class AcademicYearController extends BaseApiController
         $years = QueryBuilder::for(AcademicYear::query())
             ->allowedFilters([
                 AllowedFilter::exact('is_current'),
-                AllowedFilter::partial('name'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['name', 'created_at'])
             ->defaultSort('-created_at')
             ->paginate($request->integer('per_page') ?? 15)
             ->appends($request->query());
 
-        return $this->success($years);
+        return $this->success(AcademicYearResource::collection($years));
     }
 
     public function store(StoreAcademicYearRequest $request)
     {
         $year = DB::transaction(fn() => AcademicYear::create($request->validated()));
 
-        return $this->success($year, 'Academic year created', Response::HTTP_CREATED);
+        return $this->success(new AcademicYearResource($year), 'Academic year created', Response::HTTP_CREATED);
     }
 
     public function show(AcademicYear $academicYear)
     {
-        return $this->success($academicYear);
+        return $this->success(new AcademicYearResource($academicYear));
     }
 
     public function update(UpdateAcademicYearRequest $request, AcademicYear $academicYear)
     {
         DB::transaction(fn() => $academicYear->update($request->validated()));
 
-        return $this->success($academicYear->refresh(), 'Academic year updated');
+        return $this->success(new AcademicYearResource($academicYear->refresh()), 'Academic year updated');
     }
 
     public function destroy(string $id): JsonResponse
@@ -86,7 +87,7 @@ class AcademicYearController extends BaseApiController
             return $this->error('Aucune année académique actuelle définie.', Response::HTTP_NOT_FOUND);
         }
 
-        return $this->success($currentYear);
+        return $this->success(new AcademicYearResource($currentYear));
     }
 
     /**
@@ -105,6 +106,6 @@ class AcademicYearController extends BaseApiController
             $academicYear->update(['is_current' => true]);
         });
 
-        return $this->success($academicYear->fresh(), 'Année académique définie comme actuelle.');
+        return $this->success(new AcademicYearResource($academicYear->fresh()), 'Année académique définie comme actuelle.');
     }
 }

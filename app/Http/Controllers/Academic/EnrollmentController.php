@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Academic;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Enrollment\StoreEnrollmentRequest;
 use App\Http\Requests\Enrollment\UpdateEnrollmentRequest;
+use App\Http\Resources\EnrollmentResource;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
@@ -36,13 +37,14 @@ class EnrollmentController extends BaseApiController
                 AllowedFilter::exact('academic_year_id'),
                 AllowedFilter::exact('student_id'),
                 AllowedFilter::exact('academic_program_id'),
+                AllowedFilter::scope('enrollment_date_between'),
             ])
             ->allowedSorts(['created_at', 'enrollment_date', 'status'])
             ->defaultSort('-created_at')
             ->paginate($request->integer('per_page') ?? 15)
             ->appends($request->query());
 
-        return $this->success($enrollments, 'Enrollments retrieved successfully');
+        return $this->success(EnrollmentResource::collection($enrollments), 'Enrollments retrieved successfully');
     }
 
     public function store(StoreEnrollmentRequest $request): JsonResponse
@@ -87,7 +89,7 @@ class EnrollmentController extends BaseApiController
             });
 
             return $this->success(
-                $enrollment->load(['student', 'academicProgram', 'academicYear']),
+                new EnrollmentResource($enrollment->load(['student', 'academicProgram', 'academicYear'])),
                 'Inscription créée avec succès.',
                 201
             );
@@ -109,7 +111,7 @@ class EnrollmentController extends BaseApiController
             return $this->error('Inscription non trouvée.', 404);
         }
 
-        return $this->success($enrollment);
+        return $this->success(new EnrollmentResource($enrollment));
     }
 
     public function update(UpdateEnrollmentRequest $request, int|string $id): JsonResponse
@@ -139,7 +141,7 @@ class EnrollmentController extends BaseApiController
         });
 
         return $this->success(
-            $enrollment->fresh(['student', 'academicProgram', 'academicYear']),
+            new EnrollmentResource($enrollment->fresh(['student', 'academicProgram', 'academicYear'])),
             'Inscription mise à jour avec succès.'
         );
     }
@@ -184,61 +186,9 @@ class EnrollmentController extends BaseApiController
             ->appends($request->query());
 
         // Format the response
-        $formattedEnrollments = collect($enrollments->items())->map(function ($enrollment) {
-            return [
-                'id' => $enrollment->id,
-                'student' => [
-                    'id' => $enrollment->student->id,
-                    'student_number' => $enrollment->student->student_number,
-                    'full_name' => $enrollment->student->full_name,
-                ],
-                'program' => [
-                    'id' => $enrollment->academicProgram->id,
-                    'name' => $enrollment->academicProgram->name,
-                    'level' => $enrollment->academicProgram->level,
-                ],
-                'academic_year' => [
-                    'id' => $enrollment->academicYear->id,
-                    'name' => $enrollment->academicYear->name,
-                ],
-                'current_semester' => $enrollment->current_semester,
-                'status' => $enrollment->status,
-                'enrollment_date' => $enrollment->enrollment_date->format('Y-m-d'),
-                'registration_fee_paid' => $enrollment->registration_fee_paid,
-                'is_scholarship' => $enrollment->is_scholarship,
-                'courses' => $enrollment->courseEnrollments->map(function ($ce) {
-                    return [
-                        'id' => $ce->id,
-                        'course_id' => $ce->course->id,
-                        'code' => $ce->course->code,
-                        'name' => $ce->course->name,
-                        'credits' => $ce->course->credits,
-                        'semester' => $ce->semester,
-                        'status' => $ce->status,
-                        'enrollment_date' => $ce->enrollment_date->format('Y-m-d'),
-                        'drop_date' => $ce->drop_date?->format('Y-m-d'),
-                    ];
-                }),
-                'total_courses' => $enrollment->courseEnrollments->count(),
-                'active_courses' => $enrollment->courseEnrollments->where('status', 'ENROLLED')->count(),
-                'completed_courses' => $enrollment->courseEnrollments->where('status', 'COMPLETED')->count(),
-            ];
-        });
-
-        return $this->success([
-            'student' => [
-                'id' => $student->id,
-                'student_number' => $student->student_number,
-                'full_name' => $student->full_name,
-                'email' => $student->email,
-            ],
-            'enrollments' => $formattedEnrollments,
-            'total_enrollments' => $enrollments->total(),
-            'pagination' => [
-                'current_page' => $enrollments->currentPage(),
-                'last_page' => $enrollments->lastPage(),
-                'per_page' => $enrollments->perPage(),
-            ],
-        ]);
+        return $this->success(
+            EnrollmentResource::collection($enrollments),
+            'Inscriptions de l\'étudiant récupérées avec succès'
+        );
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Academic;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreCourseRequest;
 use App\Http\Requests\Academic\UpdateCourseRequest;
+use App\Http\Resources\Academic\CourseResource;
 use App\Models\Course;
 use App\Models\Grade;
 use Illuminate\Http\Request;
@@ -31,59 +32,42 @@ class CourseController extends BaseApiController
             ->allowedIncludes(['courseUnit', 'courseUnit.academicProgram'])
             ->allowedFilters([
                 AllowedFilter::exact('course_unit_id'),
-                AllowedFilter::callback('is_active', function ($query, $value) {
-                    $isActive = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                    if ($isActive === null) {
-                        return;
-                    }
-
-                    $query->where('is_active', $isActive);
-                }),
-                AllowedFilter::callback('level', function ($query, $value) {
-                    $level = trim((string) $value);
-                    if ($level === '') {
-                        return;
-                    }
-
-                    $query->whereHas('courseUnit.academicProgram', fn($sub) => $sub->where('level', $level));
-                }),
-                AllowedFilter::callback('search', function ($query, $value) {
-                    $search = trim((string) $value);
-                    if ($search === '') {
-                        return;
-                    }
-
-                    $query->where(function ($subQuery) use ($search) {
-                        $subQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('code', 'like', "%{$search}%");
-                    });
-                }),
+                AllowedFilter::scope('is_active'),
+                AllowedFilter::scope('program_level'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['name', 'code', 'credits', 'created_at'])
             ->defaultSort('name')
             ->paginate($request->integer('per_page') ?? 15)
             ->appends($request->query());
 
-        return $this->success($courses);
+        return $this->success(CourseResource::collection($courses));
     }
 
     public function store(StoreCourseRequest $request)
     {
         $course = DB::transaction(fn() => Course::create($request->validated()));
 
-        return $this->success($course->load(['courseUnit.academicProgram']), 'Course created', Response::HTTP_CREATED);
+        return $this->success(
+            new CourseResource($course->load(['courseUnit.academicProgram'])),
+            'Course created',
+            Response::HTTP_CREATED
+        );
     }
 
     public function show(Course $course)
     {
-        return $this->success($course->load(['courseUnit.academicProgram']));
+        return $this->success(new CourseResource($course->load(['courseUnit.academicProgram'])));
     }
 
     public function update(UpdateCourseRequest $request, Course $course)
     {
         DB::transaction(fn() => $course->update($request->validated()));
 
-        return $this->success($course->refresh()->load(['courseUnit.academicProgram']), 'Course updated');
+        return $this->success(
+            new CourseResource($course->refresh()->load(['courseUnit.academicProgram'])),
+            'Course updated'
+        );
     }
 
     public function destroy(Course $course)

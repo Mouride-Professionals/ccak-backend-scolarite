@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -91,6 +92,19 @@ class Announcement extends Model
     {
         return $query->whereDoesntHave('dismissedBy', function ($q) use ($userId) {
             $q->where('user_id', $userId);
+        });
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('title', 'ilike', "%{$term}%")
+                ->orWhere('content', 'ilike', "%{$term}%");
         });
     }
 

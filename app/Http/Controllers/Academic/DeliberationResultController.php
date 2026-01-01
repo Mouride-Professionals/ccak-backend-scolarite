@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Academic;
 
-use Illuminate\Http\Request;
 use App\Services\DeliberationResultService;
 use App\Http\Controllers\BaseApiController;
+use App\Http\Requests\Academic\StoreDeliberationResultRequest;
+use App\Http\Requests\Academic\UpdateDeliberationResultRequest;
+use App\Http\Resources\Academic\DeliberationResultResource;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -38,38 +40,38 @@ class DeliberationResultController extends BaseApiController
             ->paginate(request()->integer('per_page') ?? 15)
             ->appends(request()->query());
 
-        return $this->success($results, 'Deliberation results retrieved successfully');
+        return $this->success(
+            DeliberationResultResource::collection($results),
+            'Deliberation results retrieved successfully'
+        );
     }
 
-    public function store(Request $request)
+    public function store(StoreDeliberationResultRequest $request)
     {
-        $data = $request->validate([
-            'deliberation_session_id' => 'required|uuid',
-            'student_id' => 'required|uuid',
-            'decision' => 'required|string',
-            'is_with_honors' => 'sometimes|boolean',
-        ]);
+        $result = DB::transaction(fn() => $this->service->create($request->validated()));
 
-        $result = DB::transaction(fn() => $this->service->create($data));
-
-        return $this->success($result, 'Deliberation result created', 201);
+        return $this->success(
+            new DeliberationResultResource($result),
+            'Deliberation result created',
+            201
+        );
     }
 
     public function show($id)
     {
         $result = $this->service->getById($id);
-        return $result ? $this->success($result) : $this->error('Not found', 404);
+        return $result
+            ? $this->success(new DeliberationResultResource($result))
+            : $this->error('Not found', 404);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateDeliberationResultRequest $request, $id)
     {
-        $data = $request->only([
-            'decision', 'is_with_honors'
-        ]);
+        $result = DB::transaction(fn() => $this->service->update($id, $request->validated()));
 
-        $result = DB::transaction(fn() => $this->service->update($id, $data));
-
-        return $result ? $this->success($result) : $this->error('Not found', 404);
+        return $result
+            ? $this->success(new DeliberationResultResource($result))
+            : $this->error('Not found', 404);
     }
 
     public function destroy($id)

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Academic;
 
 use App\Http\Controllers\BaseApiController;
+use App\Http\Requests\Academic\StoreDeliberationSessionRequest;
+use App\Http\Requests\Academic\UpdateDeliberationSessionRequest;
+use App\Http\Resources\Academic\DeliberationSessionResource;
 use App\Models\DeliberationSession;
 use App\Services\DeliberationService;
 use App\Services\MinutesGeneratorService;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -27,7 +29,7 @@ class DeliberationSessionController extends BaseApiController
         $this->middleware('permission:deliberations.delete')->only('destroy');
     }
 
-    public function index(Request $request)
+    public function index(\Illuminate\Http\Request $request)
     {
         $sessions = QueryBuilder::for(DeliberationSession::query())
             ->with(['academicProgram', 'academicYear', 'president', 'juryMembers'])
@@ -44,47 +46,38 @@ class DeliberationSessionController extends BaseApiController
             ->paginate($request->integer('per_page') ?? 15)
             ->appends($request->query());
 
-        return $this->success($sessions, 'Deliberation sessions retrieved successfully');
+        return $this->success(
+            DeliberationSessionResource::collection($sessions),
+            'Deliberation sessions retrieved successfully'
+        );
     }
 
-    public function store(Request $request)
+    public function store(StoreDeliberationSessionRequest $request)
     {
-        $data = $request->validate([
-            'academic_program_id' => 'required|uuid',
-            'academic_year_id' => 'required|uuid',
-            'semester' => 'required|integer',
-            'session_name' => 'required|string|max:255',
-            'session_date' => 'required|date',
-            'status' => 'sometimes|in:SCHEDULED,IN_PROGRESS,COMPLETED,CLOSED',
-            'presided_by' => 'required|uuid',
-            'jury_members' => 'nullable|array',
-        ]);
+        $session = DB::transaction(fn() => $this->service->create($request->validated()));
 
-        $session = DB::transaction(fn() => $this->service->create($data));
-
-        return $this->success($session, 'Deliberation session created', 201);
+        return $this->success(
+            new DeliberationSessionResource($session),
+            'Deliberation session created',
+            201
+        );
     }
 
     public function show($id)
     {
         $session = $this->service->getById($id);
-        return $session ? $this->success($session) : $this->error('Not found', 404);
+        return $session
+            ? $this->success(new DeliberationSessionResource($session))
+            : $this->error('Not found', 404);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateDeliberationSessionRequest $request, $id)
     {
-        $data = $request->only([
-            'semester',
-            'session_name',
-            'session_date',
-            'status',
-            'presided_by',
-            'jury_members'
-        ]);
+        $session = DB::transaction(fn() => $this->service->update($id, $request->validated()));
 
-        $session = DB::transaction(fn() => $this->service->update($id, $data));
-
-        return $session ? $this->success($session) : $this->error('Not found', 404);
+        return $session
+            ? $this->success(new DeliberationSessionResource($session))
+            : $this->error('Not found', 404);
     }
 
     public function destroy($id)
@@ -94,7 +87,7 @@ class DeliberationSessionController extends BaseApiController
             : $this->error('Not found', 404);
     }
 
-    public function changeStatus(Request $request, $id)
+    public function changeStatus(\Illuminate\Http\Request $request, $id)
     {
         $request->validate([
             'status' => 'required|in:SCHEDULED,IN_PROGRESS,COMPLETED,CLOSED'
@@ -102,7 +95,9 @@ class DeliberationSessionController extends BaseApiController
 
         $session = DB::transaction(fn() => $this->service->changeStatus($id, $request->status));
 
-        return $session ? $this->success($session) : $this->error('Invalid status or session not found', 400);
+        return $session
+            ? $this->success(new DeliberationSessionResource($session))
+            : $this->error('Invalid status or session not found', 400);
     }
 
 
