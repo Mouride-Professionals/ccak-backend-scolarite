@@ -15,6 +15,9 @@ class FacultyMember extends Model
     use HasFactory;
     use UsesUuidV7;
 
+    public const RANKS = ['PROFESSEUR', 'MAITRE_CONF', 'MAITRE_ASS', 'ASSISTANT', 'VACATAIRE'];
+    public const CONTRACT_TYPES = ['PERMANENT', 'TEMPORARY', 'HOURLY'];
+
     protected $table = 'faculty_members';
     protected $fillable = [
         'id',
@@ -35,6 +38,9 @@ class FacultyMember extends Model
         'is_active' => 'boolean',
     ];
 
+    public $auditEvents = ['created', 'updated', 'deleted'];
+    public $auditExclude = ['created_at', 'updated_at'];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -43,6 +49,21 @@ class FacultyMember extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(FacultyDocument::class);
+    }
+
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(FacultyContract::class);
     }
 
     // Deliberation roles

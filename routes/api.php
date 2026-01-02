@@ -5,11 +5,23 @@ use App\Http\Controllers\Academic\CourseController;
 use App\Http\Controllers\Academic\CourseUnitController;
 use App\Http\Controllers\Academic\DepartmentController;
 use App\Http\Controllers\Academic\FacultyController;
+use App\Http\Controllers\Academic\FacultyContractController;
+use App\Http\Controllers\Academic\FacultyDocumentController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GeneratedDocumentController;
 use App\Http\Controllers\Academic\AcademicYearController;
 use App\Http\Controllers\Academic\CourseEnrollmentController;
 use App\Http\Controllers\Academic\EnrollmentController;
+use App\Http\Controllers\Academic\AcademicCalendarController;
+use App\Http\Controllers\Academic\HolidayController;
+use App\Http\Controllers\Academic\RoomController;
+use App\Http\Controllers\Academic\ActivityTypeController;
+use App\Http\Controllers\Academic\ScheduleController;
+use App\Http\Controllers\Academic\CourseLogController;
+use App\Http\Controllers\Academic\AttendanceController;
+use App\Http\Controllers\Academic\EvaluationController;
+use App\Http\Controllers\Academic\EvaluationResponseController;
+use App\Http\Controllers\Academic\TeachingAssignmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\RoleController;
@@ -52,6 +64,19 @@ Route::middleware('auth:api')->group(function () {
 
     Route::apiResource('deliberation-sessions', \App\Http\Controllers\Academic\DeliberationSessionController::class);
     Route::apiResource('faculty-members', \App\Http\Controllers\Academic\FacultyMemberController::class);
+    Route::get('faculty/available', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'available']);
+    Route::get('faculty/{faculty_member}/assignments', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'assignments']);
+    Route::get('faculty/{faculty_member}/workload', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'workload']);
+    Route::get('faculty/{faculty_member}/documents', [FacultyDocumentController::class, 'index']);
+    Route::post('faculty/{faculty_member}/documents', [FacultyDocumentController::class, 'store']);
+    Route::get('faculty/{faculty_member}/contracts', [FacultyContractController::class, 'index']);
+    Route::post('faculty/{faculty_member}/contracts', [FacultyContractController::class, 'store']);
+    Route::get('faculty', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'index']);
+    Route::post('faculty', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'store']);
+    Route::get('faculty/{faculty_member}', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'show']);
+    Route::put('faculty/{faculty_member}', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'update']);
+    Route::post('teaching-assignments/import', [TeachingAssignmentController::class, 'import']);
+    Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->only(['index', 'store', 'destroy']);
 
 
     Route::apiResource('faculties', FacultyController::class);
@@ -62,6 +87,35 @@ Route::middleware('auth:api')->group(function () {
     Route::get('courses/{course}/grades', [\App\Http\Controllers\Academic\CourseController::class, 'grades']);
     Route::apiResource('course-enrollments', \App\Http\Controllers\Academic\CourseEnrollmentController::class);
     Route::apiResource('enrollments', EnrollmentController::class);
+
+    // Academic calendar & scheduling
+    Route::post('academic-calendar', [AcademicCalendarController::class, 'store']);
+    Route::get('academic-calendar/{academic_year}', [AcademicCalendarController::class, 'show']);
+    Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::apiResource('rooms', RoomController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('activity-types', [ActivityTypeController::class, 'index']);
+    Route::post('activity-types', [ActivityTypeController::class, 'store']);
+    Route::post('schedules', [ScheduleController::class, 'store']);
+    Route::post('schedules/check-availability', [ScheduleController::class, 'checkAvailability']);
+    Route::get('programs/{program}/schedule', [ScheduleController::class, 'programSchedule']);
+    Route::get('faculty/{faculty_member}/schedule', [ScheduleController::class, 'facultySchedule']);
+    Route::get('students/{student}/schedule', [ScheduleController::class, 'studentSchedule']);
+
+    // Course logs & attendance
+    Route::post('course-logs', [CourseLogController::class, 'store']);
+    Route::put('course-logs/{course_log}', [CourseLogController::class, 'update']);
+    Route::get('courses/{course}/logs', [CourseLogController::class, 'courseLogs']);
+    Route::post('attendance', [AttendanceController::class, 'store']);
+    Route::get('students/{student}/attendance', [AttendanceController::class, 'studentAttendance']);
+    Route::get('courses/{course}/attendance', [AttendanceController::class, 'courseAttendance']);
+    Route::get('students/{student}/dispensations', [AttendanceController::class, 'dispensations']);
+
+    // Evaluations
+    Route::post('evaluations', [EvaluationController::class, 'store']);
+    Route::post('evaluations/{evaluation}/share', [EvaluationController::class, 'share']);
+    Route::get('evaluations/{evaluation}/results', [EvaluationController::class, 'results']);
+    Route::post('evaluation-responses', [EvaluationResponseController::class, 'store']);
+    Route::get('students/{student}/evaluations', [EvaluationController::class, 'studentEvaluations']);
 
     // Notifications
     Route::prefix('notifications')->group(function () {
