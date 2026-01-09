@@ -27,8 +27,16 @@ class DeliberationSessionSeeder extends Seeder
             return;
         }
 
-        $program = AcademicProgram::query()->inRandomOrder()->first()
-            ?? AcademicProgram::factory()->create();
+        $program = AcademicProgram::query()->inRandomOrder()->first();
+        if (!$program) {
+            $this->call(AcademicProgramSeeder::class);
+            $program = AcademicProgram::query()->inRandomOrder()->first();
+        }
+
+        if (!$program) {
+            $this->command->warn('No academic program found. Skipping deliberation sessions.');
+            return;
+        }
 
         $academicYears = AcademicYear::all();
         if ($academicYears->isEmpty()) {

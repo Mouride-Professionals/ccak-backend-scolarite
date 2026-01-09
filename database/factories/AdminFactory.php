@@ -18,9 +18,18 @@ class AdminFactory extends Factory
      */
     public function definition(): array
     {
+        $names = [
+            'Cheikh Ndiaye',
+            'Aminata Diop',
+            'Mamadou Ba',
+            'Fatou Sow',
+            'Ousmane Sarr',
+            'Awa Gueye',
+        ];
+
         return [
             'user_id' => User::factory(),
-            'full_name' => $this->faker->name(),
+            'full_name' => $names[array_rand($names)],
         ];
     }
 }

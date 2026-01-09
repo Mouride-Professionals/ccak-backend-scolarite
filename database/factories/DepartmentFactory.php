@@ -15,10 +15,34 @@ class DepartmentFactory extends Factory
 
     public function definition(): array
     {
+        static $sequence = 0;
+        $departments = [
+            ['code' => 'INF', 'name' => 'Informatique'],
+            ['code' => 'MAT', 'name' => 'Mathematiques'],
+            ['code' => 'PHY', 'name' => 'Physique'],
+            ['code' => 'CHI', 'name' => 'Chimie'],
+            ['code' => 'BIO', 'name' => 'Biologie'],
+            ['code' => 'LDM', 'name' => 'Lettres Modernes'],
+            ['code' => 'HIS', 'name' => 'Histoire'],
+            ['code' => 'GEO', 'name' => 'Geographie'],
+            ['code' => 'PHI', 'name' => 'Philosophie'],
+            ['code' => 'DRP', 'name' => 'Droit Public'],
+            ['code' => 'DRI', 'name' => 'Droit Prive'],
+            ['code' => 'POL', 'name' => 'Sciences Politiques'],
+            ['code' => 'ECO', 'name' => 'Economie'],
+            ['code' => 'GES', 'name' => 'Gestion'],
+            ['code' => 'COM', 'name' => 'Comptabilite'],
+            ['code' => 'MED', 'name' => 'Medecine'],
+            ['code' => 'PHA', 'name' => 'Pharmacie'],
+            ['code' => 'SPU', 'name' => 'Sante Publique'],
+        ];
+        $department = $departments[$sequence % count($departments)];
+        $sequence++;
+
         return [
             'faculty_id' => Faculty::factory(),
-            'name' => fake()->unique()->words(3, true),
-            'code' => strtoupper(fake()->unique()->bothify('DEP###')),
+            'name' => $department['name'],
+            'code' => $department['code'],
             'head_id' => null,
             'is_active' => true,
         ];

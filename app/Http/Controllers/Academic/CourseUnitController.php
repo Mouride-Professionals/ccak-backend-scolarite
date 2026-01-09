@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Academic;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreCourseUnitRequest;
 use App\Http\Requests\Academic\UpdateCourseUnitRequest;
+use App\Http\Resources\Academic\CourseUnitResource;
 use App\Models\CourseUnit;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -20,7 +23,7 @@ class CourseUnitController extends BaseApiController
         $this->middleware('permission:course_units.delete')->only('destroy');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $units = QueryBuilder::for(CourseUnit::query())
             ->with(['academicProgram', 'courses'])
@@ -28,44 +31,46 @@ class CourseUnitController extends BaseApiController
             ->allowedFilters([
                 AllowedFilter::exact('academic_program_id'),
                 AllowedFilter::exact('semester_number'),
-                AllowedFilter::callback('is_active', function ($query, $value) {
-                    $isActive = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                    if ($isActive === null) {
-                        return;
-                    }
-
-                    $query->where('is_active', $isActive);
-                }),
+                AllowedFilter::scope('is_active'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['semester_number', 'code', 'name', 'created_at'])
             ->defaultSort('semester_number')
-            ->get();
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
-        return $this->success($units);
+        return $this->success(CourseUnitResource::collection($units));
     }
 
     public function store(StoreCourseUnitRequest $request)
     {
-        $unit = CourseUnit::create($request->validated());
+        $unit = DB::transaction(fn() => CourseUnit::create($request->validated()));
 
-        return $this->success($unit->load(['academicProgram', 'courses']), 'Course unit created', Response::HTTP_CREATED);
+        return $this->success(
+            new CourseUnitResource($unit->load(['academicProgram', 'courses'])),
+            'Course unit created',
+            Response::HTTP_CREATED
+        );
     }
 
     public function show(CourseUnit $courseUnit)
     {
-        return $this->success($courseUnit->load(['academicProgram', 'courses']));
+        return $this->success(new CourseUnitResource($courseUnit->load(['academicProgram', 'courses'])));
     }
 
     public function update(UpdateCourseUnitRequest $request, CourseUnit $courseUnit)
     {
-        $courseUnit->update($request->validated());
+        DB::transaction(fn() => $courseUnit->update($request->validated()));
 
-        return $this->success($courseUnit->refresh()->load(['academicProgram', 'courses']), 'Course unit updated');
+        return $this->success(
+            new CourseUnitResource($courseUnit->refresh()->load(['academicProgram', 'courses'])),
+            'Course unit updated'
+        );
     }
 
     public function destroy(CourseUnit $courseUnit)
     {
-        $courseUnit->delete();
+        DB::transaction(fn() => $courseUnit->delete());
 
         return $this->success(null, 'Course unit deleted');
     }

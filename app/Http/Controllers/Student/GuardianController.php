@@ -9,6 +9,7 @@ use App\Models\Guardian;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -21,10 +22,10 @@ class GuardianController extends BaseApiController
             return;
         }
 
-        $this->middleware('permission:students.view')->only(['index', 'show']);
-        $this->middleware('permission:students.create')->only('store');
-        $this->middleware('permission:students.update')->only('update');
-        $this->middleware('permission:students.delete')->only('destroy');
+        $this->middleware('permission:guardians.view')->only(['index', 'show']);
+        $this->middleware('permission:guardians.create')->only('store');
+        $this->middleware('permission:guardians.update')->only('update');
+        $this->middleware('permission:guardians.delete')->only('destroy');
     }
 
     /**
@@ -50,7 +51,9 @@ class GuardianController extends BaseApiController
     public function store(StoreGuardianRequest $request, Student $student): JsonResponse
     {
         try {
-            $guardian = $student->guardians()->create($request->validated());
+            $guardian = DB::transaction(function () use ($request, $student) {
+                return $student->guardians()->create($request->validated());
+            });
 
             return $this->success(
                 $guardian,
@@ -89,7 +92,9 @@ class GuardianController extends BaseApiController
         }
 
         try {
-            $guardian->update($request->validated());
+            DB::transaction(function () use ($guardian, $request) {
+                $guardian->update($request->validated());
+            });
 
             return $this->success(
                 $guardian,
@@ -111,7 +116,9 @@ class GuardianController extends BaseApiController
         }
 
         try {
-            $guardian->delete();
+            DB::transaction(function () use ($guardian) {
+                $guardian->delete();
+            });
 
             return $this->success(
                 null,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\SemesterResult;
+use App\Models\Enums\DecisionType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<SemesterResult> */
@@ -13,15 +14,23 @@ class SemesterResultFactory extends Factory
 
     public function definition(): array
     {
+        $decisions = DecisionType::cases();
+        $decision = $decisions[array_rand($decisions)]->value;
+        $creditsEnrolled = $this->faker->randomFloat(2, 24, 36);
+        $semesterAverage = $this->faker->randomFloat(2, 8, 18);
+        $creditsEarned = $semesterAverage >= 10
+            ? $creditsEnrolled
+            : $this->faker->randomFloat(2, $creditsEnrolled * 0.5, $creditsEnrolled * 0.9);
+
         return [
             'student_id' => fn() => \App\Models\Student::factory(),
             'academic_year_id' => fn() => \App\Models\AcademicYear::factory(),
-            'semester' => $this->faker->numberBetween(1, 9999),
-            'total_credits_enrolled' => $this->faker->randomFloat(2, 0, 9999),
-            'total_credits_earned' => $this->faker->randomFloat(2, 0, 9999),
-            'semester_average' => $this->faker->randomFloat(2, 0, 9999),
-            'semester_gpa' => $this->faker->randomFloat(2, 0, 9999),
-            'decision' => $this->faker->sentence(),
+            'semester' => $this->faker->numberBetween(1, 2),
+            'total_credits_enrolled' => $creditsEnrolled,
+            'total_credits_earned' => $creditsEarned,
+            'semester_average' => $semesterAverage,
+            'semester_gpa' => $this->faker->randomFloat(2, 1.0, 4.0),
+            'decision' => $decision,
             'calculated_by' => fn() => \App\Models\User::factory(),
             'calculated_at' => $this->faker->dateTime()->format('Y-m-d H:i:s'),
         ];

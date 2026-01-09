@@ -15,16 +15,33 @@ class CourseFactory extends Factory
 
     public function definition(): array
     {
+        static $sequence = 0;
+        $courses = [
+            ['code' => 'EC-INF-ALG', 'name' => 'Algorithmique et programmation', 'description' => 'Bases de l algorithmique et introduction a la programmation.'],
+            ['code' => 'EC-INF-BDD', 'name' => 'Bases de donnees', 'description' => 'Modelisation relationnelle et SQL.'],
+            ['code' => 'EC-MAT-AN1', 'name' => 'Analyse 1', 'description' => 'Fonctions, limites et derivation.'],
+            ['code' => 'EC-MAT-AL1', 'name' => 'Algebre 1', 'description' => 'Espaces vectoriels et applications lineaires.'],
+            ['code' => 'EC-PHY-MEC', 'name' => 'Mecanique', 'description' => 'Cinématique et dynamique du point.'],
+            ['code' => 'EC-ECO-MICRO', 'name' => 'Microeconomie', 'description' => 'Comportements du consommateur et du producteur.'],
+            ['code' => 'EC-GES-MNG', 'name' => 'Management', 'description' => 'Fondamentaux du management des organisations.'],
+            ['code' => 'EC-DRT-INTRO', 'name' => 'Introduction au droit', 'description' => 'Sources du droit et organisation judiciaire.'],
+            ['code' => 'EC-LSH-LITF', 'name' => 'Litterature francaise', 'description' => 'Panorama des auteurs et courants litteraires.'],
+            ['code' => 'EC-SAN-EPI', 'name' => 'Epidemiologie', 'description' => 'Methodes epidemiologiques de base.'],
+            ['code' => 'EC-COM-ANAL', 'name' => 'Comptabilite analytique', 'description' => 'Calcul des couts et analyse de gestion.'],
+        ];
+        $course = $courses[$sequence % count($courses)];
+        $sequence++;
+
         return [
             'course_unit_id' => CourseUnit::factory(),
-            'code' => strtoupper(fake()->unique()->bothify('EC###')),
-            'name' => fake()->unique()->words(3, true),
-            'description' => fake()->optional()->sentence(),
-            'credits' => fake()->numberBetween(1, 15),
-            'hours_lecture' => fake()->numberBetween(0, 60),
-            'hours_td' => fake()->numberBetween(0, 60),
-            'hours_tp' => fake()->numberBetween(0, 60),
-            'coefficient' => fake()->randomFloat(2, 0.5, 5),
+            'code' => $course['code'],
+            'name' => $course['name'],
+            'description' => $course['description'],
+            'credits' => fake()->numberBetween(2, 6),
+            'hours_lecture' => fake()->numberBetween(15, 45),
+            'hours_td' => fake()->numberBetween(0, 30),
+            'hours_tp' => fake()->numberBetween(0, 30),
+            'coefficient' => fake()->randomFloat(2, 1, 3),
             'prerequisites' => [],
             'is_active' => true,
         ];

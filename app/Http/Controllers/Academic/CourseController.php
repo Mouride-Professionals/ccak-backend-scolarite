@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Academic;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreCourseRequest;
 use App\Http\Requests\Academic\UpdateCourseRequest;
+use App\Http\Resources\Academic\CourseResource;
 use App\Models\Course;
 use App\Models\Grade;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -20,72 +22,57 @@ class CourseController extends BaseApiController
         $this->middleware('permission:courses.create')->only('store');
         $this->middleware('permission:courses.update')->only('update');
         $this->middleware('permission:courses.delete')->only('destroy');
+        $this->middleware('permission:grades.view')->only('grades');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $courses = QueryBuilder::for(Course::query())
             ->with(['courseUnit.academicProgram'])
             ->allowedIncludes(['courseUnit', 'courseUnit.academicProgram'])
             ->allowedFilters([
                 AllowedFilter::exact('course_unit_id'),
-                AllowedFilter::callback('is_active', function ($query, $value) {
-                    $isActive = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                    if ($isActive === null) {
-                        return;
-                    }
-
-                    $query->where('is_active', $isActive);
-                }),
-                AllowedFilter::callback('level', function ($query, $value) {
-                    $level = trim((string) $value);
-                    if ($level === '') {
-                        return;
-                    }
-
-                    $query->whereHas('courseUnit.academicProgram', fn($sub) => $sub->where('level', $level));
-                }),
-                AllowedFilter::callback('search', function ($query, $value) {
-                    $search = trim((string) $value);
-                    if ($search === '') {
-                        return;
-                    }
-
-                    $query->where(function ($subQuery) use ($search) {
-                        $subQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('code', 'like', "%{$search}%");
-                    });
-                }),
+                AllowedFilter::scope('is_active'),
+                AllowedFilter::scope('program_level'),
+                AllowedFilter::scope('search'),
             ])
             ->allowedSorts(['name', 'code', 'credits', 'created_at'])
             ->defaultSort('name')
-            ->get();
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
 
-        return $this->success($courses);
+        return $this->success(CourseResource::collection($courses));
     }
 
     public function store(StoreCourseRequest $request)
     {
-        $course = Course::create($request->validated());
+        $course = DB::transaction(fn() => Course::create($request->validated()));
 
-        return $this->success($course->load(['courseUnit.academicProgram']), 'Course created', Response::HTTP_CREATED);
+        return $this->success(
+            new CourseResource($course->load(['courseUnit.academicProgram'])),
+            'Course created',
+            Response::HTTP_CREATED
+        );
     }
 
     public function show(Course $course)
     {
-        return $this->success($course->load(['courseUnit.academicProgram']));
+        return $this->success(new CourseResource($course->load(['courseUnit.academicProgram'])));
     }
 
     public function update(UpdateCourseRequest $request, Course $course)
     {
-        $course->update($request->validated());
+        DB::transaction(fn() => $course->update($request->validated()));
 
-        return $this->success($course->refresh()->load(['courseUnit.academicProgram']), 'Course updated');
+        return $this->success(
+            new CourseResource($course->refresh()->load(['courseUnit.academicProgram'])),
+            'Course updated'
+        );
     }
 
     public function destroy(Course $course)
     {
-        $course->delete();
+        DB::transaction(fn() => $course->delete());
 
         return $this->success(null, 'Course deleted');
     }
@@ -109,26 +96,21 @@ class CourseController extends BaseApiController
             'sort_by' => 'nullable|string|in:student_name,score,type,status,created_at',
             'sort_direction' => 'nullable|string|in:asc,desc',
             'status' => 'nullable|string|in:DRAFT,SUBMITTED,VALIDATED,PUBLISHED',
+            'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
-        // Build the query for grades
-        $query = Grade::query()
+        $query = QueryBuilder::for(Grade::query())
             ->with(['student', 'courseEnrollment', 'enteredBy'])
-            ->where('course_id', $course->id);
-
-        // Filter by grade type if specified
-        if (!empty($validated['type'])) {
-            $query->where('type', $validated['type']);
-        }
-
-        // Filter by status if specified
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
-        }
+            ->where('course_id', $course->id)
+            ->allowedFilters([
+                AllowedFilter::exact('type'),
+                AllowedFilter::exact('status'),
+            ]);
 
         // Apply sorting
         $sortBy = $validated['sort_by'] ?? 'student_name';
         $sortDirection = $validated['sort_direction'] ?? 'asc';
+        $perPage = $validated['per_page'] ?? 25;
 
         if ($sortBy === 'student_name') {
             $query->join('students', 'grades.student_id', '=', 'students.id')
@@ -138,11 +120,10 @@ class CourseController extends BaseApiController
             $query->orderBy($sortBy, $sortDirection);
         }
 
-        // Get the results
-        $grades = $query->get();
+        $grades = $query->paginate($perPage)->appends($request->query());
 
         // Transform the data for response
-        $gradeData = $grades->map(function ($grade) {
+        $gradeData = collect($grades->items())->map(function ($grade) {
             return [
                 'id' => $grade->id,
                 'student' => [
@@ -186,6 +167,12 @@ class CourseController extends BaseApiController
             ],
             'statistics' => $statistics,
             'grades' => $gradeData,
+            'pagination' => [
+                'current_page' => $grades->currentPage(),
+                'last_page' => $grades->lastPage(),
+                'per_page' => $grades->perPage(),
+                'total' => $grades->total(),
+            ],
         ], 'Course grades retrieved successfully');
     }
 

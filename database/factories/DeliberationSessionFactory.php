@@ -19,6 +19,8 @@ class DeliberationSessionFactory extends Factory
         $semester = $this->faker->numberBetween(1, 2);
         $sessionTypes = ['Normale', 'Rattrapage', 'Extraordinaire'];
         $levels = ['L1', 'L2', 'L3', 'M1', 'M2'];
+        $sessionType = $sessionTypes[array_rand($sessionTypes)];
+        $level = $levels[array_rand($levels)];
 
         return [
             'id' => Str::uuid()->toString(),
@@ -27,9 +29,9 @@ class DeliberationSessionFactory extends Factory
             'semester' => $semester,
             'session_name' => sprintf(
                 'Jury %s S%d - Session %s',
-                $this->faker->randomElement($levels),
+                $level,
                 $semester,
-                $this->faker->randomElement($sessionTypes)
+                $sessionType
             ),
             'session_date' => $this->faker->dateTimeBetween('-3 months', '+3 months'),
             'status' => $this->faker->randomElement(DeliberationSession::getStatuses()),

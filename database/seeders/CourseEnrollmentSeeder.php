@@ -55,11 +55,13 @@ class CourseEnrollmentSeeder extends Seeder
 
                 CourseEnrollment::firstOrCreate(
                     [
+                        'student_id' => $enrollment->student_id,
                         'enrollment_id' => $enrollment->id,
                         'course_id' => $course->id,
                         'academic_year_id' => $enrollment->academic_year_id,
                     ],
                     [
+                        'student_id' => $enrollment->student_id,
                         'semester' => $semester,
                         'status' => $status,
                         'enrollment_date' => $enrollmentDate->toDateString(),

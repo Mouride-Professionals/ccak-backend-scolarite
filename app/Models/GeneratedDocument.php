@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -28,7 +29,16 @@ class GeneratedDocument extends Model
 
     protected $table = 'generated_documents';
 
-    protected $fillable = ['student_id', 'type', 'document_number', 'file_path', 'generated_by', 'metadata', 'generated_at', 'issued_at', 'status',
+    protected $fillable = [
+        'student_id',
+        'type',
+        'document_number',
+        'file_path',
+        'generated_by',
+        'metadata',
+        'generated_at',
+        'issued_at',
+        'status',
     ];
 
     protected $casts = [
@@ -87,8 +97,20 @@ class GeneratedDocument extends Model
         return $studentId ? $query->where('student_id', $studentId) : $query;
     }
 
-    public function scopeFilterByDateRange(Builder $query, ?string $from, ?string $to): Builder
+    public function scopeFilterByDateRange(Builder $query, mixed $value): Builder
     {
+        $from = null;
+        $to = null;
+
+        if (is_array($value)) {
+            $from = $value['from'] ?? $value[0] ?? null;
+            $to = $value['to'] ?? $value[1] ?? null;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            [$from, $to] = array_map('trim', explode(',', $value, 2));
+        } elseif (is_string($value)) {
+            $from = $value;
+        }
+
         if ($from) {
             $query->whereDate('generated_at', '>=', $from);
         }
@@ -98,6 +120,21 @@ class GeneratedDocument extends Model
         }
 
         return $query;
+    }
+
+    public function scopeGeneratedBetween(Builder $query, mixed $value): Builder
+    {
+        return $this->scopeFilterByDateRange($query, $value);
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where('document_number', 'like', "%{$term}%");
     }
 
     public function scopeIssued(Builder $query): Builder

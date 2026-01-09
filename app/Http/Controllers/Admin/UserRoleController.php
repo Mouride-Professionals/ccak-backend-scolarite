@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Roles\AssignUserRolesRequest;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class UserRoleController extends BaseApiController
 {
@@ -17,7 +18,7 @@ class UserRoleController extends BaseApiController
     {
         $roles = $request->validated()['roles'] ?? [];
 
-        $user->syncRoles($roles);
+        DB::transaction(fn() => $user->syncRoles($roles));
 
         return $this->success($user->load('roles'), 'User roles updated');
     }

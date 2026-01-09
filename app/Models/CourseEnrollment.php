@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuidV7;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -152,5 +153,55 @@ class CourseEnrollment extends Model
             'max' => $maxCapacity,
             'remaining' => max(0, $maxCapacity - $currentEnrollments),
         ];
+    }
+
+    public function scopeEnrollmentDateBetween(Builder $query, mixed $value): Builder
+    {
+        $from = null;
+        $to = null;
+
+        if (is_array($value)) {
+            $from = $value['from'] ?? $value[0] ?? null;
+            $to = $value['to'] ?? $value[1] ?? null;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            [$from, $to] = array_map('trim', explode(',', $value, 2));
+        } elseif (is_string($value)) {
+            $from = $value;
+        }
+
+        if ($from) {
+            $query->whereDate('enrollment_date', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('enrollment_date', '<=', $to);
+        }
+
+        return $query;
+    }
+
+    public function scopeDropDateBetween(Builder $query, mixed $value): Builder
+    {
+        $from = null;
+        $to = null;
+
+        if (is_array($value)) {
+            $from = $value['from'] ?? $value[0] ?? null;
+            $to = $value['to'] ?? $value[1] ?? null;
+        } elseif (is_string($value) && str_contains($value, ',')) {
+            [$from, $to] = array_map('trim', explode(',', $value, 2));
+        } elseif (is_string($value)) {
+            $from = $value;
+        }
+
+        if ($from) {
+            $query->whereDate('drop_date', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('drop_date', '<=', $to);
+        }
+
+        return $query;
     }
 }

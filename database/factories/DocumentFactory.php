@@ -21,11 +21,26 @@ class DocumentFactory extends Factory
      */
     public function definition(): array
     {
+        static $sequence = 1;
+        $type = $this->faker->randomElement(DocumentType::values());
+        $baseNames = [
+            DocumentType::CNI->value => 'carte_identite',
+            DocumentType::BIRTH_CERT->value => 'acte_naissance',
+            DocumentType::BAC_DIPLOMA->value => 'diplome_bac',
+            DocumentType::TRANSCRIPT->value => 'releve_notes',
+            DocumentType::PHOTO->value => 'photo_identite',
+            DocumentType::MEDICAL->value => 'certificat_medical',
+            DocumentType::ATTESTATION->value => 'attestation',
+        ];
+        $baseName = $baseNames[$type] ?? 'document';
+        $number = str_pad((string) $sequence++, 4, '0', STR_PAD_LEFT);
+        $fileName = $baseName . '_' . $number . '.pdf';
+
         return [
             'student_id' => Student::factory(),
-            'type' => $this->faker->randomElement(DocumentType::values()),
-            'file_path' => 'documents/' . $this->faker->uuid() . '.pdf',
-            'file_name' => $this->faker->word() . '.pdf',
+            'type' => $type,
+            'file_path' => 'documents/' . strtolower($type) . '/' . $fileName,
+            'file_name' => $fileName,
             'status' => DocumentStatus::PENDING->value,
             'uploaded_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
         ];

@@ -15,25 +15,24 @@ class GeneratedDocumentFactory extends Factory
 
     public function definition(): array
     {
-        $student = Student::factory()->create();
+        static $sequence = 1;
+        $types = GeneratedDocument::getTypes();
+        $type = $types[array_rand($types)];
+        $year = date('Y');
+        $number = str_pad((string) $sequence++, 5, '0', STR_PAD_LEFT);
+        $documentNumber = 'UCAK-' . $year . '-' . $number;
 
         return [
             'id' => $this->faker->uuid(),
-            'student_id' => $student->id,
-            'type' => $this->faker->randomElement([
-                'TRANSCRIPT',
-                'CERTIFICATE',
-                'ATTESTATION',
-                'ID_CARD',
-                'DIPLOMA',
-            ]),
-            'document_number' => $this->faker->sentence(),
-            'file_path' => $this->faker->filePath(),
+            'student_id' => Student::factory(),
+            'type' => $type,
+            'document_number' => $documentNumber,
+            'file_path' => 'generated/' . strtolower($type) . '/' . $documentNumber . '.pdf',
             'generated_by' => User::factory(),
             'metadata' => [],
             'generated_at' => $this->faker->dateTime()->format('Y-m-d H:i:s'),
             'issued_at' => $this->faker->dateTime()->format('Y-m-d H:i:s'),
-            'status' => $this->faker->randomElement(['DRAFT', 'ISSUED', 'REVOKED']),
+            'status' => GeneratedDocument::getStatuses()[array_rand(GeneratedDocument::getStatuses())],
             'created_at' => now(),
             'updated_at' => now(),
         ];

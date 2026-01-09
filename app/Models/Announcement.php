@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -87,10 +88,23 @@ class Announcement extends Model
         });
     }
 
-    public function scopeNotDismissedBy($query, int $userId)
+    public function scopeNotDismissedBy($query, string $userId)
     {
         return $query->whereDoesntHave('dismissedBy', function ($q) use ($userId) {
             $q->where('user_id', $userId);
+        });
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('title', 'ilike', "%{$term}%")
+                ->orWhere('content', 'ilike', "%{$term}%");
         });
     }
 
@@ -115,7 +129,7 @@ class Announcement extends Model
         ]);
     }
 
-    public function dismissFor(int $userId): void
+    public function dismissFor(string $userId): void
     {
         $this->dismissedBy()->attach($userId, [
             'dismissed_at' => now(),

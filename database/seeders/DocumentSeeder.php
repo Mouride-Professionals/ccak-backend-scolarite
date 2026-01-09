@@ -30,6 +30,10 @@ class DocumentSeeder extends Seeder
 
         $reviewers = Admin::all();
         if ($reviewers->isEmpty()) {
+            $this->call(AdminSeeder::class);
+            $reviewers = Admin::all();
+        }
+        if ($reviewers->isEmpty()) {
             $reviewerUser = User::factory()->create([
                 'email' => 'admin.seed@ucak.sn',
                 'email_verified_at' => Carbon::now('Africa/Dakar'),

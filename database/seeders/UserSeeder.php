@@ -28,6 +28,7 @@ class UserSeeder extends Seeder
                 $verifiedAt = $createdAt->copy()->addDays(rand(0, 7));
 
                 return [
+                    'email' => fake()->unique()->userName() . '@ucak.sn',
                     'email_verified_at' => $verifiedAt,
                     'created_at' => $createdAt,
                     'updated_at' => $verifiedAt->copy()->addDays(rand(0, 30)),

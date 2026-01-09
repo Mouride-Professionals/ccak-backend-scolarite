@@ -47,6 +47,42 @@ class Course extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeIsActive(Builder $query, mixed $value = true): Builder
+    {
+        $isActive = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($isActive === null) {
+            return $query;
+        }
+
+        return $query->where('is_active', $isActive);
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('name', 'like', "%{$term}%")
+                ->orWhere('code', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopeProgramLevel(Builder $query, string $level): Builder
+    {
+        $level = trim($level);
+        if ($level === '') {
+            return $query;
+        }
+
+        return $query->whereHas('courseUnit.academicProgram', function (Builder $sub) use ($level): void {
+            $sub->where('level', $level);
+        });
+    }
+
     public function getPrerequisitesAttribute($value): array
     {
         return is_array($value) ? $value : (json_decode($value, true) ?: []);

@@ -18,14 +18,37 @@ class GuardianFactory extends Factory
      */
     public function definition(): array
     {
+        $maleFirstNames = ['Mamadou', 'Abdou', 'Cheikh', 'Ousmane', 'Ibrahima', 'Moussa', 'Alioune', 'Babacar'];
+        $femaleFirstNames = ['Aminata', 'Aissatou', 'Fatou', 'Khadija', 'Mariama', 'Coumba', 'Sokhna', 'Rama'];
+        $lastNames = ['Ndiaye', 'Diop', 'Ba', 'Sow', 'Fall', 'Gueye', 'Cisse', 'Seck', 'Sy', 'Sarr'];
+        $cities = ['Dakar', 'Pikine', 'Thies', 'Mbour', 'Saint-Louis', 'Kaolack', 'Ziguinchor', 'Diourbel'];
+        $occupations = [
+            'Commercant',
+            'Enseignant',
+            'Infirmier',
+            'Agent administratif',
+            'Chauffeur',
+            'Artisan',
+            'Agriculteur',
+            'Entrepreneur',
+            'Technicien',
+        ];
+        $gender = $this->faker->randomElement(['M', 'F']);
+        $firstName = $gender === 'F'
+            ? $this->faker->randomElement($femaleFirstNames)
+            : $this->faker->randomElement($maleFirstNames);
+        $fullName = $firstName . ' ' . $this->faker->randomElement($lastNames);
+        $email = strtolower(str_replace(' ', '.', $fullName)) . '@example.sn';
+        $phonePrefix = $this->faker->randomElement(['70', '75', '76', '77', '78']);
+
         return [
             'student_id' => Student::factory(),
-            'full_name' => $this->faker->name(),
+            'full_name' => $fullName,
             'relationship' => $this->faker->randomElement(['FATHER', 'MOTHER', 'GUARDIAN']),
-            'phone' => $this->faker->phoneNumber(),
-            'email' => $this->faker->email(),
-            'address' => $this->faker->address(),
-            'occupation' => $this->faker->jobTitle(),
+            'phone' => $phonePrefix . sprintf('%07d', rand(0, 9999999)),
+            'email' => $email,
+            'address' => $this->faker->randomElement($cities) . ', Senegal',
+            'occupation' => $this->faker->randomElement($occupations),
         ];
     }
 

@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers\Academic;
 
-use Illuminate\Http\Request;
 use App\Services\DeliberationResultService;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseApiController;
+use App\Http\Requests\Academic\StoreDeliberationResultRequest;
+use App\Http\Requests\Academic\UpdateDeliberationResultRequest;
+use App\Http\Resources\Academic\DeliberationResultResource;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+use App\Models\DeliberationResult;
 
-class DeliberationResultController extends Controller
+class DeliberationResultController extends BaseApiController
 {
     public function __construct(
         protected DeliberationResultService $service)
@@ -20,44 +26,58 @@ class DeliberationResultController extends Controller
 
     public function index()
     {
-        return response()->json($this->service->getAll());
+        $results = QueryBuilder::for(DeliberationResult::query())
+            ->with(['student', 'deliberationSession'])
+            ->allowedIncludes(['student', 'deliberationSession'])
+            ->allowedFilters([
+                AllowedFilter::exact('student_id'),
+                AllowedFilter::exact('deliberation_session_id'),
+                AllowedFilter::exact('decision'),
+                AllowedFilter::exact('is_with_honors'),
+            ])
+            ->allowedSorts(['created_at'])
+            ->defaultSort('-created_at')
+            ->paginate(request()->integer('per_page') ?? 15)
+            ->appends(request()->query());
+
+        return $this->success(
+            DeliberationResultResource::collection($results),
+            'Deliberation results retrieved successfully'
+        );
     }
 
-    public function store(Request $request)
+    public function store(StoreDeliberationResultRequest $request)
     {
-        $data = $request->validate([
-            'deliberation_session_id' => 'required|uuid',
-            'student_id' => 'required|uuid',
-            'decision' => 'required|string',
-            'is_with_honors' => 'sometimes|boolean',
-        ]);
+        $result = DB::transaction(fn() => $this->service->create($request->validated()));
 
-        $result = $this->service->create($data);
-
-        return response()->json($result, 201);
+        return $this->success(
+            new DeliberationResultResource($result),
+            'Deliberation result created',
+            201
+        );
     }
 
     public function show($id)
     {
         $result = $this->service->getById($id);
-        return $result ? response()->json($result) : response()->json(['message' => 'Not found'], 404);
+        return $result
+            ? $this->success(new DeliberationResultResource($result))
+            : $this->error('Not found', 404);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateDeliberationResultRequest $request, $id)
     {
-        $data = $request->only([
-            'decision', 'is_with_honors'
-        ]);
+        $result = DB::transaction(fn() => $this->service->update($id, $request->validated()));
 
-        $result = $this->service->update($id, $data);
-
-        return $result ? response()->json($result) : response()->json(['message' => 'Not found'], 404);
+        return $result
+            ? $this->success(new DeliberationResultResource($result))
+            : $this->error('Not found', 404);
     }
 
     public function destroy($id)
     {
         return $this->service->delete($id)
-            ? response()->json(['message' => 'Deleted'])
-            : response()->json(['message' => 'Not found'], 404);
+            ? $this->success(null, 'Deleted')
+            : $this->error('Not found', 404);
     }
 }

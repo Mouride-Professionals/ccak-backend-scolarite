@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuidV7;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -65,5 +66,28 @@ class Department extends Model
         }
 
         return $data;
+    }
+
+    public function scopeIsActive(Builder $query, mixed $value = true): Builder
+    {
+        $isActive = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($isActive === null) {
+            return $query;
+        }
+
+        return $query->where('is_active', $isActive);
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $sub) use ($term): void {
+            $sub->where('name', 'like', "%{$term}%")
+                ->orWhere('code', 'like', "%{$term}%");
+        });
     }
 }

@@ -2,33 +2,52 @@
 
 namespace App\Http\Controllers\Notification;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Notification\StoreAnnouncementRequest;
 use App\Http\Requests\Notification\UpdateAnnouncementRequest;
 use App\Http\Resources\AnnouncementResource;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
-class AnnouncementController extends Controller
+class AnnouncementController extends BaseApiController
 {
+    public function __construct()
+    {
+        $this->middleware('permission:announcements.view')->only(['index', 'show']);
+        $this->middleware('permission:announcements.create')->only('store');
+        $this->middleware('permission:announcements.update')->only(['update', 'publish']);
+        $this->middleware('permission:announcements.delete')->only('destroy');
+    }
+
     /**
      * NOT-012: Get announcements
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
-        $query = Announcement::query()
+        $announcements = QueryBuilder::for(Announcement::query())
             ->with('creator:id,name,email')
             ->active()
             ->forUser($request->user())
             ->notDismissedBy($request->user()->id)
-            ->orderBy('priority', 'desc')
-            ->orderBy('created_at', 'desc');
+            ->allowedFilters([
+                AllowedFilter::exact('priority'),
+                AllowedFilter::exact('target_audience'),
+                AllowedFilter::exact('is_draft'),
+                AllowedFilter::scope('search'),
+            ])
+            ->allowedSorts(['priority', 'created_at'])
+            ->defaultSort(['-priority', '-created_at'])
+            ->paginate($request->get('per_page', 10))
+            ->appends($request->query());
 
-        $announcements = $query->paginate($request->get('per_page', 10));
-
-        return AnnouncementResource::collection($announcements);
+        return $this->success(
+            AnnouncementResource::collection($announcements),
+            'Annonces récupérées avec succès'
+        );
     }
 
     /**
@@ -36,21 +55,24 @@ class AnnouncementController extends Controller
      */
     public function store(StoreAnnouncementRequest $request): JsonResponse
     {
-        $announcement = Announcement::create([
-            'creator_id' => $request->user()->id,
-            'title' => $request->title,
-            'content' => $request->content,
-            'priority' => $request->priority ?? 'medium',
-            'target_audience' => $request->target_audience,
-            'publish_at' => $request->publish_at,
-            'expire_at' => $request->expire_at,
-            'is_draft' => $request->is_draft ?? true,
-        ]);
+        $announcement = DB::transaction(function () use ($request) {
+            return Announcement::create([
+                'creator_id' => $request->user()->id,
+                'title' => $request->title,
+                'content' => $request->content,
+                'priority' => $request->priority ?? 'medium',
+                'target_audience' => $request->target_audience,
+                'publish_at' => $request->publish_at,
+                'expire_at' => $request->expire_at,
+                'is_draft' => $request->is_draft ?? true,
+            ]);
+        });
 
-        return response()->json([
-            'message' => 'Annonce créée avec succès',
-            'announcement' => new AnnouncementResource($announcement->load('creator')),
-        ], 201);
+        return $this->success(
+            new AnnouncementResource($announcement->load('creator')),
+            'Annonce créée avec succès',
+            201
+        );
     }
 
     /**
@@ -60,9 +82,7 @@ class AnnouncementController extends Controller
     {
         $announcement = Announcement::with('creator')->findOrFail($id);
 
-        return response()->json([
-            'announcement' => new AnnouncementResource($announcement),
-        ]);
+        return $this->success(new AnnouncementResource($announcement));
     }
 
     /**
@@ -72,12 +92,12 @@ class AnnouncementController extends Controller
     {
         $announcement = Announcement::findOrFail($id);
 
-        $announcement->update($request->validated());
+        DB::transaction(fn() => $announcement->update($request->validated()));
 
-        return response()->json([
-            'message' => 'Annonce mise à jour',
-            'announcement' => new AnnouncementResource($announcement->fresh('creator')),
-        ]);
+        return $this->success(
+            new AnnouncementResource($announcement->fresh('creator')),
+            'Annonce mise à jour'
+        );
     }
 
     /**
@@ -86,11 +106,9 @@ class AnnouncementController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $announcement = Announcement::findOrFail($id);
-        $announcement->delete();
+        DB::transaction(fn() => $announcement->delete());
 
-        return response()->json([
-            'message' => 'Annonce supprimée',
-        ]);
+        return $this->success(null, 'Annonce supprimée');
     }
 
     /**
@@ -99,11 +117,9 @@ class AnnouncementController extends Controller
     public function dismiss(string $id, Request $request): JsonResponse
     {
         $announcement = Announcement::findOrFail($id);
-        $announcement->dismissFor($request->user()->id);
+        DB::transaction(fn() => $announcement->dismissFor($request->user()->id));
 
-        return response()->json([
-            'message' => 'Annonce masquée',
-        ]);
+        return $this->success(null, 'Annonce masquée');
     }
 
     /**
@@ -112,11 +128,11 @@ class AnnouncementController extends Controller
     public function publish(string $id): JsonResponse
     {
         $announcement = Announcement::findOrFail($id);
-        $announcement->publish();
+        DB::transaction(fn() => $announcement->publish());
 
-        return response()->json([
-            'message' => 'Annonce publiée',
-            'announcement' => new AnnouncementResource($announcement->fresh()),
-        ]);
+        return $this->success(
+            new AnnouncementResource($announcement->fresh()),
+            'Annonce publiée'
+        );
     }
 }

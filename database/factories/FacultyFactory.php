@@ -14,9 +14,20 @@ class FacultyFactory extends Factory
 
     public function definition(): array
     {
+        static $sequence = 0;
+        $faculties = [
+            ['code' => 'FST', 'name' => 'Faculte des Sciences et Technologies'],
+            ['code' => 'FLSH', 'name' => 'Faculte des Lettres et Sciences Humaines'],
+            ['code' => 'FSJP', 'name' => 'Faculte des Sciences Juridiques et Politiques'],
+            ['code' => 'FSEG', 'name' => 'Faculte des Sciences Economiques et de Gestion'],
+            ['code' => 'FSS', 'name' => 'Faculte des Sciences de la Sante'],
+        ];
+        $faculty = $faculties[$sequence % count($faculties)];
+        $sequence++;
+
         return [
-            'name' => fake()->unique()->company(),
-            'code' => strtoupper(fake()->unique()->bothify('FAC###')),
+            'name' => $faculty['name'],
+            'code' => $faculty['code'],
             'dean_id' => null,
             'is_active' => true,
         ];
