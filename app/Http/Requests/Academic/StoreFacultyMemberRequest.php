@@ -14,8 +14,10 @@ class StoreFacultyMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['nullable', 'uuid', 'exists:users,id'],
-            'staff_number' => ['required', 'string', 'max:50', 'unique:faculty_members,staff_number'],
+            'user_id' => ['nullable', 'uuid', 'exists:users,id', 'required_without:email'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email', 'required_without:user_id'],
+            'keycloak_id' => ['nullable', 'string', 'max:255'],
+            'staff_number' => ['nullable', 'string', 'max:50', 'unique:faculty_members,staff_number'],
             'full_name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],

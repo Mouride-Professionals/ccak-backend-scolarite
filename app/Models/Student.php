@@ -94,6 +94,11 @@ class Student extends Model
     {
         return $this->hasMany(Document::class);
     }
+
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class, 'student_id');
+    }
     public function grades(): HasMany
     {
         return $this->hasMany(\App\Models\Grade::class, 'student_id');

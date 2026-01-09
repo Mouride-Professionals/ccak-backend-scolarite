@@ -3,6 +3,9 @@
 namespace App\Http\Resources\Academic;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Academic\TeachingAssignmentResource;
+use App\Http\Resources\Academic\FacultyDocumentResource;
+use App\Http\Resources\Academic\FacultyContractResource;
 
 class FacultyMemberResource extends JsonResource
 {
@@ -31,6 +34,15 @@ class FacultyMemberResource extends JsonResource
                     'id' => $this->user->id,
                     'email' => $this->user->email,
                 ];
+            }),
+            'assignments' => $this->whenLoaded('teachingAssignments', function () {
+                return TeachingAssignmentResource::collection($this->teachingAssignments);
+            }),
+            'documents' => $this->whenLoaded('documents', function () {
+                return FacultyDocumentResource::collection($this->documents);
+            }),
+            'contracts' => $this->whenLoaded('contracts', function () {
+                return FacultyContractResource::collection($this->contracts);
             }),
         ];
     }
