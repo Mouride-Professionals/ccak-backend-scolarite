@@ -164,6 +164,8 @@ Route::middleware('auth:api')->group(function () {
                 ->name('documents.download.file');
 
             // Review (approbation/rejet)
+            Route::put('/review', [DocumentController::class, 'review'])
+                ->name('documents.review');
             Route::post('/approve', [DocumentController::class, 'approve'])
                 ->name('documents.approve');
             Route::post('/reject', [DocumentController::class, 'reject'])
@@ -172,6 +174,10 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // Student area
+    Route::get('students/{student}/documents', [DocumentController::class, 'studentIndex']);
+    Route::post('students/{student}/documents', [DocumentController::class, 'studentStore']);
+    Route::get('students/{student}/documents/{document}', [DocumentController::class, 'studentShow']);
+
     Route::apiResource('students', StudentController::class);
 
     // Nested guardians for students: /api/v1/students/{student}/guardians

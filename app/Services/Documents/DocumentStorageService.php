@@ -21,13 +21,13 @@ class DocumentStorageService
     ];
     private const BASE_PATH = 'student_documents';
 
-    private string $disk;
+    private ?string $disk;
     private string $basePath;
 
     public function __construct(?string $disk = null, ?string $basePath = null)
     {
-        $this->disk = $disk ?? self::DISK;
-        $this->basePath = $basePath ?? self::BASE_PATH;
+        $this->disk = $disk;
+        $this->basePath = $basePath ?? config('documents.storage.base_path', self::BASE_PATH);
     }
 
     public function storeDocument(
@@ -41,7 +41,7 @@ class DocumentStorageService
         $filename = $this->generateFilename($documentNumber, $format);
         $path = $this->getStoragePath($documentType, $studentId, $filename);
 
-        Storage::disk(self::DISK)->put($path, $content);
+        Storage::disk($this->resolveDisk())->put($path, $content);
 
         return $path;
     }
@@ -52,7 +52,7 @@ class DocumentStorageService
             throw new RuntimeException("Le fichier n'existe pas: $filePath");
         }
 
-        return Storage::disk(self::DISK)->get($filePath);
+        return Storage::disk($this->resolveDisk())->get($filePath);
     }
 
     public function downloadDocument(string $filePath, string $downloadName): StreamedResponse
@@ -63,7 +63,7 @@ class DocumentStorageService
 
         $extension = pathinfo($filePath, PATHINFO_EXTENSION);
 
-        return Storage::disk(self::DISK)->download(
+        return Storage::disk($this->resolveDisk())->download(
             $filePath,
             $this->sanitizeFilename($downloadName . '.' . $extension)
         );
@@ -71,7 +71,7 @@ class DocumentStorageService
 
     public function documentExists(string $filePath): bool
     {
-        return Storage::disk(self::DISK)->exists($filePath);
+        return Storage::disk($this->resolveDisk())->exists($filePath);
     }
 
     private function generateFilename(string $documentNumber, string $format): string
@@ -109,7 +109,7 @@ class DocumentStorageService
             'path' => $path,
             'original_name' => $originalName,
             'file_name' => $fileName,
-            'full_path' => Storage::disk($this->disk)->path($path),
+            'full_path' => Storage::disk($this->resolveDisk())->path($path),
             'directory' => dirname($path),
         ];
     }
@@ -122,12 +122,12 @@ class DocumentStorageService
         $directory = dirname($path);
 
         // Créer le répertoire s'il n'existe pas
-        if (!Storage::disk($this->disk)->exists($directory)) {
-            Storage::disk($this->disk)->makeDirectory($directory);
+        if (!Storage::disk($this->resolveDisk())->exists($directory)) {
+            Storage::disk($this->resolveDisk())->makeDirectory($directory);
         }
 
         // Stocker le fichier
-        $stored = Storage::disk($this->disk)->putFileAs(
+        $stored = Storage::disk($this->resolveDisk())->putFileAs(
             $directory,
             $file,
             basename($path)
@@ -149,7 +149,7 @@ class DocumentStorageService
             throw new \RuntimeException("Le fichier n'existe pas: {$path}");
         }
 
-        return Storage::disk($this->disk)->get($path);
+        return Storage::disk($this->resolveDisk())->get($path);
     }
 
     /**
@@ -157,7 +157,7 @@ class DocumentStorageService
      */
     public function exists(string $path): bool
     {
-        return Storage::disk($this->disk)->exists($path);
+        return Storage::disk($this->resolveDisk())->exists($path);
     }
 
     /**
@@ -166,7 +166,7 @@ class DocumentStorageService
     public function delete(string $path): bool
     {
         if ($this->exists($path)) {
-            return Storage::disk($this->disk)->delete($path);
+            return Storage::disk($this->resolveDisk())->delete($path);
         }
 
         return false;
@@ -181,7 +181,7 @@ class DocumentStorageService
             return null;
         }
 
-        return Storage::disk($this->disk)->mimeType($path);
+        return Storage::disk($this->resolveDisk())->mimeType($path);
     }
 
     /**
@@ -193,7 +193,7 @@ class DocumentStorageService
             return null;
         }
 
-        return Storage::disk($this->disk)->size($path);
+        return Storage::disk($this->resolveDisk())->size($path);
     }
 
     /**
@@ -206,7 +206,7 @@ class DocumentStorageService
         }
 
         if (config('documents.storage.generate_urls', false)) {
-            return Storage::disk($this->disk)->url($path);
+            return Storage::disk($this->resolveDisk())->url($path);
         }
 
         return null;
@@ -244,18 +244,18 @@ class DocumentStorageService
     /** @return array<string, mixed> */
     public function cleanupOrphanedFiles(int $olderThanDays = 30): array
     {
-        $allFiles = Storage::disk($this->disk)->allFiles($this->basePath);
+        $allFiles = Storage::disk($this->resolveDisk())->allFiles($this->basePath);
         $documents = Document::pluck('file_path')->toArray();
 
         $orphaned = array_diff($allFiles, $documents);
         $deleted = [];
 
         foreach ($orphaned as $file) {
-            $lastModified = Storage::disk($this->disk)->lastModified($file);
+            $lastModified = Storage::disk($this->resolveDisk())->lastModified($file);
             $ageInDays = (time() - $lastModified) / (60 * 60 * 24);
 
             if ($ageInDays > $olderThanDays) {
-                if (Storage::disk($this->disk)->delete($file)) {
+                if (Storage::disk($this->resolveDisk())->delete($file)) {
                     $deleted[] = $file;
                 }
             }
@@ -267,5 +267,10 @@ class DocumentStorageService
             'deleted' => count($deleted),
             'deleted_files' => $deleted,
         ];
+    }
+
+    private function resolveDisk(): string
+    {
+        return $this->disk ?? config('documents.storage.disk', self::DISK);
     }
 }

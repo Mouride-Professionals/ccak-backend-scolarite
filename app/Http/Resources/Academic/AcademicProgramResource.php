@@ -10,6 +10,7 @@ class AcademicProgramResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'department_id' => $this->department_id,
             'name' => $this->name,
             'level' => $this->level,
             'duration_semesters' => $this->duration_semesters,

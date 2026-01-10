@@ -19,8 +19,10 @@ use App\Services\SemesterResultCalculationService;
 use App\Services\GradeCalculationService;
 use App\Repositories\SemesterResultRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class SemesterResultCalculationServiceTest extends TestCase
 {
@@ -54,7 +56,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->admin = User::create([
             'email' => 'admin@test.com',
             'password' => 'password',
-            'keycloak_id' => 'admin-123',
+            'keycloak_id' => Str::uuid()->toString(),
             'is_active' => true,
         ]);
         $this->admin->assignRole('ADMIN');
@@ -121,7 +123,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_semester_results_successfully()
     {
         // Create course enrollments
@@ -176,7 +178,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(5, $semesterResult->total_credits_earned);    // Both courses passed
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_student_result_with_compensation()
     {
         // Create course enrollments
@@ -221,7 +223,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(5, $result->total_credits_earned); // Both courses credited through compensation
     }
 
-    /** @test */
+    #[Test]
     public function it_determines_failed_decision_correctly()
     {
         $enrollment1 = $this->createCourseEnrollment($this->course1);
@@ -265,7 +267,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result->total_credits_earned); // No credits earned
     }
 
-    /** @test */
+    #[Test]
     public function it_determines_resit_required_correctly()
     {
         $enrollment1 = $this->createCourseEnrollment($this->course1);
@@ -307,7 +309,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(DecisionType::RESIT_REQUIRED, $result->decision);
     }
 
-    /** @test */
+    #[Test]
     public function it_updates_existing_semester_result()
     {
         $enrollment = $this->createCourseEnrollment($this->course1);
@@ -346,7 +348,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals($initialId, $updatedResult->id);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_semester_statistics_correctly()
     {
         // Create multiple students with different results
@@ -394,7 +396,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(12.25, $statistics['average_semester_average']); // (15.0 + 9.5) / 2
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_no_students_case()
     {
         $result = $this->service->calculateSemesterResults(
@@ -409,7 +411,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result['data']['results_created']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_statistics_for_no_results()
     {
         $statistics = $this->service->getSemesterStatistics($this->academicYear->id, 1);
@@ -420,7 +422,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(0, $statistics['average_semester_average']);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_credits_earned_correctly_for_compensation()
     {
         // This tests the private method through public interface

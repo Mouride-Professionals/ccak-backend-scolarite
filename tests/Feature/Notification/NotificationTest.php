@@ -5,6 +5,7 @@ namespace Tests\Feature\Notification;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
@@ -27,7 +28,7 @@ class NotificationTest extends TestCase
         $this->admin->assignRole('ADMIN');
     }
 
-    /** @test */
+    #[Test]
     public function user_can_get_their_notifications()
     {
         // Create notifications for the user
@@ -41,25 +42,22 @@ class NotificationTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'data' => [
-                    '*' => [
-                        'id',
-                        'title',
-                        'message',
-                        'type',
-                        'is_read',
-                        'created_at',
+                    'data' => [
+                        '*' => [
+                            'id',
+                            'title',
+                            'message',
+                            'type',
+                            'is_read',
+                            'created_at',
+                        ],
                     ],
                 ],
-                'meta' => [
-                    'current_page',
-                    'per_page',
-                    'total',
-                ],
             ])
-            ->assertJsonCount(3, 'data');
+            ->assertJsonCount(3, 'data.data');
     }
 
-    /** @test */
+    #[Test]
     public function user_can_filter_notifications_by_type()
     {
         Notification::factory()->create([
@@ -75,11 +73,11 @@ class NotificationTest extends TestCase
             ->getJson('/api/v1/notifications?type=' . Notification::TYPE_GRADE_PUBLISHED);
 
         $response->assertStatus(200)
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.type', Notification::TYPE_GRADE_PUBLISHED);
+            ->assertJsonCount(1, 'data.data')
+            ->assertJsonPath('data.data.0.type', Notification::TYPE_GRADE_PUBLISHED);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_filter_notifications_by_read_status()
     {
         Notification::factory()->create([
@@ -95,10 +93,10 @@ class NotificationTest extends TestCase
             ->getJson('/api/v1/notifications?is_read=false');
 
         $response->assertStatus(200)
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data.data');
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_send_notification()
     {
         $payload = [
@@ -113,7 +111,7 @@ class NotificationTest extends TestCase
             ->postJson('/api/v1/notifications', $payload);
 
         $response->assertStatus(201)
-            ->assertJsonStructure(['message', 'count']);
+            ->assertJsonPath('data.count', 1);
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->user->id,
@@ -122,7 +120,7 @@ class NotificationTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function non_admin_cannot_send_notification()
     {
         $payload = [
@@ -138,7 +136,7 @@ class NotificationTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_mark_notification_as_read()
     {
         $notification = Notification::factory()->create([
@@ -150,13 +148,13 @@ class NotificationTest extends TestCase
             ->putJson("/api/v1/notifications/{$notification->id}/read");
 
         $response->assertStatus(200)
-            ->assertJsonPath('notification.is_read', true);
+            ->assertJsonPath('data.notification.is_read', true);
 
         $this->assertTrue($notification->fresh()->is_read);
         $this->assertNotNull($notification->fresh()->read_at);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_mark_other_users_notification_as_read()
     {
         $otherUser = User::factory()->create();
@@ -170,7 +168,7 @@ class NotificationTest extends TestCase
         $response->assertStatus(404);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_mark_all_notifications_as_read()
     {
         Notification::factory()->count(3)->create([
@@ -182,14 +180,14 @@ class NotificationTest extends TestCase
             ->postJson('/api/v1/notifications/read-all');
 
         $response->assertStatus(200)
-            ->assertJsonPath('count', 3);
+            ->assertJsonPath('data.count', 3);
 
         $this->assertEquals(0, Notification::where('user_id', $this->user->id)
             ->where('is_read', false)
             ->count());
     }
 
-    /** @test */
+    #[Test]
     public function user_can_get_unread_count()
     {
         Notification::factory()->count(5)->create([
@@ -205,10 +203,10 @@ class NotificationTest extends TestCase
             ->getJson('/api/v1/notifications/unread-count');
 
         $response->assertStatus(200)
-            ->assertJsonPath('count', 5);
+            ->assertJsonPath('data.count', 5);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_delete_their_notification()
     {
         $notification = Notification::factory()->create([
@@ -222,7 +220,7 @@ class NotificationTest extends TestCase
         $this->assertSoftDeleted($notification);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_delete_other_users_notification()
     {
         $otherUser = User::factory()->create();
@@ -237,7 +235,7 @@ class NotificationTest extends TestCase
         $this->assertDatabaseHas('notifications', ['id' => $notification->id]);
     }
 
-    /** @test */
+    #[Test]
     public function unauthenticated_user_cannot_access_notifications()
     {
         $response = $this->getJson('/api/v1/notifications');

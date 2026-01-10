@@ -17,10 +17,6 @@ class NotificationController extends BaseApiController
     public function __construct(
         protected NotificationService $notificationService
     ) {
-        $this->middleware('permission:notifications.view')->only(['index', 'unreadCount']);
-        $this->middleware('permission:notifications.create')->only('send');
-        $this->middleware('permission:notifications.update')->only(['markAsRead', 'markAllAsRead']);
-        $this->middleware('permission:notifications.delete')->only('destroy');
     }
 
     /**
@@ -28,6 +24,7 @@ class NotificationController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
+        $this->applyFilters($request, ['type', 'is_read', 'search']);
         $notifications = QueryBuilder::for(Notification::query())
             ->where('user_id', $request->user()->id)
             ->allowedFilters([
@@ -117,5 +114,20 @@ class NotificationController extends BaseApiController
         $notification->delete();
 
         return $this->success(null, 'Notification supprimée');
+    }
+
+    private function applyFilters(Request $request, array $keys): void
+    {
+        $filters = (array) $request->query('filter', []);
+
+        foreach ($keys as $key) {
+            if ($request->filled($key) && !array_key_exists($key, $filters)) {
+                $filters[$key] = $request->query($key);
+            }
+        }
+
+        if (!empty($filters)) {
+            $request->merge(['filter' => $filters]);
+        }
     }
 }

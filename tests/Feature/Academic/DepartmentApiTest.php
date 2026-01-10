@@ -60,7 +60,7 @@ class DepartmentApiTest extends TestCase
         $this->getJson('/api/v1/departments')
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount(1, 'data.data');
 
         $this->getJson("/api/v1/departments/{$departmentId}")
             ->assertOk()

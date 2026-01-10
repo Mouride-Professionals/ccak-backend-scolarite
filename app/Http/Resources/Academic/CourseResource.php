@@ -10,6 +10,7 @@ class CourseResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'course_unit_id' => $this->course_unit_id,
             'code' => $this->code,
             'name' => $this->name,
             'description' => $this->description,

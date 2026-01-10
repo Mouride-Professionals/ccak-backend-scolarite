@@ -23,11 +23,10 @@ class SemesterResultController extends BaseApiController
         private readonly SemesterResultRepository $repository,
         private readonly SemesterResultCalculationService $calculationService
     ) {
-        $this->middleware('permission:semester_results.view')->only(['index', 'show', 'statistics']);
+        $this->middleware('permission:semester_results.view')->only(['index', 'show']);
         $this->middleware('permission:semester_results.create')->only('store');
         $this->middleware('permission:semester_results.update')->only('update');
         $this->middleware('permission:semester_results.delete')->only('destroy');
-        $this->middleware('permission:semester_results.calculate')->only(['calculate', 'recalculateStudent']);
     }
 
     public function index(Request $request): JsonResponse
@@ -91,7 +90,7 @@ class SemesterResultController extends BaseApiController
 
         // Validate request data
         $validated = $request->validate([
-            'academic_year_id' => 'required|string|exists:academic_years,id',
+            'academic_year_id' => 'bail|required|uuid|exists:academic_years,id',
             'semester' => 'required|integer|min:1|max:2',
             'async' => 'boolean'
         ]);
@@ -146,7 +145,7 @@ class SemesterResultController extends BaseApiController
     public function statistics(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'academic_year_id' => 'required|string|exists:academic_years,id',
+            'academic_year_id' => 'bail|required|uuid|exists:academic_years,id',
             'semester' => 'required|integer|min:1|max:2',
         ]);
 
@@ -175,8 +174,12 @@ class SemesterResultController extends BaseApiController
             return $this->error('Only administrators are authorized to recalculate student results.', 403, ['authorization' => ['Admin role required']]);
         }
 
+        if (!Str::isUuid($studentId)) {
+            return $this->error('Student not found.', 404);
+        }
+
         $validated = $request->validate([
-            'academic_year_id' => 'required|string|exists:academic_years,id',
+            'academic_year_id' => 'bail|required|uuid|exists:academic_years,id',
             'semester' => 'required|integer|min:1|max:2',
         ]);
 

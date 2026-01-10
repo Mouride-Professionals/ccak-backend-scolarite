@@ -10,6 +10,7 @@ class FacultyResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'dean_id' => $this->dean_id,
             'code' => $this->code,
             'name' => $this->name,
             'is_active' => $this->is_active,
