@@ -54,10 +54,12 @@ class DocumentApiTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    '*' => [
-                        'student_id',
-                        'file_name',
-                    ]
+                    'data' => [
+                        '*' => [
+                            'student_id',
+                            'file_name',
+                        ]
+                    ],
                 ],
             ]);
     }
@@ -81,7 +83,7 @@ class DocumentApiTest extends TestCase
         $response = $this->getJson("/api/v1/documents/student/{$this->student->id}");
 
         $response->assertStatus(200)
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data.data');
     }
 
 
@@ -466,7 +468,7 @@ class DocumentApiTest extends TestCase
         $response = $this->getJson('/api/v1/documents/pending');
 
         $response->assertStatus(200)
-            ->assertJsonCount(3, 'data');
+            ->assertJsonCount(3, 'data.data');
     }
 
     #[Test]
@@ -490,7 +492,7 @@ class DocumentApiTest extends TestCase
         $response = $this->getJson("/api/v1/documents/student/{$this->student->id}");
 
         $response->assertStatus(200)
-            ->assertJsonCount(4, 'data');
+            ->assertJsonCount(4, 'data.data');
     }
 
     #[Test]
@@ -511,8 +513,8 @@ class DocumentApiTest extends TestCase
         $response = $this->getJson("/api/v1/documents/student/{$this->student->id}?type=CNI");
 
         $response->assertStatus(200)
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.type', DocumentType::CNI->value);
+            ->assertJsonCount(1, 'data.data')
+            ->assertJsonPath('data.data.0.type', DocumentType::CNI->value);
     }
 
     #[Test]
@@ -631,9 +633,9 @@ class DocumentApiTest extends TestCase
         $response = $this->getJson('/api/v1/documents?per_page=10');
 
         $response->assertStatus(200)
-            ->assertJsonCount(10, 'data')
-            ->assertJsonPath('meta.per_page', 10)
-            ->assertJsonPath('meta.total', 25);
+            ->assertJsonCount(10, 'data.data')
+            ->assertJsonPath('data.per_page', 10)
+            ->assertJsonPath('data.total', 25);
     }
 
     #[Test]

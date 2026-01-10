@@ -47,7 +47,7 @@ class StudentController extends BaseApiController
             ->paginate($request->get('per_page', 15));
 
         return $this->success(
-            StudentResource::collection($students),
+            $students,
             'Liste des étudiants récupérée avec succès.'
         );
     }
@@ -118,9 +118,11 @@ class StudentController extends BaseApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateStudentRequest $request, Student $student): JsonResponse
+    public function update(UpdateStudentRequest $request, string $student): JsonResponse
     {
         try {
+            $student = Student::findOrFail($student);
+
             $student = DB::transaction(function () use ($request, $student) {
                 $student->update($request->validated());
                 return $student;

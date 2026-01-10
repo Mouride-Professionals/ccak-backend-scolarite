@@ -15,17 +15,11 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class GuardianController extends BaseApiController
 {
-    public function __construct()
+    private function ensurePermission(Request $request, string $permission): void
     {
-        // Désactiver les middlewares de permission pour les routes de test
-        if (request()->is('api/test/*')) {
-            return;
+        if (!$request->user()?->can($permission)) {
+            abort(403, 'User does not have the right permissions.');
         }
-
-        $this->middleware('permission:guardians.view')->only(['index', 'show']);
-        $this->middleware('permission:guardians.create')->only('store');
-        $this->middleware('permission:guardians.update')->only('update');
-        $this->middleware('permission:guardians.delete')->only('destroy');
     }
 
     /**
@@ -33,6 +27,8 @@ class GuardianController extends BaseApiController
      */
     public function index(Request $request, Student $student): JsonResponse
     {
+        $this->ensurePermission($request, 'students.view');
+
         $guardians = QueryBuilder::for(Guardian::where('student_id', $student->id))
             ->allowedFilters([
                 AllowedFilter::exact('relationship'),
@@ -50,6 +46,8 @@ class GuardianController extends BaseApiController
      */
     public function store(StoreGuardianRequest $request, Student $student): JsonResponse
     {
+        $this->ensurePermission($request, 'students.create');
+
         try {
             $guardian = DB::transaction(function () use ($request, $student) {
                 return $student->guardians()->create($request->validated());
@@ -70,6 +68,8 @@ class GuardianController extends BaseApiController
      */
     public function show(Student $student, Guardian $guardian): JsonResponse
     {
+        $this->ensurePermission(request(), 'students.view');
+
         // Vérifier que le tuteur appartient à l'étudiant
         if ($guardian->student_id !== $student->id) {
             return $this->error('Tuteur non trouvé pour cet étudiant.', 404);
@@ -86,6 +86,8 @@ class GuardianController extends BaseApiController
      */
     public function update(UpdateGuardianRequest $request, Student $student, Guardian $guardian): JsonResponse
     {
+        $this->ensurePermission($request, 'students.update');
+
         // Vérifier que le tuteur appartient à l'étudiant
         if ($guardian->student_id !== $student->id) {
             return $this->error('Tuteur non trouvé pour cet étudiant.', 404);
@@ -110,6 +112,8 @@ class GuardianController extends BaseApiController
      */
     public function destroy(Student $student, Guardian $guardian): JsonResponse
     {
+        $this->ensurePermission(request(), 'students.delete');
+
         // Vérifier que le tuteur appartient à l'étudiant
         if ($guardian->student_id !== $student->id) {
             return $this->error('Tuteur non trouvé pour cet étudiant.', 404);

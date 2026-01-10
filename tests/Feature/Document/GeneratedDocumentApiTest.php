@@ -18,14 +18,10 @@ class GeneratedDocumentApiTest extends TestCase
     use InteractsWithPermissions;
 
     private array $permissions = [
-        'documents.view',
-        'documents.create',
-        'documents.update',
-        'documents.delete',
-        'document_requests.view',
-        'document_requests.create',
-        'document_requests.update',
-        'document_requests.delete',
+        'generated_documents.view',
+        'generated_documents.create',
+        'generated_documents.update',
+        'generated_documents.delete',
     ];
 
     protected function setUp(): void
@@ -74,7 +70,7 @@ class GeneratedDocumentApiTest extends TestCase
         $this->getJson('/api/v1/generated-documents')
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount(1, 'data.data');
 
         $this->getJson("/api/v1/generated-documents/{$documentId}")
             ->assertOk()
