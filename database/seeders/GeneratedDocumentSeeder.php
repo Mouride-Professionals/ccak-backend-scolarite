@@ -59,7 +59,7 @@ class GeneratedDocumentSeeder extends Seeder
                 'student_id' => $student->id,
                 'type' => fake()->randomElement(GeneratedDocument::getTypes()),
                 'document_number' => sprintf('UCAK-%s-%s', str_replace('-', '', $academicYearName), strtoupper(Str::random(6))),
-                'file_path' => 'generated/' . Str::uuid() . '.pdf',
+                'file_path' => '',
                 'generated_by' => $users->random()->id,
                 'metadata' => ['source' => 'seed'],
                 'generated_at' => $generatedAt,
@@ -67,7 +67,38 @@ class GeneratedDocumentSeeder extends Seeder
                 'status' => $status,
                 'created_at' => $generatedAt,
                 'updated_at' => $issuedAt ?? $generatedAt,
+            ])->tap(function (GeneratedDocument $document): void {
+                $this->attachGeneratedMedia($document);
+            });
+        }
+    }
+
+    private function attachGeneratedMedia(GeneratedDocument $document): void
+    {
+        $fileName = $document->document_number . '.pdf';
+        $tmpPath = tempnam(sys_get_temp_dir(), 'gen_doc_');
+        if ($tmpPath === false) {
+            return;
+        }
+
+        $tmpFile = $tmpPath . '.pdf';
+        rename($tmpPath, $tmpFile);
+        $pdf = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF";
+        file_put_contents($tmpFile, $pdf);
+
+        try {
+            $media = $document->addMedia($tmpFile)
+                ->usingFileName($fileName)
+                ->usingName($document->document_number)
+                ->toMediaCollection('official_documents');
+
+            $document->update([
+                'media_id' => $media->id,
+                'file_path' => $media->getPathRelativeToRoot(),
+                'file_name' => $media->file_name,
             ]);
+        } finally {
+            @unlink($tmpFile);
         }
     }
 }

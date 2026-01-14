@@ -6,10 +6,13 @@ use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class FacultyDocument extends Model
+class FacultyDocument extends Model implements HasMedia
 {
-    use HasFactory, UsesUuidV7;
+    use HasFactory, UsesUuidV7, InteractsWithMedia;
 
     public const TYPE_CV = 'CV';
     public const TYPE_DIPLOMA = 'DIPLOMA';
@@ -25,6 +28,7 @@ class FacultyDocument extends Model
         'type',
         'file_path',
         'file_name',
+        'media_id',
         'status',
         'reviewed_by',
         'notes',
@@ -33,6 +37,7 @@ class FacultyDocument extends Model
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'media_id' => 'integer',
     ];
 
     public $auditEvents = ['created', 'updated', 'deleted'];
@@ -46,5 +51,37 @@ class FacultyDocument extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'reviewed_by');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $pdfOnly = ['application/pdf'];
+        $pdfOrImage = ['application/pdf', 'image/jpeg', 'image/png'];
+
+        $this->addMediaCollection(self::TYPE_CV)
+            ->singleFile()
+            ->acceptsMimeTypes($pdfOnly);
+
+        $this->addMediaCollection(self::TYPE_DIPLOMA)
+            ->acceptsMimeTypes($pdfOnly);
+
+        $this->addMediaCollection(self::TYPE_CNI)
+            ->singleFile()
+            ->acceptsMimeTypes($pdfOrImage);
+
+        $this->addMediaCollection(self::TYPE_OTHER)
+            ->acceptsMimeTypes($pdfOnly);
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        if ($media?->collection_name !== self::TYPE_CNI) {
+            return;
+        }
+
+        $this->addMediaConversion('thumb')
+            ->width(150)
+            ->height(150)
+            ->queued();
     }
 }

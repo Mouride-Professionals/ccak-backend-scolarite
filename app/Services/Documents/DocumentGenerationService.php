@@ -5,7 +5,9 @@ namespace App\Services\Documents;
 use App\Models\GeneratedDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class DocumentGenerationService
 {
@@ -64,21 +66,12 @@ class DocumentGenerationService
         // Générer le PDF
         $pdfContent = $this->generatePdf($htmlContent);
 
-        // Sauvegarder le PDF
-        $filePath = $this->fileStorage->storeDocument(
-            $pdfContent,
-            $documentType,
-            $documentNumber,
-            $studentId,
-            'pdf'
-        );
-
         // Créer l'enregistrement
         $document = GeneratedDocument::create([
             'student_id' => $studentId,
             'type' => $documentType,
             'document_number' => $documentNumber,
-            'file_path' => $filePath,
+            'file_path' => '',
             'generated_by' => $userId,
             'metadata' => array_merge($metadata, [
                 'qr_code_data' => $qrCodeData,
@@ -86,6 +79,12 @@ class DocumentGenerationService
             ]),
             'status' => $validatedData['status'] ?? GeneratedDocument::STATUS_DRAFT,
             'generated_at' => now(),
+        ]);
+
+        $media = $this->storeGeneratedPdf($document, $pdfContent, $documentNumber);
+        $document->update([
+            'media_id' => $media->id,
+            'file_path' => $media->getPathRelativeToRoot(),
         ]);
 
         Log::info('Document PDF généré', [
@@ -213,11 +212,65 @@ class DocumentGenerationService
 
     public function getDocumentContent(GeneratedDocument $document): string
     {
+        if ($document->media_id) {
+            $media = $document->media()->whereKey($document->media_id)->first();
+            if ($media instanceof Media) {
+                return Storage::disk($media->disk)->get($media->getPathRelativeToRoot());
+            }
+        }
+
         return $this->fileStorage->getDocumentContent($document->file_path);
     }
 
     public function downloadDocument(GeneratedDocument $document): \Symfony\Component\HttpFoundation\StreamedResponse
     {
+        if ($document->media_id) {
+            $media = $document->media()->whereKey($document->media_id)->first();
+            if ($media instanceof Media) {
+                try {
+                    $url = $media->getTemporaryUrl(now()->addMinutes(30));
+                    return redirect()->away($url);
+                } catch (\Throwable) {
+                    // fall through to stream download
+                }
+
+                $content = Storage::disk($media->disk)->get($media->getPathRelativeToRoot());
+
+                return response()->streamDownload(
+                    function () use ($content): void {
+                        echo $content;
+                    },
+                    $media->file_name,
+                    [
+                        'Content-Type' => $media->mime_type,
+                        'Content-Length' => (string) strlen($content),
+                        'Content-Disposition' => 'attachment; filename="' . $media->file_name . '"',
+                    ]
+                );
+            }
+        }
+
         return $this->fileStorage->downloadDocument($document->file_path, $document->document_number);
+    }
+
+    private function storeGeneratedPdf(GeneratedDocument $document, string $pdfContent, string $documentNumber): Media
+    {
+        $tmpPath = tempnam(sys_get_temp_dir(), 'ucak_pdf_');
+        if ($tmpPath === false) {
+            throw new \RuntimeException('Impossible de créer un fichier temporaire');
+        }
+
+        $tmpFile = $tmpPath . '.pdf';
+        rename($tmpPath, $tmpFile);
+        file_put_contents($tmpFile, $pdfContent);
+
+        try {
+            return $document->addMedia($tmpFile)
+                ->usingFileName($documentNumber . '.pdf')
+                ->usingName($documentNumber)
+                ->toMediaCollection('official_documents');
+        } finally {
+            @unlink($tmpFile);
+        }
     }
 }

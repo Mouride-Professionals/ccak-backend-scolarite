@@ -219,6 +219,7 @@ class DocumentController extends BaseApiController
             // Retourner les informations pour le téléchargement
             return $this->success([
                 'download_url' => route('documents.download.file', ['document' => $document->id]),
+                'temporary_url' => $fileInfo['temporary_url'] ?? null,
                 'file_name' => $fileInfo['original_name'],
                 'file_size' => $fileInfo['size'],
                 'mime_type' => $fileInfo['mime_type'],
@@ -239,14 +240,18 @@ class DocumentController extends BaseApiController
         try {
             $fileInfo = $this->documentService->download($document->id);
 
+            if (!empty($fileInfo['temporary_url'])) {
+                return redirect()->away($fileInfo['temporary_url']);
+            }
+
             return response()->streamDownload(
                 function () use ($fileInfo) {
-                    echo $fileInfo['content'];
+                    echo $fileInfo['content'] ?? '';
                 },
                 $fileInfo['original_name'],
                 [
                     'Content-Type' => $fileInfo['mime_type'],
-                    'Content-Length' => strlen($fileInfo['content']),
+                    'Content-Length' => isset($fileInfo['content']) ? strlen($fileInfo['content']) : 0,
                     'Content-Disposition' => 'attachment; filename="' . $fileInfo['original_name'] . '"',
                 ]
             );

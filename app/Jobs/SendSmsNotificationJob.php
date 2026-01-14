@@ -15,9 +15,18 @@ class SendSmsNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+    public int $timeout = 120;
+
     public function __construct(
         public Notification $notification
     ) {}
+
+    /** @return array<int, int> */
+    public function backoff(): array
+    {
+        return [60, 300, 900];
+    }
 
     public function handle(SmsService $smsService): void
     {
@@ -25,13 +34,32 @@ class SendSmsNotificationJob implements ShouldQueue
         $user = $this->notification->user;
 
         // Check if user has a phone number
-        if (!$user->phone) {
+        $phone = $user->phone ?? $user->student?->phone;
+        if (!$phone) {
+            $this->notification->update(['sms_status' => 'skipped']);
             return;
         }
 
-        $smsService->send(
-            recipients: $user->phone,
+        $results = $smsService->send(
+            recipients: $phone,
             message: $this->notification->message
         );
+
+        $this->notification->update([
+            'sms_status' => 'sent',
+            'metadata' => array_merge($this->notification->metadata ?? [], [
+                'sms' => $results,
+            ]),
+        ]);
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->notification->update([
+            'sms_status' => 'failed',
+            'metadata' => array_merge($this->notification->metadata ?? [], [
+                'sms_error' => $exception->getMessage(),
+            ]),
+        ]);
     }
 }

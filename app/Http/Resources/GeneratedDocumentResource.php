@@ -13,6 +13,7 @@ class GeneratedDocumentResource extends JsonResource
             'student_id' => $this->student_id,
             'document_number' => $this->document_number,
             'file_path' => $this->file_path,
+            'media_id' => $this->media_id,
             'generated_by' => $this->generated_by,
             'metadata' => $this->metadata,
             'generated_at' => $this->generated_at,

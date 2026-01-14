@@ -15,10 +15,12 @@
         "firebase/php-jwt": "*",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "maatwebsite/excel": "*",
         "owen-it/laravel-auditing": "^14.0",
         "robsontenorio/laravel-keycloak-guard": "*",
         "simplesoftwareio/simple-qrcode": "^4.2",
+        "spatie/laravel-medialibrary": "^11.17",
         "spatie/laravel-permission": "*",
         "spatie/laravel-query-builder": "*"
     },

@@ -17,6 +17,7 @@ class DocumentResource extends JsonResource
             'reviewed_by' => $this->reviewed_by,
             'file_path' => $this->file_path,
             'file_name' => $this->file_name,
+            'media_id' => $this->media_id,
             'notes' => $this->notes,
             'metadata' => $this->metadata,
             'uploaded_at' => $this->uploaded_at,

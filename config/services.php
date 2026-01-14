@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'orange_sms' => [
+        'base_url' => env('ORANGE_BASE_URL', 'https://api.orange.com'),
+        'app_id' => env('ORANGE_APP_ID'),
+        'client_id' => env('ORANGE_CLIENT_ID'),
+        'client_secret' => env('ORANGE_CLIENT_SECRET'),
+        'auth_header' => env('ORANGE_AUTH_HEADER'),
+        'sender_phone' => env('ORANGE_SENDER_PHONE'),
+        'sender_name' => env('ORANGE_SENDER_NAME', 'CCAK'),
+        'default_country_code' => env('ORANGE_DEFAULT_COUNTRY_CODE', '+221'),
+    ],
+
 ];

@@ -22,12 +22,14 @@ class Notification extends Model
         'metadata',
         'is_read',
         'read_at',
+        'sms_status',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'sms_status' => 'string',
     ];
 
     // Enums

@@ -3,6 +3,8 @@
 namespace App\Services\Documents;
 
 use App\Models\Document;
+use App\Models\Notification;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\Log;
 
 class DocumentNotificationService
@@ -11,7 +13,9 @@ class DocumentNotificationService
     /** @var array<int, string> */
     private array $channels;
 
-    public function __construct()
+    public function __construct(
+        private readonly NotificationService $notificationService
+    )
     {
         $this->enabled = config('documents.notifications.enabled', true);
         $this->channels = config('documents.notifications.channels', ['database']);
@@ -105,10 +109,25 @@ class DocumentNotificationService
     /** @param array<string, mixed> $data */
     private function sendToDatabase(string $event, Document $document, array $data): void
     {
-        // Créer une notification dans la table notifications
-        // (si vous utilisez le système de notifications de Laravel)
-        $document->student?->notify(
-            new \App\Notifications\DocumentStatusChanged($event, $document, $data)
+        $recipient = $document->student?->user;
+        if (!$recipient) {
+            Log::warning('Document notification skipped: missing student user', [
+                'document_id' => $document->id,
+                'student_id' => $document->student_id,
+                'event' => $event,
+            ]);
+            return;
+        }
+
+        $payload = $this->buildPayload($event, $document, $data);
+
+        $this->notificationService->send(
+            $recipient->id,
+            $payload['title'],
+            $payload['message'],
+            $payload['type'],
+            [Notification::CHANNEL_IN_APP],
+            $payload['metadata']
         );
     }
 
@@ -130,6 +149,41 @@ class DocumentNotificationService
     {
         // TODO: Implémenter l'envoi de SMS
         // Utiliser un service comme Twilio, etc.
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array{title: string, message: string, type: string, metadata: array<string, mixed>}
+     */
+    private function buildPayload(string $event, Document $document, array $data): array
+    {
+        $documentType = $document->type?->value ?? (string) $document->type;
+        $title = 'Document';
+        $message = 'Mise à jour du document.';
+
+        if ($event === 'upload') {
+            $title = 'Document reçu';
+            $message = "Votre document {$documentType} a bien été reçu.";
+        } elseif ($event === 'approval') {
+            $title = 'Document approuvé';
+            $message = "Votre document {$documentType} a été approuvé.";
+        } elseif ($event === 'rejection') {
+            $title = 'Document rejeté';
+            $message = "Votre document {$documentType} a été rejeté.";
+        }
+
+        return [
+            'title' => $title,
+            'message' => $message,
+            'type' => Notification::TYPE_SYSTEM,
+            'metadata' => array_merge([
+                'event' => $event,
+                'document_id' => $document->id,
+                'student_id' => $document->student_id,
+                'type' => $documentType,
+                'status' => $document->status?->value ?? $document->status,
+            ], $data),
+        ];
     }
 
     /**

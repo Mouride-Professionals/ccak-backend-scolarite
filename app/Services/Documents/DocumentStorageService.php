@@ -181,7 +181,10 @@ class DocumentStorageService
             return null;
         }
 
-        return Storage::disk($this->disk)->mimeType($path);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk($this->disk);
+
+        return $disk->mimeType($path);
     }
 
     /**
