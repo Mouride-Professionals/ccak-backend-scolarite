@@ -55,17 +55,23 @@ class GeneratedDocumentController extends BaseApiController
 
     public function show(GeneratedDocument $generatedDocument)
     {
+        $this->authorize('view', $generatedDocument);
+
         return $this->success($generatedDocument->load(['student', 'generator']));
     }
 
     public function update(UpdateGeneratedDocumentRequest $request, GeneratedDocument $generatedDocument): JsonResponse
     {
+        $this->authorize('update', $generatedDocument);
+
         DB::transaction(fn() => $generatedDocument->update($request->validated()));
         return $this->success($generatedDocument->refresh()->load(['student', 'generator']));
     }
 
     public function destroy(GeneratedDocument $generatedDocument): JsonResponse
     {
+        $this->authorize('delete', $generatedDocument);
+
         DB::transaction(fn() => $generatedDocument->delete());
         return $this->success();
     }

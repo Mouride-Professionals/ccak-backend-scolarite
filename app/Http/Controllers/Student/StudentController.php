@@ -107,6 +107,8 @@ class StudentController extends BaseApiController
      */
     public function show(Student $student): JsonResponse
     {
+        $this->authorize('view', $student);
+
         $student->load(['user', 'guardians', 'documents']);
 
         return $this->success(
@@ -120,6 +122,8 @@ class StudentController extends BaseApiController
      */
     public function update(UpdateStudentRequest $request, Student $student): JsonResponse
     {
+        $this->authorize('update', $student);
+
         try {
             $student = DB::transaction(function () use ($request, $student) {
                 $student->update($request->validated());
@@ -148,6 +152,8 @@ class StudentController extends BaseApiController
      */
     public function grades(Request $request, Student $student): JsonResponse
     {
+        $this->authorize('viewGrades', $student);
+
         $query = QueryBuilder::for($student->grades()->getQuery())
             ->with(['course', 'courseEnrollment'])
             ->allowedFilters([

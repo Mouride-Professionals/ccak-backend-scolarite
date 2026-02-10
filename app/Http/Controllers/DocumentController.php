@@ -113,6 +113,8 @@ class DocumentController extends BaseApiController
      */
     public function show(Document $document): JsonResponse
     {
+        $this->authorize('view', $document);
+
         return $this->success(
             new DocumentResource($document),
             'Document récupéré avec succès'
@@ -124,6 +126,8 @@ class DocumentController extends BaseApiController
      */
     public function update(UpdateDocumentRequest $request, Document $document): JsonResponse
     {
+        $this->authorize('update', $document);
+
         if ($document->status === DocumentStatus::APPROVED) {
             return $this->error('Document approuvé, modification interdite.', 403);
         }
@@ -155,6 +159,8 @@ class DocumentController extends BaseApiController
      */
     public function approve(ReviewDocumentRequest $request, Document $document): JsonResponse
     {
+        $this->authorize('review', $document);
+
         try {
             $admin = $request->user()?->getOrCreateAdmin();
 
@@ -182,6 +188,8 @@ class DocumentController extends BaseApiController
      */
     public function reject(ReviewDocumentRequest $request, Document $document): JsonResponse
     {
+        $this->authorize('review', $document);
+
         $request->validate([
             'reason' => ['required', 'string', 'min:10', 'max:500'],
         ]);
@@ -213,6 +221,8 @@ class DocumentController extends BaseApiController
      */
     public function download(Document $document): JsonResponse
     {
+        $this->authorize('download', $document);
+
         try {
             $fileInfo = $this->documentService->download($document->id);
 
@@ -237,6 +247,8 @@ class DocumentController extends BaseApiController
      */
     public function downloadFile(Document $document)
     {
+        $this->authorize('download', $document);
+
         try {
             $fileInfo = $this->documentService->download($document->id);
 
@@ -265,6 +277,8 @@ class DocumentController extends BaseApiController
      */
     public function destroy(Document $document): JsonResponse
     {
+        $this->authorize('delete', $document);
+
         try {
             $userId = request()->user()->id;
             DB::transaction(function () use ($document, $userId) {

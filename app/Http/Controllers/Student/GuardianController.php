@@ -70,10 +70,11 @@ class GuardianController extends BaseApiController
      */
     public function show(Student $student, Guardian $guardian): JsonResponse
     {
-        // Vérifier que le tuteur appartient à l'étudiant
         if ($guardian->student_id !== $student->id) {
             return $this->error('Tuteur non trouvé pour cet étudiant.', 404);
         }
+
+        $this->authorize('view', $guardian);
 
         return $this->success(
             $guardian,
@@ -86,10 +87,11 @@ class GuardianController extends BaseApiController
      */
     public function update(UpdateGuardianRequest $request, Student $student, Guardian $guardian): JsonResponse
     {
-        // Vérifier que le tuteur appartient à l'étudiant
         if ($guardian->student_id !== $student->id) {
             return $this->error('Tuteur non trouvé pour cet étudiant.', 404);
         }
+
+        $this->authorize('update', $guardian);
 
         try {
             DB::transaction(function () use ($guardian, $request) {
@@ -110,10 +112,11 @@ class GuardianController extends BaseApiController
      */
     public function destroy(Student $student, Guardian $guardian): JsonResponse
     {
-        // Vérifier que le tuteur appartient à l'étudiant
         if ($guardian->student_id !== $student->id) {
             return $this->error('Tuteur non trouvé pour cet étudiant.', 404);
         }
+
+        $this->authorize('delete', $guardian);
 
         try {
             DB::transaction(function () use ($guardian) {

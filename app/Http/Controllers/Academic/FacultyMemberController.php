@@ -89,6 +89,8 @@ class FacultyMemberController extends BaseApiController
 
     public function show(FacultyMember $faculty_member): JsonResponse
     {
+        $this->authorize('view', $faculty_member);
+
         return $this->success(
             new FacultyMemberResource(
                 $faculty_member->load(['department', 'user', 'teachingAssignments.course.courseUnit', 'teachingAssignments.academicYear', 'documents', 'contracts'])
@@ -98,6 +100,8 @@ class FacultyMemberController extends BaseApiController
 
     public function update(UpdateFacultyMemberRequest $request, FacultyMember $faculty_member): JsonResponse
     {
+        $this->authorize('update', $faculty_member);
+
         DB::transaction(fn() => $faculty_member->update($request->validated()));
 
         return $this->success(

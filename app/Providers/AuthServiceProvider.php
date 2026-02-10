@@ -2,13 +2,22 @@
 
 namespace App\Providers;
 
-use App\Models\Admin;
 use App\Models\Document;
+use App\Models\FacultyContract;
+use App\Models\FacultyDocument;
+use App\Models\FacultyMember;
+use App\Models\GeneratedDocument;
 use App\Models\Guardian;
+use App\Models\Notification;
 use App\Models\Student;
 use App\Models\User;
 use App\Policies\DocumentPolicy;
+use App\Policies\FacultyContractPolicy;
+use App\Policies\FacultyDocumentPolicy;
+use App\Policies\FacultyMemberPolicy;
+use App\Policies\GeneratedDocumentPolicy;
 use App\Policies\GuardianPolicy;
+use App\Policies\NotificationPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\StudentPolicy;
 use App\Policies\UserPolicy;
@@ -20,7 +29,12 @@ class AuthServiceProvider extends ServiceProvider
 {
     protected $policies = [
         Document::class => DocumentPolicy::class,
+        FacultyContract::class => FacultyContractPolicy::class,
+        FacultyDocument::class => FacultyDocumentPolicy::class,
+        FacultyMember::class => FacultyMemberPolicy::class,
+        GeneratedDocument::class => GeneratedDocumentPolicy::class,
         Guardian::class => GuardianPolicy::class,
+        Notification::class => NotificationPolicy::class,
         Role::class => RolePolicy::class,
         Student::class => StudentPolicy::class,
         User::class => UserPolicy::class,

@@ -18,6 +18,16 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+        $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+        $middleware->append(\App\Http\Middleware\ApiVersionHeader::class);
+
+        // SanitizeInput disabled: strip_tags + htmlspecialchars corrupts data in a JSON API
+        // (e.g. O'Brien -> O&#039;Brien). XSS prevention is the frontend's responsibility.
+        // Input validation is handled by FormRequests; SQL injection by Eloquent parameterized queries.
+        $middleware->prependToGroup('api', [
+            // \App\Http\Middleware\SanitizeInput::class,
+            \App\Http\Middleware\RequestSizeLimiter::class,
+        ]);
 
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
@@ -30,7 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 abort(401, 'Unauthenticated.');
             }
 
-            return '/login'; // or define a login route
+            return '/login';
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -86,5 +96,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $exception->getMessage() ?: 'Unauthenticated.',
                 'errors' => [],
             ], 401);
+        });
+
+        $exceptions->renderable(function (\Throwable $exception, Request $request) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            if (config('app.debug')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An internal error occurred.',
+                'errors' => [],
+            ], 500);
         });
     })->create();
