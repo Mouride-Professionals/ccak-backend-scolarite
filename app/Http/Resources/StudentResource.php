@@ -23,6 +23,7 @@ class StudentResource extends JsonResource
             'student_number' => $this->student_number,
             'full_name' => $this->full_name,
             'user_id' => $this->user_id,
+            'keycloak_user_id' => $this->keycloak_user_id,
             'user' => new UserResource($this->whenLoaded('user')),
             'date_of_birth' => $this->date_of_birth,
             'place_of_birth' => $this->place_of_birth,

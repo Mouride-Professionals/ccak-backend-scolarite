@@ -154,6 +154,7 @@ class DocumentTest extends TestCase
             'type',
             'file_path',
             'file_name',
+            'media_id',
             'status',
             'reviewed_by',
             'notes',

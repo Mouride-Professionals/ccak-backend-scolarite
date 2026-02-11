@@ -10,6 +10,7 @@ class CourseUnitResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'academic_program_id' => $this->academic_program_id,
             'code' => $this->code,
             'name' => $this->name,
             'semester_number' => $this->semester_number,

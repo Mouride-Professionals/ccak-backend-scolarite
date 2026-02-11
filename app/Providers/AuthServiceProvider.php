@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Document;
+use App\Models\DeliberationSession;
 use App\Models\FacultyContract;
 use App\Models\FacultyDocument;
 use App\Models\FacultyMember;
@@ -12,6 +13,7 @@ use App\Models\Notification;
 use App\Models\Student;
 use App\Models\User;
 use App\Policies\DocumentPolicy;
+use App\Policies\DeliberationSessionPolicy;
 use App\Policies\FacultyContractPolicy;
 use App\Policies\FacultyDocumentPolicy;
 use App\Policies\FacultyMemberPolicy;
@@ -28,6 +30,7 @@ use Spatie\Permission\Models\Role;
 class AuthServiceProvider extends ServiceProvider
 {
     protected $policies = [
+        DeliberationSession::class => DeliberationSessionPolicy::class,
         Document::class => DocumentPolicy::class,
         FacultyContract::class => FacultyContractPolicy::class,
         FacultyDocument::class => FacultyDocumentPolicy::class,

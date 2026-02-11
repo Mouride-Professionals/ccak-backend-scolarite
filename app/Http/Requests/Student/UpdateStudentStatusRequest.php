@@ -15,6 +15,7 @@ class UpdateStudentStatusRequest extends FormRequest
     {
         return [
             'status' => ['required', 'in:ACTIVE,SUSPENDED,GRADUATED,WITHDRAWN,EXPELLED'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -23,6 +24,7 @@ class UpdateStudentStatusRequest extends FormRequest
         return [
             'status.required' => 'Le statut est obligatoire.',
             'status.in' => 'Le statut doit être l\'un des suivants : ACTIVE, SUSPENDED, GRADUATED, WITHDRAWN, EXPELLED.',
+            'reason.max' => 'La raison ne peut pas dépasser 500 caractères.',
         ];
     }
 }

@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Student\StoreStudentRequest;
 use App\Http\Requests\Student\UpdateStudentRequest;
+use App\Http\Requests\Student\UpdateStudentStatusRequest;
 use App\Http\Resources\StudentResource;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\Auth\KeycloakService;
 use App\Services\Student\StudentNumberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Models\Enums\GradeStatus;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -20,11 +23,12 @@ use Spatie\QueryBuilder\QueryBuilder;
 class StudentController extends BaseApiController
 {
     public function __construct(
-        private StudentNumberService $studentNumberService
+        private StudentNumberService $studentNumberService,
+        private KeycloakService $keycloakService
     ) {
         $this->middleware('permission:students.view')->only(['index', 'show']);
         $this->middleware('permission:students.create')->only('store');
-        $this->middleware('permission:students.update')->only('update');
+        $this->middleware('permission:students.update')->only(['update', 'updateStatus']);
         $this->middleware('permission:students.delete')->only('destroy');
         $this->middleware('permission:grades.view')->only('grades');
     }
@@ -36,6 +40,15 @@ class StudentController extends BaseApiController
     {
         $students = QueryBuilder::for(Student::query())
             ->with('user')
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('status', (string) $request->string('status'));
+            })
+            ->when($request->filled('student_number'), function ($query) use ($request) {
+                $query->where('student_number', (string) $request->string('student_number'));
+            })
+            ->when($request->filled('name'), function ($query) use ($request) {
+                $query->where('full_name', 'like', '%' . trim((string) $request->string('name')) . '%');
+            })
             ->allowedIncludes(['user'])
             ->allowedFilters([
                 AllowedFilter::exact('status'),
@@ -92,12 +105,18 @@ class StudentController extends BaseApiController
                 return $student;
             });
 
+            $this->syncWithKeycloak($student, $user);
+
             return $this->success(
                 new StudentResource($student->load('user')),
                 'Profil étudiant créé avec succès.',
                 201
             );
         } catch (\Exception $e) {
+            Log::error('Student creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return $this->error('Erreur lors de la création du profil étudiant.', 500);
         }
     }
@@ -136,6 +155,31 @@ class StudentController extends BaseApiController
             );
         } catch (\Exception $e) {
             return $this->error('Erreur lors de la mise à jour du profil étudiant.', 500);
+        }
+    }
+
+    /**
+     * Update student status.
+     */
+    public function updateStatus(UpdateStudentStatusRequest $request, Student $student): JsonResponse
+    {
+        $this->authorize('updateStatus', $student);
+
+        $validated = $request->validated();
+
+        try {
+            DB::transaction(function () use ($student, $validated): void {
+                $student->update([
+                    'status' => $validated['status'],
+                ]);
+            });
+
+            return $this->success(
+                new StudentResource($student->fresh()->load('user')),
+                'Statut de l\'étudiant mis à jour avec succès.'
+            );
+        } catch (\Exception) {
+            return $this->error('Erreur lors de la mise à jour du statut étudiant.', 500);
         }
     }
 
@@ -239,5 +283,51 @@ class StudentController extends BaseApiController
     private function isStudent($user): bool
     {
         return $user->hasRole('STUDENT');
+    }
+
+    private function syncWithKeycloak(Student $student, User $user): void
+    {
+        try {
+            if (! $user->hasRole('STUDENT')) {
+                $user->assignRole('STUDENT');
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Unable to assign STUDENT role locally', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if ($user->keycloak_id) {
+            $student->update(['keycloak_user_id' => $user->keycloak_id]);
+            return;
+        }
+
+        $names = preg_split('/\s+/', trim($student->full_name)) ?: [];
+        $firstName = $names[0] ?? $student->full_name;
+        $lastName = count($names) > 1 ? implode(' ', array_slice($names, 1)) : 'Student';
+
+        try {
+            $keycloakUserId = $this->keycloakService->createStudentUser([
+                'username' => $student->student_number,
+                'email' => $user->email,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'temporary_password' => config('keycloak.default_temporary_password', Str::random(12)),
+            ]);
+
+            if (! $keycloakUserId) {
+                return;
+            }
+
+            $user->update(['keycloak_id' => $keycloakUserId]);
+            $student->update(['keycloak_user_id' => $keycloakUserId]);
+        } catch (\Throwable $e) {
+            Log::warning('Student created but Keycloak sync failed', [
+                'student_id' => $student->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

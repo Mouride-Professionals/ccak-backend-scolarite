@@ -113,7 +113,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.4.7
     container_name: ccak-backend-keycloak
-    command: start-dev
+    command: [ "start-dev", "--import-realm" ]
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -127,6 +127,8 @@ services:
       KC_PROXY_HEADERS: "xforwarded"
     ports:
       - "8080:8080"
+    volumes:
+      - ./docker/keycloak/ucak-realm.json:/opt/keycloak/data/import/ucak-realm.json:ro
     depends_on:
       - keycloak-db
     networks:

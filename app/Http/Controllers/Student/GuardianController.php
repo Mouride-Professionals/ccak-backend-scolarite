@@ -50,6 +50,10 @@ class GuardianController extends BaseApiController
      */
     public function store(StoreGuardianRequest $request, Student $student): JsonResponse
     {
+        if ($student->guardians()->count() >= 3) {
+            return $this->error('Un étudiant ne peut pas avoir plus de 3 tuteurs.', 422);
+        }
+
         try {
             $guardian = DB::transaction(function () use ($request, $student) {
                 return $student->guardians()->create($request->validated());

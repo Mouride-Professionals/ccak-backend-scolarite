@@ -3,10 +3,12 @@
 use App\Http\Controllers\Academic\AcademicProgramController;
 use App\Http\Controllers\Academic\CourseController;
 use App\Http\Controllers\Academic\CourseUnitController;
+use App\Http\Controllers\Academic\GradeStatisticsController;
 use App\Http\Controllers\Academic\DepartmentController;
 use App\Http\Controllers\Academic\FacultyController;
 use App\Http\Controllers\Academic\FacultyContractController;
 use App\Http\Controllers\Academic\FacultyDocumentController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GeneratedDocumentController;
 use App\Http\Controllers\Academic\AcademicYearController;
@@ -24,6 +26,7 @@ use App\Http\Controllers\Academic\EvaluationResponseController;
 use App\Http\Controllers\Academic\TeachingAssignmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserRoleController;
 use \App\Http\Controllers\Academic\DeliberationSessionController;
@@ -45,6 +48,7 @@ Route::middleware('auth:api')->group(function () {
             'meta' => null,
         ]);
     });
+    Route::post('/logout', [AuthController::class, 'logout']);
 
 
 
@@ -52,6 +56,7 @@ Route::middleware('auth:api')->group(function () {
     // Deliberation Sessions
     Route::patch('deliberation-sessions/{id}/status', [DeliberationSessionController::class, 'changeStatus']);
     Route::post('deliberations/{deliberation_session}/start', [DeliberationSessionController::class, 'start']);
+    Route::patch('deliberations/{deliberation_session}/students/{student}/decision', [DeliberationSessionController::class, 'saveDecision']);
     Route::post('deliberations/{deliberation_session}/complete', [DeliberationSessionController::class, 'complete']);
     Route::get('deliberations/{deliberation_session}/students', [DeliberationSessionController::class, 'getStudents']);
     Route::get('deliberations/{deliberation_session}/minutes', [DeliberationSessionController::class, 'generateMinutes']);
@@ -139,7 +144,17 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::apiResource('generated-documents', GeneratedDocumentController::class);
-    Route::get('/generated-documents/verify/{documentNumber}', [GeneratedDocumentController::class, 'verify']);
+    Route::post('/generated-documents/generate', [GeneratedDocumentController::class, 'generate']);
+    Route::post('/generated-documents/bulk-generate', [GeneratedDocumentController::class, 'bulkGenerate']);
+    Route::post('/generated-documents/{generatedDocument}/issue', [GeneratedDocumentController::class, 'issue']);
+    Route::post('/generated-documents/{generatedDocument}/revoke', [GeneratedDocumentController::class, 'revoke']);
+    Route::get('/generated-documents/{generatedDocument}/download', [GeneratedDocumentController::class, 'download']);
+
+    Route::post('/documents/generate', [GeneratedDocumentController::class, 'generate']);
+    Route::post('/documents/bulk-generate', [GeneratedDocumentController::class, 'bulkGenerate']);
+    Route::post('/documents/{generatedDocument}/issue', [GeneratedDocumentController::class, 'issue']);
+    Route::post('/documents/{generatedDocument}/revoke', [GeneratedDocumentController::class, 'revoke']);
+
     Route::apiResource('documents', DocumentController::class)
         ->whereUuid('document');
     Route::prefix('documents')->group(function () {
@@ -157,7 +172,6 @@ Route::middleware('auth:api')->group(function () {
 
         // Routes spécifiques à un document (complémentaires aux routes apiResource)
         Route::prefix('{document}')->group(function () {
-            // Téléchargement
             Route::get('/download', [DocumentController::class, 'download'])
                 ->name('documents.download');
             Route::get('/download-file', [DocumentController::class, 'downloadFile'])
@@ -171,8 +185,15 @@ Route::middleware('auth:api')->group(function () {
         });
     });
 
+    // Legacy-compatible student document endpoints
+    Route::get('students/{student}/documents', [DocumentController::class, 'studentDocuments']);
+    Route::post('students/{student}/documents', [DocumentController::class, 'storeForStudent']);
+    Route::get('students/{student}/documents/{document}', [DocumentController::class, 'showForStudent']);
+    Route::put('documents/{document}/review', [DocumentController::class, 'review']);
+
     // Student area
     Route::apiResource('students', StudentController::class);
+    Route::patch('students/{student}/status', [StudentController::class, 'updateStatus']);
 
     // Nested guardians for students: /api/v1/students/{student}/guardians
     Route::apiResource('students.guardians', GuardianController::class);
@@ -183,8 +204,12 @@ Route::middleware('auth:api')->group(function () {
     Route::post('roles', [RoleController::class, 'store']);
     Route::put('roles/{role}', [RoleController::class, 'update']);
     Route::put('users/{user}/roles', [UserRoleController::class, 'update']);
+    Route::get('admin/audits', [AuditLogController::class, 'index']);
+    Route::get('admin/audits/{audit}', [AuditLogController::class, 'show']);
+    Route::get('admin/audits/model/{model}/{id}', [AuditLogController::class, 'forModel']);
 
     // Grade management endpoints
+    Route::get('grades/statistics', [GradeStatisticsController::class, 'index']);
     Route::apiResource('grades', \App\Http\Controllers\GradeController::class);
     Route::post('grades/{grade}/submit', [\App\Http\Controllers\GradeController::class, 'submit']);
     Route::post('grades/{grade}/validate', [\App\Http\Controllers\GradeController::class, 'validateGrade']);
@@ -214,3 +239,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('courses/{course}/availability', [CourseEnrollmentController::class, 'checkAvailability']);
     Route::get('programs/{program}/available-courses', [CourseEnrollmentController::class, 'getAvailableCoursesByProgram']);
 });
+
+Route::get('/generated-documents/verify/{documentNumber}', [GeneratedDocumentController::class, 'verify']);
+Route::get('/documents/verify/{documentNumber}', [GeneratedDocumentController::class, 'verify']);

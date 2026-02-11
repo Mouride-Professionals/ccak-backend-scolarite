@@ -15,6 +15,7 @@ use App\Models\Grade;
 use App\Models\Student;
 use App\Services\GradeCalculationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class GradeCalculationServiceTest extends TestCase
@@ -117,7 +118,7 @@ class GradeCalculationServiceTest extends TestCase
         ];
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_course_average_with_weighted_grades()
     {
         // Create grades with different weights
@@ -166,7 +167,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertCount(3, $result['grades_breakdown']);
     }
 
-    /** @test */
+    #[Test]
     public function it_normalizes_scores_to_20_scale()
     {
         // Create a grade with max_score different from 20
@@ -188,7 +189,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertEquals(16.0, $result['average']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_when_no_published_grades_exist()
     {
         // Create a draft grade
@@ -210,7 +211,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertFalse($result['is_complete']);
     }
 
-    /** @test */
+    #[Test]
     public function it_marks_incomplete_when_weights_dont_sum_to_one()
     {
         Grade::create([
@@ -231,7 +232,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertEquals(0.3, $result['total_weight']);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_semester_average_with_course_coefficients()
     {
         // Create second course
@@ -279,7 +280,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertCount(2, $result['courses']);
     }
 
-    /** @test */
+    #[Test]
     public function it_converts_grades_to_gpa_scale_correctly()
     {
         $testCases = [
@@ -299,7 +300,7 @@ class GradeCalculationServiceTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_letter_grades_correctly()
     {
         $testCases = [
@@ -319,7 +320,7 @@ class GradeCalculationServiceTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_semester_gpa_with_credits()
     {
         // Create second course
@@ -374,7 +375,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertEquals('B', $courseGpaData['CS102']['letter_grade']);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_cumulative_gpa_across_semesters()
     {
         // Setup courses for multiple semesters
@@ -446,7 +447,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertCount(2, $result['semesters']);
     }
 
-    /** @test */
+    #[Test]
     public function it_applies_compensation_rules_correctly()
     {
         // Create 3 courses
@@ -521,7 +522,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertEquals('CS103', $result['failed_courses'][0]['course_code']);
     }
 
-    /** @test */
+    #[Test]
     public function it_does_not_compensate_when_semester_average_is_below_10()
     {
         ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
@@ -569,7 +570,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertCount(2, $result['failed_courses']);
     }
 
-    /** @test */
+    #[Test]
     public function it_determines_pass_fail_for_single_course()
     {
         // Passing grade
@@ -596,7 +597,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertEquals(12.0, $result['average']);
     }
 
-    /** @test */
+    #[Test]
     public function it_determines_fail_for_course_below_10()
     {
         Grade::create([
@@ -621,7 +622,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertFalse($result['passed']);
     }
 
-    /** @test */
+    #[Test]
     public function it_determines_semester_pass_fail_with_compensation()
     {
         ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
@@ -671,7 +672,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertCount(1, $result['compensated_courses']);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_complete_student_grade_report()
     {
         ['course' => $course2, 'enrollment' => $enrollment2] = $this->createCourseWithEnrollment(
@@ -728,7 +729,7 @@ class GradeCalculationServiceTest extends TestCase
         $this->assertTrue($result['passed']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_incomplete_grades_in_course_average()
     {
         $result = $this->service->calculateCourseAverage($this->enrollment->id);

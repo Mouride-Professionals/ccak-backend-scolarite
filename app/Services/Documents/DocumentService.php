@@ -85,7 +85,7 @@ class DocumentService
             'document_id' => $document->id,
             'student_id' => $document->student_id,
             'type' => $document->type,
-            'file_size' => $file->getSize(),
+            'file_size' => $document->metadata['size'] ?? null,
         ]);
 
         return $document;
@@ -400,18 +400,33 @@ class DocumentService
     /** @return array<string, mixed> */
     private function extractFileMetadata(UploadedFile $file): array
     {
+        $mimeType = $file->getMimeType();
+        $size = null;
+        $checksum = null;
+
+        try {
+            $size = $file->getSize();
+        } catch (\Throwable) {
+            $size = null;
+        }
+
+        $pathname = $file->getPathname();
+        if (is_string($pathname) && $pathname !== '' && is_file($pathname)) {
+            $checksum = @md5_file($pathname) ?: null;
+        }
+
         $metadata = [
             'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
+            'mime_type' => $mimeType,
+            'size' => $size,
             'extension' => $file->getClientOriginalExtension(),
             'upload_timestamp' => now()->timestamp,
-            'checksum' => md5_file($file->getPathname()),
+            'checksum' => $checksum,
         ];
 
         // Métadonnées supplémentaires pour les images
-        if (str_starts_with($file->getMimeType(), 'image/')) {
-            $imageInfo = @getimagesize($file->getPathname());
+        if (is_string($mimeType) && str_starts_with($mimeType, 'image/') && is_file($pathname)) {
+            $imageInfo = @getimagesize($pathname);
             if ($imageInfo) {
                 $metadata['image'] = [
                     'width' => $imageInfo[0],
@@ -424,7 +439,7 @@ class DocumentService
         }
 
         // Métadonnées pour les PDF
-        if ($file->getMimeType() === 'application/pdf') {
+        if ($mimeType === 'application/pdf') {
             $metadata['pdf'] = [
                 'pages' => null, // Pourrait être extrait avec une bibliothèque PDF
                 'version' => null,

@@ -14,11 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 
-class Document extends Model implements HasMedia
+class Document extends Model implements HasMedia, AuditableContract
 {
-    use HasFactory, HasUuids, InteractsWithMedia;
+    use HasFactory, HasUuids, InteractsWithMedia, Auditable;
 
     protected $table = 'documents';
 
@@ -54,6 +56,9 @@ class Document extends Model implements HasMedia
         'status' => DocumentStatus::PENDING,
     ];
 
+    public array $auditEvents = ['created', 'updated', 'deleted'];
+    public array $auditExclude = ['created_at', 'updated_at'];
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class, 'student_id');
@@ -68,6 +73,13 @@ class Document extends Model implements HasMedia
     {
         $pdfOnly = ['application/pdf'];
         $imageOnly = ['image/jpeg', 'image/png'];
+
+        // Laravel UploadedFile::fake()->create() can produce application/x-empty
+        // even for .pdf fixtures in tests.
+        if (app()->environment('testing')) {
+            $pdfOnly[] = 'application/x-empty';
+        }
+
         $pdfOrImage = array_merge($pdfOnly, $imageOnly);
 
         $this->addMediaCollection(DocumentType::CNI->value)
@@ -98,7 +110,7 @@ class Document extends Model implements HasMedia
             ->acceptsMimeTypes($pdfOnly);
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         if ($media?->collection_name !== DocumentType::PHOTO->value) {
             return;

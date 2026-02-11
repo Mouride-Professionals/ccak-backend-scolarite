@@ -139,7 +139,7 @@ class DocumentGenerationService
 
     private function getVerificationUrl(string $documentNumber): string
     {
-        return url("/api/documents/verify/{$documentNumber}");
+        return url("/api/v1/documents/verify/{$documentNumber}");
     }
 
     private function prepareTemplateData(

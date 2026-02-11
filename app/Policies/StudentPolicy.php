@@ -19,6 +19,11 @@ class StudentPolicy extends BasePolicy
         return $this->canOrOwn($user, 'students.update', $student, 'user_id');
     }
 
+    public function updateStatus(User $user, Model $student): bool
+    {
+        return $this->canOrOwn($user, 'students.update', $student, 'user_id');
+    }
+
     public function viewGrades(User $user, Model $student): bool
     {
         return $this->allow($user, 'grades.view')

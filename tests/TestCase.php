@@ -30,6 +30,8 @@ abstract class TestCase extends BaseTestCase
                 'driver' => 'keycloak',
                 'provider' => 'keycloak_users',
             ]),
+            'filesystems.default' => 'documents',
+            'media-library.disk_name' => 'documents',
         ]);
     }
 }

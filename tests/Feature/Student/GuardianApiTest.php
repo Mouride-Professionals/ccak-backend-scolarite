@@ -15,10 +15,10 @@ class GuardianApiTest extends TestCase
     use InteractsWithPermissions;
 
     private array $permissions = [
-        'students.view',
-        'students.create',
-        'students.update',
-        'students.delete',
+        'guardians.view',
+        'guardians.create',
+        'guardians.update',
+        'guardians.delete',
     ];
 
     protected function setUp(): void
@@ -30,7 +30,7 @@ class GuardianApiTest extends TestCase
 
     public function test_can_list_guardians_for_student(): void
     {
-        $this->actingAsUserWithPermissions(['students.view']);
+        $this->actingAsUserWithPermissions(['guardians.view']);
 
         $student = Student::factory()->create();
         Guardian::factory()->count(3)->create(['student_id' => $student->id]);
@@ -39,42 +39,42 @@ class GuardianApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(3, 'data.data');
+            ->assertJsonCount(3, 'data');
     }
 
     public function test_can_filter_guardians_by_relationship(): void
     {
-        $this->actingAsUserWithPermissions(['students.view']);
+        $this->actingAsUserWithPermissions(['guardians.view']);
 
         $student = Student::factory()->create();
         Guardian::factory()->father()->create(['student_id' => $student->id]);
         Guardian::factory()->mother()->create(['student_id' => $student->id]);
 
-        $response = $this->getJson("/api/v1/students/{$student->id}/guardians?relationship=FATHER");
+        $response = $this->getJson("/api/v1/students/{$student->id}/guardians?filter[relationship]=FATHER");
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data.data');
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_can_filter_guardians_by_name(): void
     {
-        $this->actingAsUserWithPermissions(['students.view']);
+        $this->actingAsUserWithPermissions(['guardians.view']);
 
         $student = Student::factory()->create();
         Guardian::factory()->create(['student_id' => $student->id, 'full_name' => 'John Doe']);
         Guardian::factory()->create(['student_id' => $student->id, 'full_name' => 'Jane Smith']);
 
-        $response = $this->getJson("/api/v1/students/{$student->id}/guardians?full_name=John");
+        $response = $this->getJson("/api/v1/students/{$student->id}/guardians?filter[full_name]=John");
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data.data');
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_can_sort_guardians(): void
     {
-        $this->actingAsUserWithPermissions(['students.view']);
+        $this->actingAsUserWithPermissions(['guardians.view']);
 
         $student = Student::factory()->create();
         Guardian::factory()->create(['student_id' => $student->id, 'full_name' => 'Zoe']);
@@ -84,13 +84,13 @@ class GuardianApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.data.0.full_name', 'Alice')
-            ->assertJsonPath('data.data.1.full_name', 'Zoe');
+            ->assertJsonPath('data.0.full_name', 'Alice')
+            ->assertJsonPath('data.1.full_name', 'Zoe');
     }
 
     public function test_can_paginate_guardians(): void
     {
-        $this->actingAsUserWithPermissions(['students.view']);
+        $this->actingAsUserWithPermissions(['guardians.view']);
 
         $student = Student::factory()->create();
         Guardian::factory()->count(5)->create(['student_id' => $student->id]);
@@ -99,8 +99,8 @@ class GuardianApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data.data')
-            ->assertJsonPath('data.per_page', 2);
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.per_page', 2);
     }
 
     public function test_can_create_guardian(): void
@@ -134,7 +134,7 @@ class GuardianApiTest extends TestCase
 
     public function test_can_show_guardian(): void
     {
-        $this->actingAsUserWithPermissions(['students.view']);
+        $this->actingAsUserWithPermissions(['guardians.view']);
 
         $student = Student::factory()->create();
         $guardian = Guardian::factory()->create(['student_id' => $student->id]);
@@ -149,7 +149,7 @@ class GuardianApiTest extends TestCase
 
     public function test_cannot_show_guardian_from_different_student(): void
     {
-        $this->actingAsUserWithPermissions(['students.view']);
+        $this->actingAsUserWithPermissions(['guardians.view']);
 
         $student1 = Student::factory()->create();
         $student2 = Student::factory()->create();
@@ -163,7 +163,7 @@ class GuardianApiTest extends TestCase
 
     public function test_can_update_guardian(): void
     {
-        $this->actingAsUserWithPermissions(['students.update']);
+        $this->actingAsUserWithPermissions(['guardians.update']);
 
         $student = Student::factory()->create();
         $guardian = Guardian::factory()->create(['student_id' => $student->id]);
@@ -189,7 +189,7 @@ class GuardianApiTest extends TestCase
 
     public function test_cannot_update_guardian_from_different_student(): void
     {
-        $this->actingAsUserWithPermissions(['students.update']);
+        $this->actingAsUserWithPermissions(['guardians.update']);
 
         $student1 = Student::factory()->create();
         $student2 = Student::factory()->create();
@@ -205,7 +205,7 @@ class GuardianApiTest extends TestCase
 
     public function test_can_delete_guardian(): void
     {
-        $this->actingAsUserWithPermissions(['students.delete']);
+        $this->actingAsUserWithPermissions(['guardians.delete']);
 
         $student = Student::factory()->create();
         $guardian = Guardian::factory()->create(['student_id' => $student->id]);
@@ -222,7 +222,7 @@ class GuardianApiTest extends TestCase
 
     public function test_cannot_delete_guardian_from_different_student(): void
     {
-        $this->actingAsUserWithPermissions(['students.delete']);
+        $this->actingAsUserWithPermissions(['guardians.delete']);
 
         $student1 = Student::factory()->create();
         $student2 = Student::factory()->create();
@@ -239,12 +239,13 @@ class GuardianApiTest extends TestCase
         $this->seedPermissions($this->permissions);
 
         $student = Student::factory()->create();
+        $guardian = Guardian::factory()->create(['student_id' => $student->id]);
         $this->actingAs(User::factory()->create());
 
         $this->getJson("/api/v1/students/{$student->id}/guardians")->assertStatus(403);
         $this->postJson("/api/v1/students/{$student->id}/guardians", [])->assertStatus(403);
-        $this->putJson("/api/v1/students/{$student->id}/guardians/123", [])->assertStatus(404);
-        $this->deleteJson("/api/v1/students/{$student->id}/guardians/123")->assertStatus(404);
+        $this->putJson("/api/v1/students/{$student->id}/guardians/{$guardian->id}", [])->assertStatus(403);
+        $this->deleteJson("/api/v1/students/{$student->id}/guardians/{$guardian->id}")->assertStatus(403);
     }
 
     public function test_store_guardian_validation(): void
@@ -302,7 +303,7 @@ class GuardianApiTest extends TestCase
 
     public function test_update_guardian_validation(): void
     {
-        $this->actingAsUserWithPermissions(['students.update']);
+        $this->actingAsUserWithPermissions(['guardians.update']);
 
         $student = Student::factory()->create();
         $guardian = Guardian::factory()->create(['student_id' => $student->id]);

@@ -27,6 +27,7 @@ class DocumentController extends BaseApiController
         $this->middleware('permission:documents.view')->only([
             'index',
             'show',
+            'showForStudent',
             'download',
             'downloadFile',
             'studentDocuments',
@@ -34,8 +35,8 @@ class DocumentController extends BaseApiController
             'report',
             'checkStatus',
         ]);
-        $this->middleware('permission:documents.create')->only('store');
-        $this->middleware('permission:documents.update')->only('update');
+        $this->middleware('permission:documents.create')->only(['store', 'storeForStudent']);
+        $this->middleware('permission:documents.update')->only(['update', 'review']);
         $this->middleware('permission:documents.delete')->only('destroy');
         $this->middleware('permission:documents.review')->only(['approve', 'reject']);
         $this->middleware('permission:documents.download')->only(['download', 'downloadFile']);
@@ -378,6 +379,12 @@ class DocumentController extends BaseApiController
         $perPage = (int) ($request->integer('per_page') ?: 15);
         $documents = QueryBuilder::for(Document::query())
             ->where('student_id', $student->id)
+            ->when($request->filled('type'), function ($query) use ($request) {
+                $query->where('type', (string) $request->string('type'));
+            })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('status', (string) $request->string('status'));
+            })
             ->allowedFilters([
                 AllowedFilter::exact('type'),
                 AllowedFilter::exact('status'),
@@ -393,5 +400,106 @@ class DocumentController extends BaseApiController
             DocumentResource::collection($documents),
             'Documents de l\'étudiant récupérés avec succès'
         );
+    }
+
+    /**
+     * Compatibility endpoint: show a specific document for a student.
+     */
+    public function showForStudent(Student $student, Document $document): JsonResponse
+    {
+        if ($document->student_id !== $student->id) {
+            return $this->error('Document non trouvé', 404);
+        }
+
+        $this->authorize('view', $document);
+
+        return $this->success(
+            new DocumentResource($document),
+            'Document récupéré avec succès'
+        );
+    }
+
+    /**
+     * Compatibility endpoint: upload document via nested student route.
+     */
+    public function storeForStudent(Request $request, Student $student): JsonResponse
+    {
+        $validated = $request->validate([
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'type' => ['required', 'string', 'in:' . implode(',', \App\Enums\DocumentType::values())],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        /** @var UploadedFile $file */
+        $file = $validated['document'];
+
+        try {
+            $document = DB::transaction(function () use ($validated, $student, $file) {
+                return $this->documentService->upload([
+                    'student_id' => $student->id,
+                    'type' => $validated['type'],
+                    'notes' => $validated['notes'] ?? null,
+                ], $file);
+            });
+
+            return $this->success(
+                new DocumentResource($document),
+                'Document uploadé avec succès',
+                201
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->error(
+                'Erreur de validation',
+                422,
+                $e->errors()
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 400);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Compatibility endpoint: review document using status field.
+     */
+    public function review(Request $request, Document $document): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:APPROVED,REJECTED'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $admin = $request->user()?->admin;
+        if (!$admin) {
+            return $this->error('Profil administrateur requis', 403);
+        }
+
+        try {
+            $document = DB::transaction(function () use ($document, $admin, $validated) {
+                if ($validated['status'] === DocumentStatus::APPROVED->value) {
+                    return $this->documentService->approve(
+                        $document->id,
+                        $admin->id,
+                        $validated['notes'] ?? null
+                    );
+                }
+
+                return $this->documentService->reject(
+                    $document->id,
+                    $admin->id,
+                    $validated['notes'] ?? 'Document rejeté'
+                );
+            });
+
+            return $this->success(
+                new DocumentResource($document),
+                'Document revu avec succès'
+            );
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return $this->error('Document non trouvé', 404);
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 400);
+        }
     }
 }

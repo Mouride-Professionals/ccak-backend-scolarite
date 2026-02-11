@@ -37,7 +37,7 @@ class StudentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(3, 'data.data');
+            ->assertJsonCount(3, 'data');
     }
 
     public function test_can_filter_students_by_status(): void
@@ -51,7 +51,7 @@ class StudentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data.data');
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_can_filter_students_by_name(): void
@@ -65,7 +65,7 @@ class StudentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data.data');
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_can_filter_students_by_student_number(): void
@@ -79,7 +79,7 @@ class StudentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data.data');
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_can_sort_students(): void
@@ -93,8 +93,8 @@ class StudentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.data.0.full_name', 'Alice')
-            ->assertJsonPath('data.data.1.full_name', 'Zoe');
+            ->assertJsonPath('data.0.full_name', 'Alice')
+            ->assertJsonPath('data.1.full_name', 'Zoe');
     }
 
     public function test_can_paginate_students(): void
@@ -107,8 +107,8 @@ class StudentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data.data')
-            ->assertJsonPath('data.per_page', 2);
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.per_page', 2);
     }
 
     public function test_can_create_student(): void
@@ -223,11 +223,12 @@ class StudentApiTest extends TestCase
     {
         $this->seedPermissions($this->permissions);
 
+        $student = Student::factory()->create();
         $this->actingAs(User::factory()->create());
 
         $this->getJson('/api/v1/students')->assertStatus(403);
         $this->postJson('/api/v1/students', [])->assertStatus(403);
-        $this->putJson('/api/v1/students/123', [])->assertStatus(403);
+        $this->putJson("/api/v1/students/{$student->id}", [])->assertStatus(403);
     }
 
     public function test_store_student_validation(): void

@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Log;
 
 class CourseEnrollmentService
 {
+    public function __construct(
+        private readonly EnrollmentValidationService $validationService
+    ) {
+    }
+
     public function enrollCourse(Enrollment $enrollment, array $payload): array
     {
         if (!$enrollment->isActive()) {
@@ -44,16 +49,15 @@ class CourseEnrollmentService
             ];
         }
 
-        $prerequisiteCheck = CourseEnrollment::checkPrerequisites($enrollment->student_id, $payload['course_id']);
+        $prerequisiteCheck = $this->validationService->validatePrerequisites($enrollment->student_id, $course);
         if (!$prerequisiteCheck['satisfied']) {
-            $missingCourses = Course::whereIn('id', $prerequisiteCheck['missing'])->pluck('name')->toArray();
-
             return [
                 'error' => [
                     'message' => 'Prérequis non satisfaits.',
                     'status' => 422,
                     'errors' => [
-                        'missing_prerequisites' => $missingCourses,
+                        'missing_required_prerequisites' => $prerequisiteCheck['missing_required_courses'],
+                        'missing_optional_prerequisites' => $prerequisiteCheck['missing_optional_courses'],
                     ],
                 ],
             ];
