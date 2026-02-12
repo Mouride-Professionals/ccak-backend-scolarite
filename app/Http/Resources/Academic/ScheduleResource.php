@@ -47,6 +47,8 @@ class ScheduleResource extends JsonResource
             'starts_on' => $this->starts_on,
             'ends_on' => $this->ends_on,
             'recurrence_pattern' => $this->recurrence_pattern,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

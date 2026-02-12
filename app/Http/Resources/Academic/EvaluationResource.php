@@ -18,6 +18,8 @@ class EvaluationResource extends JsonResource
             'question_template' => $this->question_template,
             'is_published' => $this->is_published,
             'response_deadline' => $this->response_deadline,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

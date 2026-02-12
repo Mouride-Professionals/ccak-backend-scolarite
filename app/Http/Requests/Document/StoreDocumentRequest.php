@@ -19,8 +19,12 @@ class StoreDocumentRequest extends FormRequest
             'student_id' => ['required', 'uuid'],
             'type' => ['required', 'string', Rule::in(DocumentType::values())],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'document_file' => ['required', 'file'],
-            // Note: La validation du fichier sera faite dans le service
+            'document_file' => [
+                'required',
+                'file',
+                'max:10240', // 10 MB
+                'mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+            ],
         ];
     }
 
@@ -35,6 +39,8 @@ class StoreDocumentRequest extends FormRequest
             'notes.max' => 'Les notes ne doivent pas dépasser 1000 caractères',
             'document_file.required' => 'Un fichier est requis',
             'document_file.file' => 'Le fichier n\'est pas valide',
+            'document_file.max' => 'Le fichier ne doit pas dépasser 10 Mo',
+            'document_file.mimes' => 'Le fichier doit être de type : pdf, doc, docx, jpg, jpeg, png, webp',
         ];
     }
 

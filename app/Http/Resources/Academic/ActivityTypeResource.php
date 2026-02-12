@@ -15,6 +15,8 @@ class ActivityTypeResource extends JsonResource
             'duration_minutes' => $this->duration_minutes,
             'color' => $this->color,
             'is_active' => $this->is_active,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

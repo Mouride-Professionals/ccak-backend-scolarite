@@ -102,9 +102,11 @@ class Announcement extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('title', 'ilike', "%{$term}%")
-                ->orWhere('content', 'ilike', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('title', $likeOperator, "%{$term}%")
+                ->orWhere('content', $likeOperator, "%{$term}%");
         });
     }
 

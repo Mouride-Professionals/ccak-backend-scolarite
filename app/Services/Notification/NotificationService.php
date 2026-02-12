@@ -66,6 +66,8 @@ class NotificationService
         string $channel,
         array $metadata
     ): Notification {
+        $smsStatus = $channel === Notification::CHANNEL_SMS ? 'queued' : null;
+
         return Notification::create([
             'user_id' => $userId,
             'title' => $title,
@@ -73,6 +75,7 @@ class NotificationService
             'type' => $type,
             'channel' => $channel,
             'metadata' => $metadata,
+            'sms_status' => $smsStatus,
         ]);
     }
 
@@ -134,13 +137,12 @@ class NotificationService
         $this->send(
             $user->id,
             'Document disponible',
-            "Le document {$document->name} est maintenant disponible.",
+            "Le document {$document->file_name} est maintenant disponible.",
             Notification::TYPE_DOCUMENT_READY,
             ['in_app'],
             [
                 'document_id' => $document->id,
-                'document_name' => $document->name,
-                'download_url' => $document->download_url,
+                'document_name' => $document->file_name,
             ]
         );
     }

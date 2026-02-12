@@ -26,6 +26,8 @@ class SemesterResultResource extends JsonResource
             'decision' => $this->decision,
             'calculated_by' => $this->calculated_by,
             'calculated_at' => $this->calculated_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

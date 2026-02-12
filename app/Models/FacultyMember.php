@@ -99,9 +99,11 @@ class FacultyMember extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('full_name', 'like', "%{$term}%")
-                ->orWhere('staff_number', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('full_name', $likeOperator, "%{$term}%")
+                ->orWhere('staff_number', $likeOperator, "%{$term}%");
         });
     }
 }

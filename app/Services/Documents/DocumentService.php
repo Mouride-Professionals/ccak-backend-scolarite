@@ -10,6 +10,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class DocumentService
 {
@@ -48,26 +50,32 @@ class DocumentService
             $validatedData['type']
         );
 
-        // Préparer le stockage
-        $storageInfo = $this->storageService->prepareForStorage(
-            $file,
-            $validatedData['student_id'],
-            $validatedData['type']
-        );
-
-        // Stocker le fichier
-        $filePath = $this->storageService->store($file, $storageInfo['path']);
-
-        // Créer le document en base
         $documentData = array_merge($validatedData, [
-            'file_path' => $filePath,
-            'file_name' => $storageInfo['original_name'],
+            'file_path' => '',
+            'file_name' => $file->getClientOriginalName(),
             'uploaded_at' => now(),
             'status' => DocumentStatus::PENDING,
             'metadata' => $this->extractFileMetadata($file),
         ]);
 
         $document = $this->repository->create($documentData);
+
+        $filename = $this->buildDocumentFileName(
+            $validatedData['type'],
+            $validatedData['student_id'],
+            $file->getClientOriginalExtension()
+        );
+
+        $media = $document->addMedia($file)
+            ->usingFileName($filename)
+            ->usingName($validatedData['type'])
+            ->toMediaCollection($validatedData['type']);
+
+        $document = $this->repository->update($document->id, [
+            'media_id' => $media->id,
+            'file_path' => $media->getPathRelativeToRoot(),
+            'file_name' => $media->file_name,
+        ]);
 
         // Notifications
         $this->notificationService->notifyUpload($document);
@@ -77,7 +85,7 @@ class DocumentService
             'document_id' => $document->id,
             'student_id' => $document->student_id,
             'type' => $document->type,
-            'file_size' => $file->getSize(),
+            'file_size' => $document->metadata['size'] ?? null,
         ]);
 
         return $document;
@@ -147,6 +155,36 @@ class DocumentService
     {
         $document = $this->repository->find($documentId);
 
+        $media = null;
+        if ($document->media_id) {
+            $media = $document->media()->whereKey($document->media_id)->first();
+        }
+
+        if ($media instanceof Media) {
+            $temporaryUrl = null;
+            $content = null;
+
+            try {
+                $temporaryUrl = $media->getTemporaryUrl(now()->addMinutes(30));
+            } catch (\Throwable) {
+                $temporaryUrl = null;
+            }
+
+            if ($temporaryUrl === null) {
+                $content = Storage::disk($media->disk)->get($media->getPathRelativeToRoot());
+            }
+
+            return [
+                'path' => $media->getPathRelativeToRoot(),
+                'content' => $content,
+                'temporary_url' => $temporaryUrl,
+                'mime_type' => $media->mime_type,
+                'original_name' => $media->file_name,
+                'size' => $media->size,
+                'disk' => $media->disk,
+            ];
+        }
+
         if (!$this->storageService->exists($document->file_path)) {
             throw new \RuntimeException('Le fichier n\'existe plus sur le serveur');
         }
@@ -154,9 +192,11 @@ class DocumentService
         return [
             'path' => $document->file_path,
             'content' => $this->storageService->get($document->file_path),
+            'temporary_url' => null,
             'mime_type' => $this->storageService->mimeType($document->file_path),
             'original_name' => $document->file_name,
             'size' => $this->storageService->size($document->file_path),
+            'disk' => null,
         ];
     }
 
@@ -167,8 +207,14 @@ class DocumentService
     {
         $document = $this->repository->find($documentId);
 
-        // Supprimer le fichier physique
-        $this->storageService->delete($document->file_path);
+        if ($document->media_id) {
+            $media = $document->media()->whereKey($document->media_id)->first();
+            if ($media instanceof Media) {
+                $media->delete();
+            }
+        } else {
+            $this->storageService->delete($document->file_path);
+        }
 
         // Supprimer de la base
         $this->repository->delete($document->id);
@@ -354,18 +400,33 @@ class DocumentService
     /** @return array<string, mixed> */
     private function extractFileMetadata(UploadedFile $file): array
     {
+        $mimeType = $file->getMimeType();
+        $size = null;
+        $checksum = null;
+
+        try {
+            $size = $file->getSize();
+        } catch (\Throwable) {
+            $size = null;
+        }
+
+        $pathname = $file->getPathname();
+        if (is_string($pathname) && $pathname !== '' && is_file($pathname)) {
+            $checksum = @md5_file($pathname) ?: null;
+        }
+
         $metadata = [
             'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
+            'mime_type' => $mimeType,
+            'size' => $size,
             'extension' => $file->getClientOriginalExtension(),
             'upload_timestamp' => now()->timestamp,
-            'checksum' => md5_file($file->getPathname()),
+            'checksum' => $checksum,
         ];
 
         // Métadonnées supplémentaires pour les images
-        if (str_starts_with($file->getMimeType(), 'image/')) {
-            $imageInfo = @getimagesize($file->getPathname());
+        if (is_string($mimeType) && str_starts_with($mimeType, 'image/') && is_file($pathname)) {
+            $imageInfo = @getimagesize($pathname);
             if ($imageInfo) {
                 $metadata['image'] = [
                     'width' => $imageInfo[0],
@@ -378,7 +439,7 @@ class DocumentService
         }
 
         // Métadonnées pour les PDF
-        if ($file->getMimeType() === 'application/pdf') {
+        if ($mimeType === 'application/pdf') {
             $metadata['pdf'] = [
                 'pages' => null, // Pourrait être extrait avec une bibliothèque PDF
                 'version' => null,
@@ -386,6 +447,16 @@ class DocumentService
         }
 
         return $metadata;
+    }
+
+    private function buildDocumentFileName(string $type, string $studentId, ?string $extension): string
+    {
+        $timestamp = now()->format('Ymd_His');
+        $suffix = $extension ? strtolower($extension) : 'bin';
+        $safeType = preg_replace('/[^A-Z0-9_]/', '', strtoupper($type));
+        $safeStudent = preg_replace('/[^a-zA-Z0-9-]/', '', $studentId);
+
+        return "{$safeType}_{$safeStudent}_{$timestamp}.{$suffix}";
     }
 
     /**

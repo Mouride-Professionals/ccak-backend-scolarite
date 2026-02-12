@@ -39,6 +39,8 @@ class Admin extends Model
             return $query;
         }
 
-        return $query->where('full_name', 'ilike', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where('full_name', $likeOperator, "%{$term}%");
     }
 }

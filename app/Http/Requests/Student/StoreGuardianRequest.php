@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Student;
 
+use App\Models\Student;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreGuardianRequest extends FormRequest
 {
@@ -10,7 +12,7 @@ class StoreGuardianRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user !== null && $user->can('students.create');
+        return $user !== null && $user->can('guardians.create');
     }
 
     public function rules(): array
@@ -37,6 +39,23 @@ class StoreGuardianRequest extends FormRequest
             'email.unique' => 'Cette adresse email est déjà utilisée.',
             'address.required' => 'L\'adresse est obligatoire.',
             'occupation.required' => 'La profession est obligatoire.',
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $student = $this->route('student');
+
+                if (! $student instanceof Student) {
+                    return;
+                }
+
+                if ($student->guardians()->count() >= 3) {
+                    $validator->errors()->add('student_id', 'Un étudiant ne peut pas avoir plus de 3 tuteurs.');
+                }
+            },
         ];
     }
 }

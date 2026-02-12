@@ -44,7 +44,7 @@ class RoleApiTest extends TestCase
         $this->getJson('/api/v1/roles')
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonCount(1, 'data.data');
+            ->assertJsonCount(1, 'data');
 
         $this->putJson("/api/v1/roles/{$roleId}", [
             'name' => 'EDITOR_UPDATED',

@@ -2,7 +2,7 @@
 
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
 
-$requireAuth = env('SCRAMBLE_REQUIRE_AUTH', false);
+$requireAuth = env('SCRAMBLE_REQUIRE_AUTH', true);
 
 return [
     /*

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Academic;
 
+use App\Http\Resources\Academic\AcademicProgramResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class DepartmentResource extends JsonResource
@@ -29,6 +30,8 @@ class DepartmentResource extends JsonResource
                 ];
             }),
             'programs' => AcademicProgramResource::collection($this->whenLoaded('programs')),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

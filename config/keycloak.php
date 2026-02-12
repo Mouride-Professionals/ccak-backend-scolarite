@@ -1,6 +1,18 @@
 <?php
 
 return [
+    'server_url' => rtrim((string) env('KEYCLOAK_SERVER_URL', 'http://localhost:8080'), '/'),
+    'realm' => env('KEYCLOAK_REALM', 'master'),
+    'admin_api_enabled' => filter_var(env('KEYCLOAK_ADMIN_API_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+    'client_id' => env('KEYCLOAK_CLIENT_ID', ''),
+    'client_secret' => env('KEYCLOAK_CLIENT_SECRET', ''),
+    'admin_client_id' => env('KEYCLOAK_ADMIN_CLIENT_ID', 'admin-cli'),
+    'admin_client_secret' => env('KEYCLOAK_ADMIN_CLIENT_SECRET', ''),
+    'admin_username' => env('KEYCLOAK_ADMIN_USERNAME', ''),
+    'admin_password' => env('KEYCLOAK_ADMIN_PASSWORD', ''),
+    'default_temporary_password' => env('KEYCLOAK_DEFAULT_TEMP_PASSWORD', 'ChangeMe123!'),
+    'frontend_logout_redirect' => env('KEYCLOAK_FRONTEND_LOGOUT_REDIRECT', env('APP_URL', 'http://localhost')),
+
     // Sync Keycloak roles into Spatie Permission.
     'sync_roles' => filter_var(env('KEYCLOAK_SYNC_ROLES', false), FILTER_VALIDATE_BOOLEAN),
 

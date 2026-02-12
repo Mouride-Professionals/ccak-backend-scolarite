@@ -2,11 +2,12 @@
 
 use Illuminate\Support\Str;
 
-$mysqlSslAttr = null;
-if (class_exists(\Pdo\Mysql::class)) {
-    $mysqlSslAttr = \Pdo\Mysql::ATTR_SSL_CA;
+$mysqlSslCaOption = null;
+if (class_exists(\Pdo\Mysql::class) && defined('\Pdo\Mysql::ATTR_SSL_CA')) {
+    $mysqlSslCaOption = \Pdo\Mysql::ATTR_SSL_CA;
 } elseif (defined('PDO::MYSQL_ATTR_SSL_CA')) {
-    $mysqlSslAttr = PDO::MYSQL_ATTR_SSL_CA;
+    /** @phpstan-ignore-next-line */
+    $mysqlSslCaOption = constant('PDO::MYSQL_ATTR_SSL_CA');
 }
 
 return [
@@ -65,8 +66,8 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => is_int($mysqlSslAttr) ? array_filter([
-                $mysqlSslAttr => env('MYSQL_ATTR_SSL_CA'),
+            'options' => $mysqlSslCaOption !== null ? array_filter([
+                $mysqlSslCaOption => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -85,8 +86,8 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => is_int($mysqlSslAttr) ? array_filter([
-                $mysqlSslAttr => env('MYSQL_ATTR_SSL_CA'),
+            'options' => $mysqlSslCaOption !== null ? array_filter([
+                $mysqlSslCaOption => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -102,7 +103,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'prefer',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
         'sqlsrv' => [

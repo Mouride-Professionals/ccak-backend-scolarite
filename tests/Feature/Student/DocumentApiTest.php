@@ -29,7 +29,7 @@ class DocumentApiTest extends TestCase
         parent::setUp();
 
         $this->withoutMiddleware(\Illuminate\Auth\Middleware\Authenticate::class);
-        Storage::fake('externeStorage');
+        Storage::fake('documents');
     }
 
     public function test_can_list_documents_for_student(): void
@@ -43,7 +43,7 @@ class DocumentApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(3, 'data.data');
+            ->assertJsonCount(3, 'data');
     }
 
     public function test_can_show_document(): void
@@ -87,7 +87,7 @@ class DocumentApiTest extends TestCase
         ]);
 
         // Vérifier que le fichier a été stocké
-        $this->assertTrue(Storage::disk('externeStorage')->exists($response->json('data.file_path')));
+        $this->assertTrue(Storage::disk('documents')->exists($response->json('data.file_path')));
     }
 
     public function test_can_review_document(): void
@@ -200,11 +200,12 @@ class DocumentApiTest extends TestCase
         $this->seedPermissions($this->permissions);
 
         $student = Student::factory()->create();
+        $document = Document::factory()->pending()->create(['student_id' => $student->id]);
         $this->actingAs(User::factory()->create());
 
         $this->getJson("/api/v1/students/{$student->id}/documents")->assertStatus(403);
         $this->postJson("/api/v1/students/{$student->id}/documents", [])->assertStatus(403);
-        $this->putJson("/api/v1/documents/123/review", [])->assertStatus(403);
+        $this->putJson("/api/v1/documents/{$document->id}/review", [])->assertStatus(403);
     }
 
     public function test_review_requires_authorization(): void

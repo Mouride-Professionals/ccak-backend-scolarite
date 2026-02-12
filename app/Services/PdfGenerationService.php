@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class PdfGenerationService implements DocumentGenerationServiceInterface
 {
@@ -67,18 +68,22 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         $pdf = $this->generatePdf($template, $processedData, $withWatermark);
 
         // Store PDF file
-        $filePath = $this->storePdf($pdf, $type, $documentNumber);
-
         // Create document record
         $document = GeneratedDocument::create([
             'student_id' => $student->id,
             'type' => $type,
             'document_number' => $documentNumber,
-            'file_path' => $filePath,
+            'file_path' => '',
             'generated_by' => $generatedBy->id,
             'metadata' => $this->prepareMetadata($processedData, $withWatermark, $withQrCode),
             'status' => GeneratedDocument::STATUS_DRAFT,
             'generated_at' => now(),
+        ]);
+
+        $media = $this->storeGeneratedPdf($document, $pdf->output(), $documentNumber);
+        $document->update([
+            'media_id' => $media->id,
+            'file_path' => $media->getPathRelativeToRoot(),
         ]);
 
         return $document;
@@ -134,16 +139,28 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
             );
     }
 
-    private function storePdf(
-        \Barryvdh\DomPDF\PDF $pdf,
-        DocumentType $type,
+    private function storeGeneratedPdf(
+        GeneratedDocument $document,
+        string $pdfContent,
         string $documentNumber
-    ): string {
-        $path = $this->getStoragePath($type, $documentNumber);
+    ): Media {
+        $tmpPath = tempnam(sys_get_temp_dir(), 'ucak_pdf_');
+        if ($tmpPath === false) {
+            throw new \RuntimeException('Impossible de créer un fichier temporaire');
+        }
 
-        Storage::disk($this->storageDisk)->put($path, $pdf->output());
+        $tmpFile = $tmpPath . '.pdf';
+        rename($tmpPath, $tmpFile);
+        file_put_contents($tmpFile, $pdfContent);
 
-        return $path;
+        try {
+            return $document->addMedia($tmpFile)
+                ->usingFileName($documentNumber . '.pdf')
+                ->usingName($documentNumber)
+                ->toMediaCollection('official_documents');
+        } finally {
+            @unlink($tmpFile);
+        }
     }
 
     public function getStoragePath(DocumentType $type, string $documentNumber): string
@@ -264,6 +281,17 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
      */
     public function getDownloadUrl(GeneratedDocument $document): string
     {
+        if ($document->media_id) {
+            $media = $document->media()->whereKey($document->media_id)->first();
+            if ($media instanceof Media) {
+                try {
+                    return $media->getTemporaryUrl(now()->addMinutes(30));
+                } catch (\Throwable) {
+                    return '';
+                }
+            }
+        }
+
         return Storage::disk($this->storageDisk)->exists($document->file_path) ? url($document->file_path) : '';
     }
 
@@ -272,6 +300,14 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
      */
     public function getAsBase64(GeneratedDocument $document): string
     {
+        if ($document->media_id) {
+            $media = $document->media()->whereKey($document->media_id)->first();
+            if ($media instanceof Media) {
+                $content = Storage::disk($media->disk)->get($media->getPathRelativeToRoot());
+                return base64_encode($content);
+            }
+        }
+
         $content = Storage::disk($this->storageDisk)->get($document->file_path);
 
         return base64_encode($content);

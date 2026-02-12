@@ -18,13 +18,15 @@ use App\Jobs\CalculateSemesterResultsJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
-use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\Permission\Models\Role;
+use Tests\Support\InteractsWithPermissions;
+use Tests\TestCase;
 
 class SemesterResultCalculationApiTest extends TestCase
 {
     use RefreshDatabase;
+    use InteractsWithPermissions;
 
     private User $admin;
     private User $faculty;
@@ -32,6 +34,10 @@ class SemesterResultCalculationApiTest extends TestCase
     private AcademicYear $academicYear;
     private AcademicProgram $academicProgram;
     private CourseUnit $courseUnit;
+    private array $permissions = [
+        'semester_results.view',
+        'semester_results.calculate',
+    ];
 
     protected function setUp(): void
     {
@@ -46,7 +52,7 @@ class SemesterResultCalculationApiTest extends TestCase
         $this->admin = User::create([
             'email' => 'admin@test.com',
             'password' => 'password',
-            'keycloak_id' => Str::uuid()->toString(),
+            'keycloak_id' => (string) Str::uuid(),
             'is_active' => true,
         ]);
         $this->admin->assignRole('ADMIN');
@@ -54,7 +60,7 @@ class SemesterResultCalculationApiTest extends TestCase
         $this->faculty = User::create([
             'email' => 'faculty@test.com',
             'password' => 'password',
-            'keycloak_id' => Str::uuid()->toString(),
+            'keycloak_id' => (string) Str::uuid(),
             'is_active' => true,
         ]);
         $this->faculty->assignRole('FACULTY');
@@ -62,10 +68,14 @@ class SemesterResultCalculationApiTest extends TestCase
         $this->student = User::create([
             'email' => 'student@test.com',
             'password' => 'password',
-            'keycloak_id' => Str::uuid()->toString(),
+            'keycloak_id' => (string) Str::uuid(),
             'is_active' => true,
         ]);
         $this->student->assignRole('STUDENT');
+
+        $this->seedPermissions($this->permissions);
+        $this->admin->givePermissionTo($this->permissions);
+        $this->faculty->givePermissionTo(['semester_results.calculate']);
 
         $this->academicYear = AcademicYear::create(['name' => '2023-2024']);
 

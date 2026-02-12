@@ -21,6 +21,8 @@ class GradeResource extends JsonResource
             'status' => $this->status,
             'entered_at' => $this->entered_at,
             'validated_at' => $this->validated_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

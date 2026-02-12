@@ -17,6 +17,8 @@ class RoomResource extends JsonResource
             'type' => $this->type,
             'equipment' => $this->equipment,
             'is_available' => $this->is_available,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

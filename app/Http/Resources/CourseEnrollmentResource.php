@@ -19,6 +19,8 @@ class CourseEnrollmentResource extends JsonResource
             'status' => $this->status,
             'enrollment_date' => $this->enrollment_date,
             'drop_date' => $this->drop_date,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

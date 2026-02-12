@@ -6,7 +6,9 @@ use App\Models\User;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class KeycloakUserProvider extends EloquentUserProvider
 {
@@ -56,6 +58,25 @@ class KeycloakUserProvider extends EloquentUserProvider
         $allowedRoles = $this->getAllowedRoles();
         $allowedRolesSet = array_fill_keys($allowedRoles, true);
         $roles = $this->extractAllowedRoles($claims, $allowedRolesSet);
+        $guard = $this->resolveGuard($user);
+
+        $existingRoles = Role::query()
+            ->where('guard_name', $guard)
+            ->whereIn('name', $roles)
+            ->pluck('name')
+            ->map(fn (string $name): string => strtoupper($name))
+            ->unique()
+            ->values()
+            ->all();
+
+        $missingRoles = array_values(array_diff($roles, $existingRoles));
+        if ($missingRoles !== []) {
+            Log::warning('Skipping Keycloak role sync for roles missing locally', [
+                'user_id' => $user->id,
+                'guard' => $guard,
+                'missing_roles' => $missingRoles,
+            ]);
+        }
 
         $currentRoles = method_exists($user, 'getRoleNames')
             ? $user->getRoleNames()
@@ -66,9 +87,18 @@ class KeycloakUserProvider extends EloquentUserProvider
             ->all()
             : [];
 
-        if ($roles !== $currentRoles) {
-            $user->syncRoles($roles);
+        if ($existingRoles !== $currentRoles) {
+            $user->syncRoles($existingRoles);
         }
+    }
+
+    private function resolveGuard(User $user): string
+    {
+        $attributeGuard = $user->getAttribute('guard_name');
+
+        return is_string($attributeGuard) && $attributeGuard !== ''
+            ? $attributeGuard
+            : (string) config('auth.defaults.guard', 'api');
     }
 
     private function extractAllowedRoles(array $claims, array $allowedRolesSet): array

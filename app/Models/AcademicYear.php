@@ -72,7 +72,9 @@ class AcademicYear extends Model
             return $query;
         }
 
-        return $query->where('name', 'ilike', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where('name', $likeOperator, "%{$term}%");
     }
 
     public function getPrerequisitesAttribute($value): array

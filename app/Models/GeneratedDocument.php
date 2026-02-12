@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property string $id
@@ -22,9 +24,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $issued_at
  * @property string $status
  */
-class GeneratedDocument extends Model
+class GeneratedDocument extends Model implements HasMedia
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, InteractsWithMedia;
 
 
     protected $table = 'generated_documents';
@@ -34,6 +36,7 @@ class GeneratedDocument extends Model
         'type',
         'document_number',
         'file_path',
+        'media_id',
         'generated_by',
         'metadata',
         'generated_at',
@@ -45,6 +48,7 @@ class GeneratedDocument extends Model
         'student_id' => 'string',
         'document_number' => 'string',
         'file_path' => 'string',
+        'media_id' => 'integer',
         'generated_by' => 'string',
         'metadata' => 'array',
         'generated_at' => 'datetime',
@@ -134,7 +138,9 @@ class GeneratedDocument extends Model
             return $query;
         }
 
-        return $query->where('document_number', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where('document_number', $likeOperator, "%{$term}%");
     }
 
     public function scopeIssued(Builder $query): Builder
@@ -161,5 +167,12 @@ class GeneratedDocument extends Model
     public function generator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('official_documents')
+            ->singleFile()
+            ->acceptsMimeTypes(['application/pdf']);
     }
 }

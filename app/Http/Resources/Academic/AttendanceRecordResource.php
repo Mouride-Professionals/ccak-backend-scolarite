@@ -17,6 +17,8 @@ class AttendanceRecordResource extends JsonResource
             'notes' => $this->notes,
             'absence_count' => $this->absence_count,
             'is_dispensed' => $this->is_dispensed,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

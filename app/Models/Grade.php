@@ -9,11 +9,14 @@ use App\Models\Enums\GradeType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class Grade extends Model
+class Grade extends Model implements AuditableContract
 {
     use HasFactory;
     use UsesUuidV7;
+    use Auditable;
 
     protected $table = 'grades';
 
@@ -32,6 +35,9 @@ class Grade extends Model
         'entered_at' => 'datetime',
         'validated_at' => 'datetime',
     ];
+
+    public array $auditEvents = ['created', 'updated', 'deleted'];
+    public array $auditExclude = ['created_at', 'updated_at'];
 
     public function courseEnrollment()
     {

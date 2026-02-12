@@ -1,0 +1,45 @@
+{
+  "realm": "ucak",
+  "enabled": true,
+  "displayName": "UCAK Realm",
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN"
+      },
+      {
+        "name": "STAFF"
+      },
+      {
+        "name": "FACULTY"
+      },
+      {
+        "name": "STUDENT"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "ccak-backend",
+      "name": "CCAK Backend API",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:*/*",
+        "https://back-office.ucak.sn/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles"
+      ]
+    }
+  ]
+}

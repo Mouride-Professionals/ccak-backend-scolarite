@@ -29,6 +29,7 @@ class NotificationController extends BaseApiController
             ->where('user_id', $request->user()->id)
             ->allowedFilters([
                 AllowedFilter::exact('type'),
+                AllowedFilter::exact('sms_status'),
                 AllowedFilter::scope('is_read'),
                 AllowedFilter::scope('search'),
             ])

@@ -2,64 +2,25 @@
 
 namespace App\Policies;
 
-use App\Models\DeliberationSession;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 
-class DeliberationSessionPolicy
+class DeliberationSessionPolicy extends BasePolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    protected string $resource = 'deliberations';
+
+    public function start(User $user, Model $session): bool
     {
-        return false;
+        return $this->allow($user, 'deliberations.update');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, DeliberationSession $deliberationSession): bool
+    public function saveDecision(User $user, Model $session): bool
     {
-        return false;
+        return $this->allow($user, 'deliberations.update');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
+    public function complete(User $user, Model $session): bool
     {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, DeliberationSession $deliberationSession): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, DeliberationSession $deliberationSession): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, DeliberationSession $deliberationSession): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, DeliberationSession $deliberationSession): bool
-    {
-        return false;
+        return $this->allow($user, 'deliberations.update');
     }
 }

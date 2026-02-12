@@ -65,6 +65,39 @@ services:
     networks:
       - laravel
 
+  minio:
+    image: minio/minio:latest
+    container_name: ccak-backend-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-ucak_access_key}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ucak_secret_key}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - laravel
+
+  minio-create-buckets:
+    image: minio/mc:latest
+    container_name: ccak-backend-minio-init
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      /usr/bin/mc alias set ucakminio http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
+      /usr/bin/mc mb -p ucakminio/$$MINIO_BUCKET &&
+      exit 0;
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-ucak_access_key}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ucak_secret_key}
+      MINIO_BUCKET: ${MINIO_BUCKET:-ucak-documents}
+    networks:
+      - laravel
+    restart: "no"
+
   keycloak-db:
     image: postgres:16-alpine
     container_name: ccak-backend-keycloak-db
@@ -80,7 +113,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.4.7
     container_name: ccak-backend-keycloak
-    command: start-dev
+    command: [ "start-dev", "--import-realm" ]
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -94,6 +127,8 @@ services:
       KC_PROXY_HEADERS: "xforwarded"
     ports:
       - "8080:8080"
+    volumes:
+      - ./docker/keycloak/ucak-realm.json:/opt/keycloak/data/import/ucak-realm.json:ro
     depends_on:
       - keycloak-db
     networks:
@@ -118,10 +153,26 @@ services:
       - laravel
     restart: "no"
 
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ccak-backend-queue
+    working_dir: /var/www/html
+    command: php artisan queue:work --tries=3 --timeout=120
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - pgsql
+      - redis
+    networks:
+      - laravel
+
 volumes:
   pgsql_data:
   redis_data:
   keycloak_db_data:
+  minio_data:
 
 
 networks:

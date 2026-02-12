@@ -20,6 +20,8 @@ class GuardianResource extends JsonResource
             'email' => $this->email,
             'address' => $this->address,
             'occupation' => $this->occupation,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

@@ -97,6 +97,7 @@ class StudentTest extends TestCase
     {
         $fillable = [
             'user_id',
+            'keycloak_user_id',
             'student_number',
             'full_name',
             'gender',

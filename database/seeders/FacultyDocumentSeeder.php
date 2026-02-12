@@ -24,18 +24,58 @@ class FacultyDocumentSeeder extends Seeder
             ];
 
             foreach ($documents as $doc) {
-                FacultyDocument::firstOrCreate(
+                $facultyDocument = FacultyDocument::firstOrCreate(
                     [
                         'faculty_member_id' => $member->id,
                         'type' => $doc['type'],
                     ],
                     [
-                        'file_path' => 'faculty_documents/' . $member->id . '/' . $doc['file_name'],
+                        'file_path' => '',
                         'file_name' => $doc['file_name'],
+                        'media_id' => null,
                         'status' => FacultyDocument::STATUS_APPROVED,
                     ]
                 );
+
+                $this->attachFacultyMedia($facultyDocument, $doc['type'], $doc['file_name']);
             }
+        }
+    }
+
+    private function attachFacultyMedia(FacultyDocument $document, string $type, string $fileName): void
+    {
+        $extension = $type === FacultyDocument::TYPE_CNI ? 'png' : 'pdf';
+        $tmpPath = tempnam(sys_get_temp_dir(), 'fac_doc_');
+        if ($tmpPath === false) {
+            return;
+        }
+
+        $tmpFile = $tmpPath . '.' . $extension;
+        rename($tmpPath, $tmpFile);
+
+        if ($extension === 'png') {
+            $png = base64_decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
+            );
+            file_put_contents($tmpFile, $png ?: '');
+        } else {
+            $pdf = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF";
+            file_put_contents($tmpFile, $pdf);
+        }
+
+        try {
+            $media = $document->addMedia($tmpFile)
+                ->usingFileName($fileName)
+                ->usingName($type)
+                ->toMediaCollection($type);
+
+            $document->update([
+                'media_id' => $media->id,
+                'file_path' => $media->getPathRelativeToRoot(),
+                'file_name' => $media->file_name,
+            ]);
+        } finally {
+            @unlink($tmpFile);
         }
     }
 }

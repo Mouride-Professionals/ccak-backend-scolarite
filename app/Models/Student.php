@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
  * @property string $id
@@ -26,14 +28,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $photo_url
  * @property string $status
  */
-class Student extends Model
+class Student extends Model implements AuditableContract
 {
 
     use HasFactory;
     use UsesUuidV7;
+    use Auditable;
 
     protected $table = 'students';
 
+
+    public array $auditEvents = ['created', 'updated', 'deleted'];
+    public array $auditExclude = ['created_at', 'updated_at'];
 
 
 
@@ -45,6 +51,7 @@ class Student extends Model
      */
     protected $fillable = [
         'user_id',
+        'keycloak_user_id',
         'student_number',
         'full_name',
         'gender',
@@ -62,6 +69,7 @@ class Student extends Model
 
     protected $casts = [
         'user_id' => 'string',
+        'keycloak_user_id' => 'string',
         'student_number' => 'string',
         'full_name' => 'string',
         'date_of_birth' => 'date',
@@ -138,10 +146,12 @@ class Student extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('full_name', 'ilike', "%{$term}%")
-                ->orWhere('student_number', 'ilike', "%{$term}%")
-                ->orWhere('phone', 'ilike', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('full_name', $likeOperator, "%{$term}%")
+                ->orWhere('student_number', $likeOperator, "%{$term}%")
+                ->orWhere('phone', $likeOperator, "%{$term}%");
         });
     }
 

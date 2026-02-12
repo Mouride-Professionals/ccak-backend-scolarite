@@ -6,14 +6,22 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\InteractsWithPermissions;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
 {
     use RefreshDatabase;
+    use InteractsWithPermissions;
 
     protected User $user;
     protected User $admin;
+    protected array $permissions = [
+        'notifications.view',
+        'notifications.create',
+        'notifications.update',
+        'notifications.delete',
+    ];
 
     protected function setUp(): void
     {
@@ -26,6 +34,14 @@ class NotificationTest extends TestCase
         $this->user = User::factory()->create(['email' => 'user@test.com']);
         $this->admin = User::factory()->create(['email' => 'admin@test.com']);
         $this->admin->assignRole('ADMIN');
+
+        $this->seedPermissions($this->permissions);
+        $this->user->givePermissionTo([
+            'notifications.view',
+            'notifications.update',
+            'notifications.delete',
+        ]);
+        $this->admin->givePermissionTo($this->permissions);
     }
 
     #[Test]
@@ -42,19 +58,17 @@ class NotificationTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'data' => [
-                    'data' => [
-                        '*' => [
-                            'id',
-                            'title',
-                            'message',
-                            'type',
-                            'is_read',
-                            'created_at',
-                        ],
+                    '*' => [
+                        'id',
+                        'title',
+                        'message',
+                        'type',
+                        'is_read',
+                        'created_at',
                     ],
                 ],
             ])
-            ->assertJsonCount(3, 'data.data');
+            ->assertJsonCount(3, 'data');
     }
 
     #[Test]
@@ -70,11 +84,11 @@ class NotificationTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user, 'api')
-            ->getJson('/api/v1/notifications?type=' . Notification::TYPE_GRADE_PUBLISHED);
+            ->getJson('/api/v1/notifications?filter[type]=' . Notification::TYPE_GRADE_PUBLISHED);
 
         $response->assertStatus(200)
-            ->assertJsonCount(1, 'data.data')
-            ->assertJsonPath('data.data.0.type', Notification::TYPE_GRADE_PUBLISHED);
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.type', Notification::TYPE_GRADE_PUBLISHED);
     }
 
     #[Test]
@@ -90,10 +104,10 @@ class NotificationTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user, 'api')
-            ->getJson('/api/v1/notifications?is_read=false');
+            ->getJson('/api/v1/notifications?filter[is_read]=false');
 
         $response->assertStatus(200)
-            ->assertJsonCount(2, 'data.data');
+            ->assertJsonCount(2, 'data');
     }
 
     #[Test]

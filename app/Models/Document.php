@@ -11,11 +11,16 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 
-class Document extends Model
+class Document extends Model implements HasMedia, AuditableContract
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, InteractsWithMedia, Auditable;
 
     protected $table = 'documents';
 
@@ -24,6 +29,7 @@ class Document extends Model
         'type',
         'file_path',
         'file_name',
+        'media_id',
         'status',
         'reviewed_by',
         'notes',
@@ -39,6 +45,7 @@ class Document extends Model
         'status' => DocumentStatus::class,
         'file_path' => 'string',
         'file_name' => 'string',
+        'media_id' => 'integer',
         'notes' => 'string',
         'metadata' => 'array',
         'uploaded_at' => 'datetime',
@@ -49,6 +56,9 @@ class Document extends Model
         'status' => DocumentStatus::PENDING,
     ];
 
+    public array $auditEvents = ['created', 'updated', 'deleted'];
+    public array $auditExclude = ['created_at', 'updated_at'];
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class, 'student_id');
@@ -57,6 +67,59 @@ class Document extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'reviewed_by');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $pdfOnly = ['application/pdf'];
+        $imageOnly = ['image/jpeg', 'image/png'];
+
+        // Laravel UploadedFile::fake()->create() can produce application/x-empty
+        // even for .pdf fixtures in tests.
+        if (app()->runningUnitTests()) {
+            $pdfOnly[] = 'application/x-empty';
+        }
+
+        $pdfOrImage = array_merge($pdfOnly, $imageOnly);
+
+        $this->addMediaCollection(DocumentType::CNI->value)
+            ->singleFile()
+            ->acceptsMimeTypes($pdfOrImage);
+
+        $this->addMediaCollection(DocumentType::BIRTH_CERT->value)
+            ->singleFile()
+            ->acceptsMimeTypes($pdfOnly);
+
+        $this->addMediaCollection(DocumentType::BAC_DIPLOMA->value)
+            ->singleFile()
+            ->acceptsMimeTypes($pdfOnly);
+
+        $this->addMediaCollection(DocumentType::PHOTO->value)
+            ->singleFile()
+            ->acceptsMimeTypes($imageOnly);
+
+        $this->addMediaCollection(DocumentType::MEDICAL->value)
+            ->singleFile()
+            ->acceptsMimeTypes($pdfOrImage);
+
+        $this->addMediaCollection(DocumentType::ATTESTATION->value)
+            ->singleFile()
+            ->acceptsMimeTypes($pdfOnly);
+
+        $this->addMediaCollection(DocumentType::TRANSCRIPT->value)
+            ->acceptsMimeTypes($pdfOnly);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        if ($media?->collection_name !== DocumentType::PHOTO->value) {
+            return;
+        }
+
+        $this->addMediaConversion('thumb')
+            ->width(150)
+            ->height(150)
+            ->queued();
     }
 
     /**
@@ -184,9 +247,11 @@ class Document extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('file_name', 'like', "%{$term}%")
-                ->orWhere('notes', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('file_name', $likeOperator, "%{$term}%")
+                ->orWhere('notes', $likeOperator, "%{$term}%");
         });
     }
        /**
