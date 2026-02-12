@@ -49,7 +49,7 @@ jobs:
       name: staging
     steps:
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
