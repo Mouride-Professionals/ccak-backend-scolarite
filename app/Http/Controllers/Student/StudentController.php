@@ -10,9 +10,11 @@ use App\Http\Resources\StudentResource;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Auth\KeycloakService;
+use App\Services\Documents\DocumentService;
 use App\Services\Student\StudentNumberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -24,7 +26,8 @@ class StudentController extends BaseApiController
 {
     public function __construct(
         private StudentNumberService $studentNumberService,
-        private KeycloakService $keycloakService
+        private KeycloakService $keycloakService,
+        private DocumentService $documentService
     ) {
         $this->middleware('permission:students.view')->only(['index', 'show']);
         $this->middleware('permission:students.create')->only('store');
@@ -72,38 +75,53 @@ class StudentController extends BaseApiController
     public function store(StoreStudentRequest $request): JsonResponse
     {
         try {
-            $user = User::findOrFail($request->user_id);
+            $validated = $request->validated();
 
-            Log::info('User found', ['user_id' => $request->user_id, 'user' => $user]);
-
-            if ($user->student) {
-                return $this->error('Un profil étudiant existe déjà pour cet utilisateur.', 409);
+            if (!empty($validated['documents']) && !($request->user()?->can('documents.create') ?? false)) {
+                return $this->error(
+                    'Permission documents.create requise pour ajouter des documents.',
+                    403
+                );
             }
 
-            $student = DB::transaction(function () use ($request) {
+            [$student, $user] = DB::transaction(function () use ($validated) {
+                $user = User::create([
+                    'email' => trim((string) $validated['email']),
+                    'is_active' => true,
+                ]);
+
                 // Générer le numéro d'étudiant
                 $studentNumber = $this->studentNumberService->generate();
 
                 // Créer le profil étudiant
                 $student = Student::create([
-                    'user_id' => $request->user_id,
+                    'user_id' => $user->id,
                     'student_number' => $studentNumber,
-                    'full_name' => $request->full_name,
-                    'gender' => $request->gender,
-                    'date_of_birth' => $request->date_of_birth,
-                    'place_of_birth' => $request->place_of_birth,
-                    'nationality' => $request->nationality,
-                    'phone' => $request->phone,
-                    'emergency_contact_name' => $request->emergency_contact_name,
-                    'emergency_contact_phone' => $request->emergency_contact_phone,
-                    'address' => $request->address,
-                    'photo_url' => $request->photo_url,
-                    'status' => $request->status ?? 'ACTIVE',
+                    'full_name' => $validated['full_name'],
+                    'gender' => $validated['gender'],
+                    'date_of_birth' => $validated['date_of_birth'],
+                    'place_of_birth' => $validated['place_of_birth'],
+                    'nationality' => $validated['nationality'],
+                    'phone' => $validated['phone'],
+                    'emergency_contact_name' => $validated['emergency_contact_name'],
+                    'emergency_contact_phone' => $validated['emergency_contact_phone'],
+                    'address' => $validated['address'],
+                    'photo_url' => $validated['photo_url'] ?? null,
+                    'status' => $validated['status'] ?? 'ACTIVE',
                 ]);
 
                 Log::info('Student created', ['id' => $student->id, 'student_number' => $student->student_number]);
+                Log::info('Local user created for student', ['user_id' => $user->id, 'email' => $user->email]);
 
-                return $student;
+                foreach ($validated['documents'] ?? [] as $document) {
+                    $this->documentService->upload([
+                        'student_id' => $student->id,
+                        'type' => $document['type'],
+                        'notes' => $document['notes'] ?? null,
+                    ], $document['document_file']);
+                }
+
+                return [$student, $user];
             });
 
             $this->syncWithKeycloak($student, $user);
@@ -113,6 +131,8 @@ class StudentController extends BaseApiController
                 'Profil étudiant créé avec succès.',
                 201
             );
+        } catch (ValidationException $e) {
+            return $this->error('Erreur de validation', 422, $e->errors());
         } catch (\Exception $e) {
             Log::error('Student creation failed', [
                 'error' => $e->getMessage(),

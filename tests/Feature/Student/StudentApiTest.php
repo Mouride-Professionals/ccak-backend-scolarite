@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Student;
 
+use App\Models\Document;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Support\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -25,6 +28,7 @@ class StudentApiTest extends TestCase
         parent::setUp();
 
         $this->withoutMiddleware(\Illuminate\Auth\Middleware\Authenticate::class);
+        Storage::fake('documents');
     }
 
     public function test_can_list_students(): void
@@ -115,10 +119,8 @@ class StudentApiTest extends TestCase
     {
         $this->actingAsUserWithPermissions($this->permissions);
 
-        $user = User::factory()->create();
-
         $payload = [
-            'user_id' => $user->id,
+            'email' => 'john.doe@example.com',
             'full_name' => 'John Doe',
             'gender' => 'M',
             'date_of_birth' => '2000-01-01',
@@ -137,24 +139,26 @@ class StudentApiTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.full_name', 'John Doe')
-            ->assertJsonPath('data.status', 'ACTIVE');
+            ->assertJsonPath('data.status', 'ACTIVE')
+            ->assertJsonPath('data.user.email', 'john.doe@example.com');
 
+        $this->assertDatabaseHas('users', [
+            'email' => 'john.doe@example.com',
+        ]);
         $this->assertDatabaseHas('students', [
-            'user_id' => $user->id,
             'full_name' => 'John Doe',
             'status' => 'ACTIVE',
         ]);
     }
 
-    public function test_cannot_create_student_with_existing_user(): void
+    public function test_cannot_create_student_with_existing_email(): void
     {
         $this->actingAsUserWithPermissions($this->permissions);
 
-        $user = User::factory()->create();
-        Student::factory()->create(['user_id' => $user->id]);
+        User::factory()->create(['email' => 'existing.student@example.com']);
 
         $payload = [
-            'user_id' => $user->id,
+            'email' => 'existing.student@example.com',
             'full_name' => 'John Doe',
             'gender' => 'M',
             'date_of_birth' => '2000-01-01',
@@ -169,7 +173,55 @@ class StudentApiTest extends TestCase
         $response = $this->postJson('/api/v1/students', $payload);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['user_id']);
+            ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_can_create_student_with_documents(): void
+    {
+        $this->actingAsUserWithPermissions(array_merge($this->permissions, ['documents.create']));
+
+        $payload = [
+            'email' => 'student.docs@example.com',
+            'full_name' => 'Student With Docs',
+            'gender' => 'F',
+            'date_of_birth' => '2001-03-10',
+            'place_of_birth' => 'Dakar',
+            'nationality' => 'Senegalaise',
+            'phone' => '+221771234500',
+            'emergency_contact_name' => 'Emergency Contact',
+            'emergency_contact_phone' => '+221771234501',
+            'address' => 'Dakar',
+            'documents' => [
+                [
+                    'type' => 'CNI',
+                    'notes' => 'Identity document',
+                    'document_file' => UploadedFile::fake()->create('cni.pdf', 500, 'application/pdf'),
+                ],
+                [
+                    'type' => 'PHOTO',
+                    'document_file' => UploadedFile::fake()->image('photo.jpg', 400, 400),
+                ],
+            ],
+        ];
+
+        $response = $this->post('/api/v1/students', $payload, ['Accept' => 'application/json']);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
+
+        $studentId = $response->json('data.id');
+        $this->assertNotNull($studentId);
+
+        $this->assertDatabaseHas('documents', [
+            'student_id' => $studentId,
+            'type' => 'CNI',
+            'status' => 'PENDING',
+        ]);
+
+        $document = Document::where('student_id', $studentId)->where('type', 'CNI')->first();
+        $this->assertNotNull($document);
+        $this->assertNotNull($document->file_path);
+        $this->assertTrue(Storage::disk('documents')->exists($document->file_path));
     }
 
     public function test_can_show_student(): void
@@ -239,7 +291,7 @@ class StudentApiTest extends TestCase
         $this->postJson('/api/v1/students', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors([
-                'user_id',
+                'email',
                 'full_name',
                 'gender',
                 'date_of_birth',
@@ -251,9 +303,9 @@ class StudentApiTest extends TestCase
                 'address',
             ]);
 
-        // Test invalid user_id
+        // Test invalid email
         $this->postJson('/api/v1/students', [
-            'user_id' => 'invalid-uuid',
+            'email' => 'invalid-email',
             'full_name' => 'John Doe',
             'gender' => 'M',
             'date_of_birth' => '2000-01-01',
@@ -264,12 +316,11 @@ class StudentApiTest extends TestCase
             'emergency_contact_phone' => '+221771234568',
             'address' => '123 Main St, Dakar',
         ])->assertStatus(422)
-            ->assertJsonValidationErrors(['user_id']);
+            ->assertJsonValidationErrors(['email']);
 
         // Test invalid gender
-        $user = User::factory()->create();
         $this->postJson('/api/v1/students', [
-            'user_id' => $user->id,
+            'email' => 'invalid-gender@example.com',
             'full_name' => 'John Doe',
             'gender' => 'X',
             'date_of_birth' => '2000-01-01',
@@ -284,7 +335,7 @@ class StudentApiTest extends TestCase
 
         // Test future date of birth
         $this->postJson('/api/v1/students', [
-            'user_id' => $user->id,
+            'email' => 'future-dob@example.com',
             'full_name' => 'John Doe',
             'gender' => 'M',
             'date_of_birth' => '2030-01-01',
@@ -299,7 +350,7 @@ class StudentApiTest extends TestCase
 
         // Test invalid status
         $this->postJson('/api/v1/students', [
-            'user_id' => $user->id,
+            'email' => 'invalid-status@example.com',
             'full_name' => 'John Doe',
             'gender' => 'M',
             'date_of_birth' => '2000-01-01',
