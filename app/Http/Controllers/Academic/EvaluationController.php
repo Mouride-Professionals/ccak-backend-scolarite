@@ -16,6 +16,8 @@ use App\Services\Notification\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class EvaluationController extends BaseApiController
 {
@@ -23,7 +25,29 @@ class EvaluationController extends BaseApiController
     {
         $this->middleware('permission:evaluations.create')->only('store');
         $this->middleware('permission:evaluations.update')->only('share');
-        $this->middleware('permission:evaluations.view')->only(['results', 'studentEvaluations']);
+        $this->middleware('permission:evaluations.view')->only(['index', 'results', 'studentEvaluations']);
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $evaluations = QueryBuilder::for(Evaluation::query())
+            ->with(['course', 'facultyMember', 'academicYear'])
+            ->allowedIncludes(['course', 'facultyMember', 'academicYear'])
+            ->allowedFilters([
+                AllowedFilter::exact('course_id'),
+                AllowedFilter::exact('faculty_member_id'),
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('is_published'),
+            ])
+            ->allowedSorts(['created_at', 'start_date', 'response_deadline'])
+            ->defaultSort('-created_at')
+            ->paginate($request->integer('per_page') ?: 15)
+            ->appends($request->query());
+
+        return $this->success(
+            EvaluationResource::collection($evaluations),
+            'Evaluations retrieved successfully'
+        );
     }
 
     public function store(StoreEvaluationRequest $request): JsonResponse

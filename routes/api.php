@@ -134,6 +134,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('students/{student}/dispensations', [AttendanceController::class, 'dispensations']);
 
     // Evaluations
+    Route::get('evaluations', [EvaluationController::class, 'index']);
     Route::post('evaluations', [EvaluationController::class, 'store']);
     Route::post('evaluations/{evaluation}/share', [EvaluationController::class, 'share']);
     Route::get('evaluations/{evaluation}/results', [EvaluationController::class, 'results']);
