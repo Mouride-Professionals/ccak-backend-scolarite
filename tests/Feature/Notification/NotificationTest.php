@@ -58,19 +58,17 @@ class NotificationTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'data' => [
-                    'data' => [
-                        '*' => [
-                            'id',
-                            'title',
-                            'message',
-                            'type',
-                            'is_read',
-                            'created_at',
-                        ],
+                    '*' => [
+                        'id',
+                        'title',
+                        'message',
+                        'type',
+                        'is_read',
+                        'created_at',
                     ],
                 ],
             ])
-            ->assertJsonCount(3, 'data.data');
+            ->assertJsonCount(3, 'data');
     }
 
     #[Test]
@@ -89,8 +87,8 @@ class NotificationTest extends TestCase
             ->getJson('/api/v1/notifications?filter[type]=' . Notification::TYPE_GRADE_PUBLISHED);
 
         $response->assertStatus(200)
-            ->assertJsonCount(1, 'data.data')
-            ->assertJsonPath('data.data.0.type', Notification::TYPE_GRADE_PUBLISHED);
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.type', Notification::TYPE_GRADE_PUBLISHED);
     }
 
     #[Test]
@@ -109,7 +107,7 @@ class NotificationTest extends TestCase
             ->getJson('/api/v1/notifications?filter[is_read]=false');
 
         $response->assertStatus(200)
-            ->assertJsonCount(2, 'data.data');
+            ->assertJsonCount(2, 'data');
     }
 
     #[Test]

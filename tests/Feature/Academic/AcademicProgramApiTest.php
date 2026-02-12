@@ -60,7 +60,7 @@ class AcademicProgramApiTest extends TestCase
         $this->getJson('/api/v1/academic-programs')
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonCount(1, 'data.data');
+            ->assertJsonCount(1, 'data');
 
         $this->getJson("/api/v1/academic-programs/{$programId}")
             ->assertOk()

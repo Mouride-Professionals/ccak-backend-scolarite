@@ -163,10 +163,9 @@ class StudentController extends BaseApiController
      */
     public function update(UpdateStudentRequest $request, string $student): JsonResponse
     {
-        $this->authorize('update', $student);
-
         try {
             $student = Student::findOrFail($student);
+            $this->authorize('update', $student);
 
             $student = DB::transaction(function () use ($request, $student) {
                 $student->update($request->validated());

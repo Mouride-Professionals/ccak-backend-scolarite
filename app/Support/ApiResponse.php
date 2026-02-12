@@ -17,23 +17,31 @@ trait ApiResponse
         if ($data instanceof ResourceCollection) {
             $resource = $data->resource;
             if ($resource instanceof AbstractPaginator) {
-                $data = $resource->toArray();
+                $resolved = $data->resolve();
+                $data = is_array($resolved) && array_key_exists('data', $resolved)
+                    ? $resolved['data']
+                    : $resolved;
+                $meta = [
+                    'current_page' => $resource->currentPage(),
+                    'per_page' => $resource->perPage(),
+                    'total' => $resource->total(),
+                    'last_page' => $resource->lastPage(),
+                ];
             } else {
                 $data = $data->resolve();
             }
         } elseif ($data instanceof AbstractPaginator) {
-            $data = $data->toArray();
+            $meta = [
+                'current_page' => $data->currentPage(),
+                'per_page' => $data->perPage(),
+                'total' => $data->total(),
+                'last_page' => $data->lastPage(),
+            ];
+            $data = $data->items();
         } elseif ($data instanceof JsonResource) {
             $data = $data->resolve();
         } elseif ($data instanceof Collection) {
-            $values = $data->values()->all();
-            $data = [
-                'data' => $values,
-                'current_page' => 1,
-                'last_page' => 1,
-                'per_page' => count($values),
-                'total' => count($values),
-            ];
+            $data = $data->values()->all();
         }
 
         if ($meta === null && is_array($data) && array_is_list($data)) {

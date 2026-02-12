@@ -12,7 +12,7 @@ class StoreGuardianRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user !== null && $user->can('students.create');
+        return $user !== null && $user->can('guardians.create');
     }
 
     public function rules(): array
