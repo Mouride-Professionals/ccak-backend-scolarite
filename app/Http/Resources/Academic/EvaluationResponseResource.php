@@ -17,6 +17,8 @@ class EvaluationResponseResource extends JsonResource
             'comments' => $this->comments,
             'is_anonymous' => $this->is_anonymous,
             'submitted_at' => $this->submitted_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

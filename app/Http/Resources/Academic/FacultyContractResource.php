@@ -27,6 +27,7 @@ class FacultyContractResource extends JsonResource
             'file_name' => $this->file_name,
             'is_expiring' => $isExpiring,
             'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

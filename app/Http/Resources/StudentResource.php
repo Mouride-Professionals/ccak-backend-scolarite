@@ -40,6 +40,8 @@ class StudentResource extends JsonResource
             'documents' => $this->whenLoaded('documents', function () {
                 return DocumentResource::collection($this->documents);
             }),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

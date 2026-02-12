@@ -44,6 +44,8 @@ class FacultyMemberResource extends JsonResource
             'contracts' => $this->whenLoaded('contracts', function () {
                 return FacultyContractResource::collection($this->contracts);
             }),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

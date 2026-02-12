@@ -22,6 +22,8 @@ class FacultyResource extends JsonResource
                 ];
             }),
             'departments' => DepartmentResource::collection($this->whenLoaded('departments')),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

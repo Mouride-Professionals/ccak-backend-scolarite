@@ -30,6 +30,8 @@ class DepartmentResource extends JsonResource
                 ];
             }),
             'programs' => AcademicProgramResource::collection($this->whenLoaded('programs')),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

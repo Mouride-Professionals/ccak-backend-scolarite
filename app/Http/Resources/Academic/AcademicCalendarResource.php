@@ -17,6 +17,8 @@ class AcademicCalendarResource extends JsonResource
             'weekend_days' => $this->weekend_days,
             'hour_slots' => $this->hour_slots,
             'break_slots' => $this->break_slots,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

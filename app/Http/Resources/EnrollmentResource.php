@@ -39,6 +39,8 @@ class EnrollmentResource extends JsonResource
                     'name' => $this->academicYear->name,
                 ];
             }),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

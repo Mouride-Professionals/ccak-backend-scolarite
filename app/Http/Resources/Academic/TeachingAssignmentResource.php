@@ -35,6 +35,7 @@ class TeachingAssignmentResource extends JsonResource
             'hours_assigned' => $this->hours_assigned,
             'hourly_rate' => $this->hourly_rate,
             'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

@@ -25,6 +25,8 @@ class CourseUnitResource extends JsonResource
                 ];
             }),
             'courses' => CourseResource::collection($this->whenLoaded('courses')),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

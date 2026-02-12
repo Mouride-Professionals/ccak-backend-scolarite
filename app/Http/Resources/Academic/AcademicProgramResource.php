@@ -25,6 +25,8 @@ class AcademicProgramResource extends JsonResource
                 ];
             }),
             'course_units' => CourseUnitResource::collection($this->whenLoaded('courseUnits')),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }
