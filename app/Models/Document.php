@@ -247,9 +247,11 @@ class Document extends Model implements HasMedia, AuditableContract
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('file_name', 'like', "%{$term}%")
-                ->orWhere('notes', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('file_name', $likeOperator, "%{$term}%")
+                ->orWhere('notes', $likeOperator, "%{$term}%");
         });
     }
        /**

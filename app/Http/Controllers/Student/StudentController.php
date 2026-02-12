@@ -47,7 +47,8 @@ class StudentController extends BaseApiController
                 $query->where('student_number', (string) $request->string('student_number'));
             })
             ->when($request->filled('name'), function ($query) use ($request) {
-                $query->where('full_name', 'like', '%' . trim((string) $request->string('name')) . '%');
+                $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+                $query->where('full_name', $likeOperator, '%' . trim((string) $request->string('name')) . '%');
             })
             ->allowedIncludes(['user'])
             ->allowedFilters([

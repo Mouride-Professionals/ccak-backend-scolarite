@@ -99,9 +99,11 @@ class Notification extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('title', 'like', "%{$term}%")
-                ->orWhere('message', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('title', $likeOperator, "%{$term}%")
+                ->orWhere('message', $likeOperator, "%{$term}%");
         });
     }
 

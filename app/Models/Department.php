@@ -85,9 +85,11 @@ class Department extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('name', 'like', "%{$term}%")
-                ->orWhere('code', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('name', $likeOperator, "%{$term}%")
+                ->orWhere('code', $likeOperator, "%{$term}%");
         });
     }
 }

@@ -158,6 +158,8 @@ class User extends Authenticatable
             return $query;
         }
 
-        return $query->where('email', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where('email', $likeOperator, "%{$term}%");
     }
 }

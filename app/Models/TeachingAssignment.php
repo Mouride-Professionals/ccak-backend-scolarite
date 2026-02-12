@@ -56,13 +56,15 @@ class TeachingAssignment extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->whereHas('course', function (Builder $course) use ($term): void {
-                $course->where('name', 'ilike', "%{$term}%")
-                    ->orWhere('code', 'ilike', "%{$term}%");
-            })->orWhereHas('facultyMember', function (Builder $faculty) use ($term): void {
-                $faculty->where('full_name', 'ilike', "%{$term}%")
-                    ->orWhere('staff_number', 'ilike', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->whereHas('course', function (Builder $course) use ($term, $likeOperator): void {
+                $course->where('name', $likeOperator, "%{$term}%")
+                    ->orWhere('code', $likeOperator, "%{$term}%");
+            })->orWhereHas('facultyMember', function (Builder $faculty) use ($term, $likeOperator): void {
+                $faculty->where('full_name', $likeOperator, "%{$term}%")
+                    ->orWhere('staff_number', $likeOperator, "%{$term}%");
             });
         });
     }

@@ -146,10 +146,12 @@ class Student extends Model implements AuditableContract
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('full_name', 'ilike', "%{$term}%")
-                ->orWhere('student_number', 'ilike', "%{$term}%")
-                ->orWhere('phone', 'ilike', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('full_name', $likeOperator, "%{$term}%")
+                ->orWhere('student_number', $likeOperator, "%{$term}%")
+                ->orWhere('phone', $likeOperator, "%{$term}%");
         });
     }
 

@@ -54,10 +54,12 @@ class Room extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $sub) use ($term): void {
-            $sub->where('room_number', 'ilike', "%{$term}%")
-                ->orWhere('name', 'ilike', "%{$term}%")
-                ->orWhere('building', 'ilike', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(function (Builder $sub) use ($term, $likeOperator): void {
+            $sub->where('room_number', $likeOperator, "%{$term}%")
+                ->orWhere('name', $likeOperator, "%{$term}%")
+                ->orWhere('building', $likeOperator, "%{$term}%");
         });
     }
 }

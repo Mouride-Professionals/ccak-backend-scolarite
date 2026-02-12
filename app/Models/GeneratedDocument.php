@@ -138,7 +138,9 @@ class GeneratedDocument extends Model implements HasMedia
             return $query;
         }
 
-        return $query->where('document_number', 'like', "%{$term}%");
+        $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where('document_number', $likeOperator, "%{$term}%");
     }
 
     public function scopeIssued(Builder $query): Builder
