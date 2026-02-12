@@ -76,7 +76,7 @@ class Document extends Model implements HasMedia, AuditableContract
 
         // Laravel UploadedFile::fake()->create() can produce application/x-empty
         // even for .pdf fixtures in tests.
-        if (app()->environment('testing')) {
+        if (app()->runningUnitTests()) {
             $pdfOnly[] = 'application/x-empty';
         }
 

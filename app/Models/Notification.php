@@ -26,7 +26,7 @@ class Notification extends Model
     ];
 
     protected $casts = [
-        'metadata' => 'encrypted:array',
+        'metadata' => 'array',
         'is_read' => 'boolean',
         'read_at' => 'datetime',
         'sms_status' => 'string',

@@ -19,6 +19,7 @@ use App\Services\SemesterResultCalculationService;
 use App\Services\GradeCalculationService;
 use App\Repositories\SemesterResultRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -55,7 +56,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->admin = User::create([
             'email' => 'admin@test.com',
             'password' => 'password',
-            'keycloak_id' => 'admin-123',
+            'keycloak_id' => (string) Str::uuid(),
             'is_active' => true,
         ]);
         $this->admin->assignRole('ADMIN');

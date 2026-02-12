@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Jobs\CalculateSemesterResultsJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Role;
 use Tests\Support\InteractsWithPermissions;
@@ -51,7 +52,7 @@ class SemesterResultCalculationApiTest extends TestCase
         $this->admin = User::create([
             'email' => 'admin@test.com',
             'password' => 'password',
-            'keycloak_id' => 'admin-123',
+            'keycloak_id' => (string) Str::uuid(),
             'is_active' => true,
         ]);
         $this->admin->assignRole('ADMIN');
@@ -59,7 +60,7 @@ class SemesterResultCalculationApiTest extends TestCase
         $this->faculty = User::create([
             'email' => 'faculty@test.com',
             'password' => 'password',
-            'keycloak_id' => 'faculty-123',
+            'keycloak_id' => (string) Str::uuid(),
             'is_active' => true,
         ]);
         $this->faculty->assignRole('FACULTY');
@@ -67,7 +68,7 @@ class SemesterResultCalculationApiTest extends TestCase
         $this->student = User::create([
             'email' => 'student@test.com',
             'password' => 'password',
-            'keycloak_id' => 'student-123',
+            'keycloak_id' => (string) Str::uuid(),
             'is_active' => true,
         ]);
         $this->student->assignRole('STUDENT');

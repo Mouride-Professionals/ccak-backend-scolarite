@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\Enums\GradeStatus;
+use Spatie\Permission\Models\Role;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -307,14 +308,32 @@ class StudentController extends BaseApiController
 
     private function isStudent($user): bool
     {
-        return $user->hasRole('STUDENT');
+        try {
+            return $user->hasRole('STUDENT');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function syncWithKeycloak(Student $student, User $user): void
     {
         try {
-            if (! $user->hasRole('STUDENT')) {
+            $attributeGuard = $user->getAttribute('guard_name');
+            $guard = is_string($attributeGuard) && $attributeGuard !== ''
+                ? $attributeGuard
+                : (string) config('auth.defaults.guard', 'api');
+            $studentRoleExists = Role::query()
+                ->where('name', 'STUDENT')
+                ->where('guard_name', $guard)
+                ->exists();
+
+            if ($studentRoleExists && ! $user->hasRole('STUDENT')) {
                 $user->assignRole('STUDENT');
+            } elseif (! $studentRoleExists) {
+                Log::warning('STUDENT role missing locally; skipping role assignment', [
+                    'user_id' => $user->id,
+                    'guard' => $guard,
+                ]);
             }
         } catch (\Throwable $e) {
             Log::warning('Unable to assign STUDENT role locally', [
