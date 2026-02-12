@@ -66,7 +66,7 @@ class CourseApiTest extends TestCase
         $this->getJson('/api/v1/courses')
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data.data');
 
         $this->getJson("/api/v1/courses/{$courseId}")
             ->assertOk()

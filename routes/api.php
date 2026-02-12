@@ -197,6 +197,8 @@ Route::middleware('auth:api')->group(function () {
                 ->name('documents.download.file');
 
             // Review (approbation/rejet)
+            Route::put('/review', [DocumentController::class, 'review'])
+                ->name('documents.review');
             Route::post('/approve', [DocumentController::class, 'approve'])
                 ->name('documents.approve');
             Route::post('/reject', [DocumentController::class, 'reject'])
@@ -204,13 +206,11 @@ Route::middleware('auth:api')->group(function () {
         });
     });
 
-    // Legacy-compatible student document endpoints
-    Route::get('students/{student}/documents', [DocumentController::class, 'studentDocuments']);
-    Route::post('students/{student}/documents', [DocumentController::class, 'storeForStudent']);
-    Route::get('students/{student}/documents/{document}', [DocumentController::class, 'showForStudent']);
-    Route::put('documents/{document}/review', [DocumentController::class, 'review']);
-
     // Student area
+    Route::get('students/{student}/documents', [DocumentController::class, 'studentIndex']);
+    Route::post('students/{student}/documents', [DocumentController::class, 'studentStore']);
+    Route::get('students/{student}/documents/{document}', [DocumentController::class, 'studentShow']);
+
     Route::apiResource('students', StudentController::class);
     Route::patch('students/{student}/status', [StudentController::class, 'updateStatus']);
 

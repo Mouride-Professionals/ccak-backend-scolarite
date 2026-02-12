@@ -17,6 +17,7 @@ use App\Services\GradeCalculationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class GradeCalculationServiceTest extends TestCase
 {

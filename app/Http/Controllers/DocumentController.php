@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Document\StoreDocumentRequest;
+use App\Http\Requests\Document\StoreStudentDocumentRequest;
 use App\Http\Requests\Document\UpdateDocumentRequest;
 use App\Http\Requests\Document\ReviewDocumentRequest;
+use App\Http\Requests\Document\ReviewStudentDocumentRequest;
 use App\Http\Resources\DocumentResource;
 use App\Models\Document;
 use App\Models\Student;
@@ -27,15 +29,16 @@ class DocumentController extends BaseApiController
         $this->middleware('permission:documents.view')->only([
             'index',
             'show',
-            'showForStudent',
             'download',
             'downloadFile',
             'studentDocuments',
+            'studentIndex',
+            'studentShow',
             'pending',
             'report',
             'checkStatus',
         ]);
-        $this->middleware('permission:documents.create')->only(['store', 'storeForStudent']);
+        $this->middleware('permission:documents.create')->only(['store', 'studentStore']);
         $this->middleware('permission:documents.update')->only(['update', 'review']);
         $this->middleware('permission:documents.delete')->only('destroy');
         $this->middleware('permission:documents.review')->only(['approve', 'reject']);
@@ -47,6 +50,7 @@ class DocumentController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
+        $this->applyFilters($request, ['type', 'status', 'student_id', 'uploaded_between', 'search']);
         $perPage = (int) ($request->integer('per_page') ?: 15);
         $documents = QueryBuilder::for(Document::query())
             ->allowedFilters([
@@ -114,8 +118,6 @@ class DocumentController extends BaseApiController
      */
     public function show(Document $document): JsonResponse
     {
-        $this->authorize('view', $document);
-
         return $this->success(
             new DocumentResource($document),
             'Document récupéré avec succès'
@@ -127,8 +129,6 @@ class DocumentController extends BaseApiController
      */
     public function update(UpdateDocumentRequest $request, Document $document): JsonResponse
     {
-        $this->authorize('update', $document);
-
         if ($document->status === DocumentStatus::APPROVED) {
             return $this->error('Document approuvé, modification interdite.', 403);
         }
@@ -160,8 +160,6 @@ class DocumentController extends BaseApiController
      */
     public function approve(ReviewDocumentRequest $request, Document $document): JsonResponse
     {
-        $this->authorize('review', $document);
-
         try {
             $admin = $request->user()?->getOrCreateAdmin();
 
@@ -189,8 +187,6 @@ class DocumentController extends BaseApiController
      */
     public function reject(ReviewDocumentRequest $request, Document $document): JsonResponse
     {
-        $this->authorize('review', $document);
-
         $request->validate([
             'reason' => ['required', 'string', 'min:10', 'max:500'],
         ]);
@@ -222,15 +218,12 @@ class DocumentController extends BaseApiController
      */
     public function download(Document $document): JsonResponse
     {
-        $this->authorize('download', $document);
-
         try {
             $fileInfo = $this->documentService->download($document->id);
 
             // Retourner les informations pour le téléchargement
             return $this->success([
                 'download_url' => route('documents.download.file', ['document' => $document->id]),
-                'temporary_url' => $fileInfo['temporary_url'] ?? null,
                 'file_name' => $fileInfo['original_name'],
                 'file_size' => $fileInfo['size'],
                 'mime_type' => $fileInfo['mime_type'],
@@ -248,23 +241,17 @@ class DocumentController extends BaseApiController
      */
     public function downloadFile(Document $document)
     {
-        $this->authorize('download', $document);
-
         try {
             $fileInfo = $this->documentService->download($document->id);
 
-            if (!empty($fileInfo['temporary_url'])) {
-                return redirect()->away($fileInfo['temporary_url']);
-            }
-
             return response()->streamDownload(
                 function () use ($fileInfo) {
-                    echo $fileInfo['content'] ?? '';
+                    echo $fileInfo['content'];
                 },
                 $fileInfo['original_name'],
                 [
                     'Content-Type' => $fileInfo['mime_type'],
-                    'Content-Length' => isset($fileInfo['content']) ? strlen($fileInfo['content']) : 0,
+                    'Content-Length' => strlen($fileInfo['content']),
                     'Content-Disposition' => 'attachment; filename="' . $fileInfo['original_name'] . '"',
                 ]
             );
@@ -278,8 +265,6 @@ class DocumentController extends BaseApiController
      */
     public function destroy(Document $document): JsonResponse
     {
-        $this->authorize('delete', $document);
-
         try {
             $userId = request()->user()->id;
             DB::transaction(function () use ($document, $userId) {
@@ -352,6 +337,7 @@ class DocumentController extends BaseApiController
      */
     public function pending(Request $request): JsonResponse
     {
+        $this->applyFilters($request, ['type', 'uploaded_between', 'search']);
         $perPage = (int) ($request->integer('per_page') ?: 15);
         $documents = QueryBuilder::for(Document::query())
             ->where('status', DocumentStatus::PENDING)
@@ -376,15 +362,10 @@ class DocumentController extends BaseApiController
      */
     public function studentDocuments(Request $request, Student $student): JsonResponse
     {
+        $this->applyFilters($request, ['type', 'status', 'uploaded_between', 'search']);
         $perPage = (int) ($request->integer('per_page') ?: 15);
         $documents = QueryBuilder::for(Document::query())
             ->where('student_id', $student->id)
-            ->when($request->filled('type'), function ($query) use ($request) {
-                $query->where('type', (string) $request->string('type'));
-            })
-            ->when($request->filled('status'), function ($query) use ($request) {
-                $query->where('status', (string) $request->string('status'));
-            })
             ->allowedFilters([
                 AllowedFilter::exact('type'),
                 AllowedFilter::exact('status'),
@@ -403,15 +384,39 @@ class DocumentController extends BaseApiController
     }
 
     /**
-     * Compatibility endpoint: show a specific document for a student.
+     * Documents d'un étudiant (endpoints étudiants)
      */
-    public function showForStudent(Student $student, Document $document): JsonResponse
+    public function studentIndex(Request $request, Student $student): JsonResponse
+    {
+        $this->applyFilters($request, ['type', 'status', 'uploaded_between', 'search']);
+        $perPage = (int) ($request->integer('per_page') ?: 15);
+        $documents = QueryBuilder::for(Document::query())
+            ->where('student_id', $student->id)
+            ->allowedFilters([
+                AllowedFilter::exact('type'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::scope('uploaded_between'),
+                AllowedFilter::scope('search'),
+            ])
+            ->allowedSorts(['uploaded_at', 'created_at'])
+            ->defaultSort('-uploaded_at')
+            ->paginate($perPage)
+            ->appends($request->query());
+
+        return $this->success(
+            DocumentResource::collection($documents),
+            'Documents de l\'étudiant récupérés avec succès'
+        );
+    }
+
+    /**
+     * Afficher un document d'un étudiant
+     */
+    public function studentShow(Student $student, Document $document): JsonResponse
     {
         if ($document->student_id !== $student->id) {
-            return $this->error('Document non trouvé', 404);
+            return $this->error('Document non trouvé pour cet étudiant.', 404);
         }
-
-        $this->authorize('view', $document);
 
         return $this->success(
             new DocumentResource($document),
@@ -420,26 +425,24 @@ class DocumentController extends BaseApiController
     }
 
     /**
-     * Compatibility endpoint: upload document via nested student route.
+     * Upload d'un document pour un étudiant
      */
-    public function storeForStudent(Request $request, Student $student): JsonResponse
+    public function studentStore(StoreStudentDocumentRequest $request, Student $student): JsonResponse
     {
-        $validated = $request->validate([
-            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-            'type' => ['required', 'string', 'in:' . implode(',', \App\Enums\DocumentType::values())],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $file = $request->file('document');
 
-        /** @var UploadedFile $file */
-        $file = $validated['document'];
+        if (!$file instanceof UploadedFile || !$file->isValid()) {
+            return $this->error('Le fichier n\'est pas valide', 422);
+        }
 
         try {
-            $document = DB::transaction(function () use ($validated, $student, $file) {
-                return $this->documentService->upload([
-                    'student_id' => $student->id,
-                    'type' => $validated['type'],
-                    'notes' => $validated['notes'] ?? null,
-                ], $file);
+            config(['documents.storage.disk' => 'externeStorage']);
+
+            $document = DB::transaction(function () use ($request, $file, $student) {
+                return $this->documentService->upload(
+                    array_merge($request->validated(), ['student_id' => $student->id]),
+                    $file
+                );
             });
 
             return $this->success(
@@ -448,11 +451,13 @@ class DocumentController extends BaseApiController
                 201
             );
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->error(
-                'Erreur de validation',
-                422,
-                $e->errors()
-            );
+            $errors = $e->errors();
+            if (isset($errors['document_file'])) {
+                $errors['document'] = $errors['document_file'];
+                unset($errors['document_file']);
+            }
+
+            return $this->error('Erreur de validation', 422, $errors);
         } catch (\InvalidArgumentException $e) {
             return $this->error($e->getMessage(), 400);
         } catch (\RuntimeException $e) {
@@ -461,45 +466,62 @@ class DocumentController extends BaseApiController
     }
 
     /**
-     * Compatibility endpoint: review document using status field.
+     * Review d'un document (approve/reject)
      */
-    public function review(Request $request, Document $document): JsonResponse
+    public function review(ReviewStudentDocumentRequest $request, string $document): JsonResponse
     {
-        $validated = $request->validate([
-            'status' => ['required', 'string', 'in:APPROVED,REJECTED'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
         $admin = $request->user()?->admin;
+
         if (!$admin) {
-            return $this->error('Profil administrateur requis', 403);
+            return $this->error('Vous n\'êtes pas autorisé à revoir ce document.', 403);
         }
 
+        $document = Document::findOrFail($document);
+
+        $status = $request->string('status')->toString();
+        $notes = $request->string('notes')->toString();
+
         try {
-            $document = DB::transaction(function () use ($document, $admin, $validated) {
-                if ($validated['status'] === DocumentStatus::APPROVED->value) {
+            if ($status === DocumentStatus::APPROVED->value) {
+                $document = DB::transaction(function () use ($document, $admin, $notes) {
                     return $this->documentService->approve(
                         $document->id,
                         $admin->id,
-                        $validated['notes'] ?? null
+                        $notes !== '' ? $notes : null
                     );
-                }
-
-                return $this->documentService->reject(
-                    $document->id,
-                    $admin->id,
-                    $validated['notes'] ?? 'Document rejeté'
-                );
-            });
+                });
+            } else {
+                $reason = $notes !== '' ? $notes : 'Document rejeté';
+                $document = DB::transaction(function () use ($document, $admin, $reason) {
+                    return $this->documentService->reject(
+                        $document->id,
+                        $admin->id,
+                        $reason
+                    );
+                });
+            }
 
             return $this->success(
                 new DocumentResource($document),
                 'Document revu avec succès'
             );
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return $this->error('Document non trouvé', 404);
         } catch (\InvalidArgumentException $e) {
             return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    private function applyFilters(Request $request, array $keys): void
+    {
+        $filters = (array) $request->query('filter', []);
+
+        foreach ($keys as $key) {
+            if ($request->filled($key) && !array_key_exists($key, $filters)) {
+                $filters[$key] = $request->query($key);
+            }
+        }
+
+        if (!empty($filters)) {
+            $request->merge(['filter' => $filters]);
         }
     }
 }

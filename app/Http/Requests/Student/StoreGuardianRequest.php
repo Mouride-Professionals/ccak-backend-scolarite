@@ -10,7 +10,9 @@ class StoreGuardianRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user !== null && $user->can('students.create');
     }
 
     public function rules(): array

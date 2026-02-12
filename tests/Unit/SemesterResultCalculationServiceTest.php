@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tests\Unit;
@@ -124,6 +125,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     }
 
     #[Test]
+    #[Test]
     public function it_calculates_semester_results_successfully()
     {
         // Create course enrollments
@@ -179,6 +181,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     }
 
     #[Test]
+    #[Test]
     public function it_calculates_student_result_with_compensation()
     {
         // Create course enrollments
@@ -224,6 +227,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     }
 
     #[Test]
+    #[Test]
     public function it_determines_failed_decision_correctly()
     {
         $enrollment1 = $this->createCourseEnrollment($this->course1);
@@ -268,6 +272,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     }
 
     #[Test]
+    #[Test]
     public function it_determines_resit_required_correctly()
     {
         $enrollment1 = $this->createCourseEnrollment($this->course1);
@@ -310,6 +315,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     }
 
     #[Test]
+    #[Test]
     public function it_updates_existing_semester_result()
     {
         $enrollment = $this->createCourseEnrollment($this->course1);
@@ -348,6 +354,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals($initialId, $updatedResult->id);
     }
 
+    #[Test]
     #[Test]
     public function it_calculates_semester_statistics_correctly()
     {
@@ -397,6 +404,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     }
 
     #[Test]
+    #[Test]
     public function it_handles_no_students_case()
     {
         $result = $this->service->calculateSemesterResults(
@@ -412,6 +420,7 @@ class SemesterResultCalculationServiceTest extends TestCase
     }
 
     #[Test]
+    #[Test]
     public function it_returns_empty_statistics_for_no_results()
     {
         $statistics = $this->service->getSemesterStatistics($this->academicYear->id, 1);
@@ -422,6 +431,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(0, $statistics['average_semester_average']);
     }
 
+    #[Test]
     #[Test]
     public function it_calculates_credits_earned_correctly_for_compensation()
     {
