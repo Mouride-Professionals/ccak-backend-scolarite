@@ -24,6 +24,9 @@ use App\Http\Controllers\Academic\AttendanceController;
 use App\Http\Controllers\Academic\EvaluationController;
 use App\Http\Controllers\Academic\EvaluationResponseController;
 use App\Http\Controllers\Academic\TeachingAssignmentController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\EnrollmentDashboardController;
+use App\Http\Controllers\Templates\EmailTemplateController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -92,7 +95,20 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('courses', CourseController::class);
     Route::get('courses/{course}/grades', [\App\Http\Controllers\Academic\CourseController::class, 'grades']);
     Route::apiResource('course-enrollments', \App\Http\Controllers\Academic\CourseEnrollmentController::class);
-    Route::apiResource('enrollments', EnrollmentController::class);
+    Route::get('enrollments/dashboard', [EnrollmentDashboardController::class, 'index']);
+    Route::apiResource('enrollments', EnrollmentController::class)
+        ->whereUuid('enrollment');
+
+    Route::prefix('dashboard')->group(function () {
+        Route::get('overview', [DashboardController::class, 'overview']);
+        Route::get('students-by-level', [DashboardController::class, 'studentsByLevel']);
+        Route::get('enrollments-trend', [DashboardController::class, 'enrollmentsTrend']);
+        Route::get('validation-rate', [DashboardController::class, 'validationRate']);
+        Route::get('recent-activities', [DashboardController::class, 'recentActivities']);
+    });
+
+    Route::get('templates/email', [EmailTemplateController::class, 'index']);
+    Route::post('templates/email/preview', [EmailTemplateController::class, 'preview']);
 
     // Academic calendar & scheduling
     Route::post('academic-calendar', [AcademicCalendarController::class, 'store']);

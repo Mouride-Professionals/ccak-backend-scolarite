@@ -4,6 +4,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use KeycloakGuard\Exceptions\TokenException;
 use Spatie\Permission\Exceptions\UnauthorizedException;
@@ -74,6 +76,30 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 401);
         });
 
+        $exceptions->renderable(function (ValidationException $exception, Request $request) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'The given data was invalid.',
+                'errors' => $exception->errors(),
+            ], 422);
+        });
+
+        $exceptions->renderable(function (AuthorizationException $exception, Request $request) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage() ?: 'This action is unauthorized.',
+                'errors' => [],
+            ], 403);
+        });
+
         $exceptions->renderable(function (\Symfony\Component\HttpKernel\Exception\HttpException $exception, Request $request) {
             if (! $request->expectsJson() && ! $request->is('api/*')) {
                 return null;
@@ -103,13 +129,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            if (config('app.debug')) {
-                return null;
-            }
-
             return response()->json([
                 'success' => false,
-                'message' => 'An internal error occurred.',
+                'message' => config('app.debug')
+                    ? ($exception->getMessage() ?: 'An internal error occurred.')
+                    : 'An internal error occurred.',
                 'errors' => [],
             ], 500);
         });
