@@ -28,6 +28,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserRoleController;
 use \App\Http\Controllers\Academic\DeliberationSessionController;
 
@@ -100,6 +101,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('rooms', RoomController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::get('activity-types', [ActivityTypeController::class, 'index']);
     Route::post('activity-types', [ActivityTypeController::class, 'store']);
+    Route::get('schedules', [ScheduleController::class, 'index']);
     Route::post('schedules', [ScheduleController::class, 'store']);
     Route::post('schedules/check-availability', [ScheduleController::class, 'checkAvailability']);
     Route::get('programs/{program}/schedule', [ScheduleController::class, 'programSchedule']);
@@ -199,14 +201,22 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('students.guardians', GuardianController::class);
 
     // Documents: nested index/store/show/update/destroy under students and review route
+    // Admin routes
+    Route::prefix('admin')->group(function () {
+        // User management (Faculty/Admin/Staff creation with Keycloak integration)
+        Route::post('users', [UserController::class, 'store'])->middleware('permission:users.create');
+
+        // Audit logs
+        Route::get('audits', [AuditLogController::class, 'index']);
+        Route::get('audits/{audit}', [AuditLogController::class, 'show']);
+        Route::get('audits/model/{model}/{id}', [AuditLogController::class, 'forModel']);
+    });
+
     // Admin roles
     Route::get('roles', [RoleController::class, 'index']);
     Route::post('roles', [RoleController::class, 'store']);
     Route::put('roles/{role}', [RoleController::class, 'update']);
     Route::put('users/{user}/roles', [UserRoleController::class, 'update']);
-    Route::get('admin/audits', [AuditLogController::class, 'index']);
-    Route::get('admin/audits/{audit}', [AuditLogController::class, 'show']);
-    Route::get('admin/audits/model/{model}/{id}', [AuditLogController::class, 'forModel']);
 
     // Grade management endpoints
     Route::get('grades/statistics', [GradeStatisticsController::class, 'index']);
@@ -228,9 +238,10 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/students/{id}/enrollments', [EnrollmentController::class, 'getByStudent']);
 
     // Academic Years
-    Route::apiResource('academic-years', AcademicYearController::class);
     Route::get('/academic-years/current', [AcademicYearController::class, 'current']);
     Route::put('/academic-years/{id}/set-current', [AcademicYearController::class, 'setCurrent']);
+    Route::apiResource('academic-years', AcademicYearController::class)
+        ->whereUuid('academic_year');
 
     // Course Enrollments
     Route::post('enrollments/{enrollment}/courses', [CourseEnrollmentController::class, 'enrollCourse']);

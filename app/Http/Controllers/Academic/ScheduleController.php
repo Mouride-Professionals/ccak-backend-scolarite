@@ -15,13 +15,36 @@ use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ScheduleController extends BaseApiController
 {
     public function __construct()
     {
         $this->middleware('permission:schedules.create')->only('store');
-        $this->middleware('permission:schedules.view')->only(['programSchedule', 'facultySchedule', 'studentSchedule', 'checkAvailability']);
+        $this->middleware('permission:schedules.view')->only(['index', 'programSchedule', 'facultySchedule', 'studentSchedule', 'checkAvailability']);
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $schedules = QueryBuilder::for(Schedule::query())
+            ->with(['course', 'facultyMember', 'room', 'activityType', 'academicYear'])
+            ->allowedFilters([
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('semester_number'),
+                AllowedFilter::exact('day_of_week'),
+                AllowedFilter::exact('course_id'),
+                AllowedFilter::exact('faculty_member_id'),
+                AllowedFilter::exact('room_id'),
+                AllowedFilter::exact('activity_type_id'),
+            ])
+            ->allowedSorts(['day_of_week', 'start_time', 'end_time', 'created_at'])
+            ->defaultSort('day_of_week', 'start_time')
+            ->paginate($request->integer('per_page') ?? 15)
+            ->appends($request->query());
+
+        return $this->success(ScheduleResource::collection($schedules), 'Schedules retrieved successfully.');
     }
 
     public function store(StoreScheduleRequest $request): JsonResponse

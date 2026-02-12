@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Academic;
 
+use App\Http\Resources\Academic\DepartmentResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class FacultyResource extends JsonResource

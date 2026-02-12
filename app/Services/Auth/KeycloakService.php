@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -15,9 +16,11 @@ class KeycloakService
     }
 
     /**
+     * Create a generic Keycloak user (for any role).
+     *
      * @param array<string, mixed> $data
      */
-    public function createStudentUser(array $data): ?string
+    public function createUser(array $data): ?string
     {
         if (! $this->isConfigured()) {
             return null;
@@ -28,6 +31,7 @@ class KeycloakService
             return null;
         }
 
+        /** @var Response $response */
         $response = Http::timeout(15)
             ->withToken($token)
             ->acceptJson()
@@ -36,17 +40,18 @@ class KeycloakService
                 'email' => $data['email'] ?? null,
                 'firstName' => $data['first_name'] ?? null,
                 'lastName' => $data['last_name'] ?? null,
-                'enabled' => true,
-                'emailVerified' => false,
+                'enabled' => $data['enabled'] ?? true,
+                'emailVerified' => $data['email_verified'] ?? false,
                 'credentials' => [[
                     'type' => 'password',
                     'value' => $data['temporary_password'] ?? config('keycloak.default_temporary_password', 'ChangeMe123!'),
-                    'temporary' => true,
+                    'temporary' => $data['password_temporary'] ?? true,
                 ]],
             ]);
 
         if (! $response->successful()) {
             Log::warning('Keycloak user creation failed', [
+                'username' => $data['username'],
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -63,7 +68,21 @@ class KeycloakService
             return null;
         }
 
-        $this->assignRealmRole($keycloakUserId, 'STUDENT');
+        return $keycloakUserId;
+    }
+
+    /**
+     * Create a student user in Keycloak (legacy method - uses createUser).
+     *
+     * @param array<string, mixed> $data
+     */
+    public function createStudentUser(array $data): ?string
+    {
+        $keycloakUserId = $this->createUser($data);
+
+        if ($keycloakUserId) {
+            $this->assignRealmRole($keycloakUserId, 'STUDENT');
+        }
 
         return $keycloakUserId;
     }
@@ -75,6 +94,7 @@ class KeycloakService
             return false;
         }
 
+        /** @var Response $roleResponse */
         $roleResponse = Http::timeout(15)
             ->withToken($token)
             ->acceptJson()
@@ -92,6 +112,7 @@ class KeycloakService
 
         $rolePayload = $roleResponse->json();
 
+        /** @var Response $assignResponse */
         $assignResponse = Http::timeout(15)
             ->withToken($token)
             ->acceptJson()
@@ -152,6 +173,7 @@ class KeycloakService
             $payload['password'] = $adminPassword;
         }
 
+        /** @var Response $response */
         $response = Http::asForm()
             ->timeout(15)
             ->acceptJson()

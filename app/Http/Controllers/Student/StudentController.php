@@ -169,9 +169,13 @@ class StudentController extends BaseApiController
 
         try {
             DB::transaction(function () use ($student, $validated): void {
-                $student->update([
-                    'status' => $validated['status'],
-                ]);
+                $updateData = ['status' => $validated['status']];
+
+                if (isset($validated['reason'])) {
+                    $updateData['status_reason'] = $validated['reason'];
+                }
+
+                $student->update($updateData);
             });
 
             return $this->success(

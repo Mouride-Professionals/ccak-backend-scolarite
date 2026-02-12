@@ -18,6 +18,10 @@ class UpdateAcademicYearRequest extends FormRequest
 
         return [
             'name' => ['sometimes', 'string', 'max:255', Rule::unique('academic_years', 'name')->ignore($academicYearId)],
+            'start_date' => ['sometimes', 'nullable', 'date'],
+            'end_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:start_date'],
+            'is_current' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 }
