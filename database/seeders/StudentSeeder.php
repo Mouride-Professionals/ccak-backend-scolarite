@@ -11,6 +11,7 @@ use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Faker\Factory as Faker;
 
 class StudentSeeder extends Seeder
@@ -121,7 +122,7 @@ class StudentSeeder extends Seeder
         if ($admins->isEmpty()) {
             $gender = $faker->randomElement(['M', 'F']);
             $user = User::factory()->create([
-                'email' => $faker->unique()->safeEmail(),
+                'email' => $this->uniqueSeedEmail('admin'),
                 'email_verified_at' => Carbon::now('Africa/Dakar'),
             ]);
             if (method_exists($user, 'assignRole')) {
@@ -138,7 +139,7 @@ class StudentSeeder extends Seeder
         for ($i = 0; $i < 100; $i++) {
             // Créer un utilisateur pour l'étudiant
             $user = User::factory()->create([
-                'email' => $faker->unique()->safeEmail(),
+                'email' => $this->uniqueSeedEmail('student'),
                 'email_verified_at' => Carbon::now('Africa/Dakar'),
             ]);
             if (method_exists($user, 'assignRole')) {
@@ -234,6 +235,11 @@ class StudentSeeder extends Seeder
         $prefix = Arr::random(['70', '75', '76', '77', '78']);
 
         return $prefix . sprintf('%07d', rand(0, 9999999));
+    }
+
+    private function uniqueSeedEmail(string $prefix): string
+    {
+        return sprintf('%s+%s@seed.ucak.sn', $prefix, (string) Str::uuid());
     }
 
     private function attachDocumentMedia(Document $document, string $type): void
