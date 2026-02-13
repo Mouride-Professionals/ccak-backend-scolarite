@@ -55,7 +55,7 @@ class GeneratedDocumentSeeder extends Seeder
                 }
             }
 
-            GeneratedDocument::create([
+            $document = GeneratedDocument::create([
                 'student_id' => $student->id,
                 'type' => fake()->randomElement(GeneratedDocument::getTypes()),
                 'document_number' => sprintf('UCAK-%s-%s', str_replace('-', '', $academicYearName), strtoupper(Str::random(6))),
@@ -67,9 +67,9 @@ class GeneratedDocumentSeeder extends Seeder
                 'status' => $status,
                 'created_at' => $generatedAt,
                 'updated_at' => $issuedAt ?? $generatedAt,
-            ])->tap(function (GeneratedDocument $document): void {
-                $this->attachGeneratedMedia($document);
-            });
+            ]);
+
+            $this->attachGeneratedMedia($document);
         }
     }
 
@@ -95,7 +95,6 @@ class GeneratedDocumentSeeder extends Seeder
             $document->update([
                 'media_id' => $media->id,
                 'file_path' => $media->getPathRelativeToRoot(),
-                'file_name' => $media->file_name,
             ]);
         } finally {
             @unlink($tmpFile);
