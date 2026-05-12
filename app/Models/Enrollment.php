@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\RegistrationStatus;
 use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,36 +18,47 @@ class Enrollment extends Model
 
     protected $table = 'enrollments';
 
-    protected $fillable = ['student_id', 'academic_program_id', 'academic_year_id', 'current_semester', 'status', 'enrollment_date', 'registration_fee_paid', 'is_scholarship'];
+    protected $fillable = [
+        'student_id',
+        'academic_program_id',
+        'academic_year_id',
+        'level_id',
+        'current_semester',
+        'status',
+        'enrollment_date',
+        'registration_fee_paid',
+        'registration_number',
+        'notes',
+        'is_repeating',
+        'is_medically_fit',
+        'is_scholarship_holder',
+        'scholarship_type',
+        'scholarship_amount',
+        'is_registered_elsewhere',
+        'is_willing_to_cancel_other_registration',
+        'certification_file_url',
+    ];
 
     protected $casts = [
         'student_id' => 'string',
         'academic_program_id' => 'string',
         'academic_year_id' => 'string',
+        'level_id' => 'string',
         'current_semester' => 'integer',
-        'status' => 'string',
+        'status' => RegistrationStatus::class,
         'enrollment_date' => 'date',
         'registration_fee_paid' => 'float',
-        'is_scholarship' => 'boolean',
+        'scholarship_amount' => 'decimal:2',
+        'is_repeating' => 'boolean',
+        'is_medically_fit' => 'boolean',
+        'is_scholarship_holder' => 'boolean',
+        'is_registered_elsewhere' => 'boolean',
+        'is_willing_to_cancel_other_registration' => 'boolean',
     ];
 
-    // Status enum constants
-    const STATUS_PENDING = 'PENDING';
-    const STATUS_REGISTERED = 'REGISTERED';
-    const STATUS_ACTIVE = 'ACTIVE';
-    const STATUS_COMPLETED = 'COMPLETED';
-    const STATUS_WITHDRAWN = 'WITHDRAWN';
-
-    // Get all valid statuses
     public static function getStatuses(): array
     {
-        return [
-            self::STATUS_PENDING,
-            self::STATUS_REGISTERED,
-            self::STATUS_ACTIVE,
-            self::STATUS_COMPLETED,
-            self::STATUS_WITHDRAWN,
-        ];
+        return RegistrationStatus::values();
     }
 
     public function student(): BelongsTo
@@ -62,6 +74,11 @@ class Enrollment extends Model
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class, 'academic_year_id');
+    }
+
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(Level::class, 'level_id');
     }
 
     // HasMany course_enrollments
@@ -106,10 +123,9 @@ class Enrollment extends Model
         return $query->exists();
     }
 
-    // Check if enrollment is active
     public function isActive(): bool
     {
-        return in_array($this->status, [self::STATUS_ACTIVE, self::STATUS_REGISTERED]);
+        return $this->status === RegistrationStatus::VALIDATED;
     }
 
     // Get total enrolled courses count

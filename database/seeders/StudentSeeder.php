@@ -151,30 +151,50 @@ class StudentSeeder extends Seeder
             $birthDate = Carbon::now('Africa/Dakar')
                 ->subYears(rand(18, 26))
                 ->subDays(rand(0, 365));
+            $firstName = $gender === 'F'
+                ? Arr::random($this->femaleFirstNames)
+                : Arr::random($this->maleFirstNames);
+            $lastName = Arr::random($this->lastNames);
+            $fullName = $firstName . ' ' . $lastName;
+            $slugName = strtolower(str_replace(' ', '.', $fullName));
+
             $student = Student::create([
                 'user_id' => $user->id,
-                'student_number' => Student::generateStudentNumber(),
-                'full_name' => $this->pickFullName($gender),
+                'student_number' => $studentNumber = Student::generateStudentNumber(),
+                'full_name' => $fullName,
                 'gender' => $gender,
                 'date_of_birth' => $birthDate->format('Y-m-d'),
                 'place_of_birth' => Arr::random($this->senegalCities),
                 'nationality' => 'Senegalaise',
                 'phone' => $this->senegalPhone(),
+                'phone_2' => $faker->boolean(30) ? $this->senegalPhone() : null,
+                'email' => $faker->unique()->safeEmail(),
+                'email_university' => $slugName . '.' . strtolower($studentNumber) . '@etudiant.ucak.sn',
+                'type_of_id' => $faker->randomElement(['PASSPORT', 'NATIONAL_ID', 'DRIVING_LICENSE']),
+                'id_details' => $faker->bothify('SN-########'),
                 'emergency_contact_name' => $this->pickFullName($faker->randomElement(['M', 'F'])),
                 'emergency_contact_phone' => $this->senegalPhone(),
                 'address' => Arr::random($this->senegalCities) . ', Senegal',
-                'photo_url' => null, // Peut être ajouté plus tard
-                'status' => $faker->randomElement(['ACTIVE', 'ACTIVE', 'ACTIVE', 'SUSPENDED', 'GRADUATED']), // Plus de ACTIVE
+                'photo_url' => null,
+                'status' => $faker->randomElement(['ACTIVE', 'ACTIVE', 'ACTIVE', 'SUSPENDED', 'GRADUATED', 'INACTIVE']),
             ]);
 
             // Créer 1 à 2 tuteurs
             $numGuardians = $faker->numberBetween(1, 2);
             for ($j = 0; $j < $numGuardians; $j++) {
+                $guardianGender = $faker->randomElement(['M', 'F']);
+                $guardianFirst = $guardianGender === 'F'
+                    ? Arr::random($this->femaleFirstNames)
+                    : Arr::random($this->maleFirstNames);
+                $guardianLast = Arr::random($this->lastNames);
                 Guardian::create([
                     'student_id' => $student->id,
-                    'full_name' => $this->pickFullName($faker->randomElement(['M', 'F'])),
-                    'relationship' => $faker->randomElement(['FATHER', 'MOTHER', 'GUARDIAN']),
+                    'first_name' => $guardianFirst,
+                    'last_name' => $guardianLast,
+                    'full_name' => $guardianFirst . ' ' . $guardianLast,
+                    'relationship' => $faker->randomElement(['Père', 'Mère', 'Tuteur', 'Oncle', 'Tante']),
                     'phone' => $this->senegalPhone(),
+                    'phone_2' => $faker->boolean(20) ? $this->senegalPhone() : null,
                     'email' => $faker->email(),
                     'address' => Arr::random($this->senegalCities) . ', Senegal',
                     'occupation' => $faker->jobTitle(),
@@ -203,7 +223,7 @@ class StudentSeeder extends Seeder
                     }
                 }
 
-                $document = Document::create([
+                Document::create([
                     'student_id' => $student->id,
                     'type' => $type,
                     'file_path' => '',
@@ -215,8 +235,6 @@ class StudentSeeder extends Seeder
                     'uploaded_at' => $uploadedAt,
                     'reviewed_at' => $reviewedAt,
                 ]);
-
-                $this->attachDocumentMedia($document, $type);
             }
         }
     }
@@ -242,41 +260,4 @@ class StudentSeeder extends Seeder
         return sprintf('%s+%s@seed.ucak.sn', $prefix, (string) Str::uuid());
     }
 
-    private function attachDocumentMedia(Document $document, string $type): void
-    {
-        $extension = $type === 'PHOTO' ? 'png' : 'pdf';
-        $fileName = "{$type}_{$document->student_id}.{$extension}";
-        $tmpPath = tempnam(sys_get_temp_dir(), 'doc_seed_');
-        if ($tmpPath === false) {
-            return;
-        }
-
-        $tmpFile = $tmpPath . '.' . $extension;
-        rename($tmpPath, $tmpFile);
-
-        if ($extension === 'png') {
-            $png = base64_decode(
-                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
-            );
-            file_put_contents($tmpFile, $png ?: '');
-        } else {
-            $pdf = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF";
-            file_put_contents($tmpFile, $pdf);
-        }
-
-        try {
-            $media = $document->addMedia($tmpFile)
-                ->usingFileName($fileName)
-                ->usingName($type)
-                ->toMediaCollection($type);
-
-            $document->update([
-                'media_id' => $media->id,
-                'file_path' => $media->getPathRelativeToRoot(),
-                'file_name' => $media->file_name,
-            ]);
-        } finally {
-            @unlink($tmpFile);
-        }
-    }
 }

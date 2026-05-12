@@ -28,3 +28,4 @@ Thumbs.db
 docker-compose.override.yml.example
 docs/docker-compose.tmp.yml
 docs/docker-nginx-default.tmp.conf
+docker/nginx/local.conf

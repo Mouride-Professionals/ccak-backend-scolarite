@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\DashboardFiltersRequest;
 use App\Http\Requests\Dashboard\EnrollmentsTrendRequest;
 use App\Http\Requests\Dashboard\RecentActivitiesRequest;
+use App\Enums\RegistrationStatus;
 use App\Models\DeliberationResult;
 use App\Models\DeliberationSession;
 use App\Models\Enrollment;
@@ -63,7 +64,7 @@ class DashboardController extends Controller
         $totalDeliberations = (clone $deliberationQuery)->count();
 
         $pendingEnrollments = (clone $enrollmentQuery)
-            ->where('status', Enrollment::STATUS_PENDING)
+            ->where('status', RegistrationStatus::PENDING_VALIDATION)
             ->count();
 
         $pendingDeliberations = (clone $deliberationQuery)
@@ -302,7 +303,7 @@ class DashboardController extends Controller
                     'action' => 'Inscription',
                     'context' => trim((string) $row->programme_name . ($level !== '' ? ' L' . $level : '')),
                     'occurred_at' => $this->iso8601((string) $row->occurred_at),
-                    'status' => $this->mapEnrollmentActivityStatus((string) $row->status),
+                    'status' => $this->mapEnrollmentActivityStatus($row->status instanceof \BackedEnum ? $row->status->value : (string) $row->status),
                 ];
             });
     }
@@ -362,8 +363,8 @@ class DashboardController extends Controller
     private function mapEnrollmentActivityStatus(string $status): string
     {
         return match ($status) {
-            Enrollment::STATUS_COMPLETED => 'VALIDATED',
-            Enrollment::STATUS_PENDING => 'PENDING',
+            RegistrationStatus::VALIDATED->value => 'VALIDATED',
+            RegistrationStatus::PENDING_VALIDATION->value => 'PENDING',
             default => 'PROCESSED',
         };
     }

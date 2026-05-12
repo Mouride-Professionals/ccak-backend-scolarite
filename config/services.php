@@ -46,4 +46,9 @@ return [
         'default_country_code' => env('ORANGE_DEFAULT_COUNTRY_CODE', '+221'),
     ],
 
+    'ccak' => [
+        'base_url' => env('CCAK_API_URL'),
+        'api_key'  => env('CCAK_API_KEY'),
+    ],
+
 ];
