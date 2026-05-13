@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuidV7;
-use App\Models\Enums\GradeStatus;
-use App\Models\Enums\GradeType;
+use App\Enums\GradeStatus;
+use App\Enums\GradeType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
