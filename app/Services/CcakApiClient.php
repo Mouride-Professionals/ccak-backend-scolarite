@@ -19,7 +19,7 @@ class CcakApiClient
 
     public function getStudentsBulk(): array
     {
-        return $this->get('/api/v1/students/bulk');
+        return $this->get('/api/admin-service/student', timeout: 120);
     }
 
     public function getGrades(): array
@@ -52,10 +52,10 @@ class CcakApiClient
         return $this->get('/api/v1/academic-years');
     }
 
-    private function get(string $path): array
+    private function get(string $path, int $timeout = 30): array
     {
         try {
-            $response = Http::timeout(30)
+            $response = Http::timeout($timeout)
                 ->withHeader('X-API-Key', $this->apiKey)
                 ->get("{$this->baseUrl}{$path}");
 

@@ -150,7 +150,7 @@ class StudentController extends BaseApiController
     {
         $this->authorize('view', $student);
 
-        $student->load(['user', 'guardians', 'documents']);
+        $student->load(['user', 'guardians', 'priorDiplomas', 'documents', 'bacInfo', 'addresses', 'socialProfile']);
 
         return $this->success(
             new StudentResource($student),

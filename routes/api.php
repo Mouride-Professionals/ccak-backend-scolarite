@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Academic\ExamSessionController;
+use App\Http\Controllers\Academic\ExamScheduleController;
 use App\Http\Controllers\Academic\AcademicProgramController;
 use App\Http\Controllers\Academic\CourseController;
 use App\Http\Controllers\Academic\CourseUnitController;
@@ -23,6 +25,7 @@ use App\Http\Controllers\Academic\CourseLogController;
 use App\Http\Controllers\Academic\AttendanceController;
 use App\Http\Controllers\Academic\EvaluationController;
 use App\Http\Controllers\Academic\EvaluationResponseController;
+use App\Http\Controllers\Academic\MaquetteController;
 use App\Http\Controllers\Academic\TeachingAssignmentController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\EnrollmentDashboardController;
@@ -31,6 +34,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SyncController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserRoleController;
 use \App\Http\Controllers\Academic\DeliberationSessionController;
@@ -56,6 +60,17 @@ Route::middleware('auth:api')->group(function () {
 
 
 
+
+    // Exam sessions & schedules
+    Route::apiResource('exam-sessions', ExamSessionController::class);
+    Route::post('exam-sessions/{examSession}/publish', [ExamSessionController::class, 'publish']);
+    Route::post('exam-sessions/{examSession}/close', [ExamSessionController::class, 'close']);
+    Route::get('exam-sessions/{examSession}/schedules', [ExamScheduleController::class, 'index']);
+    Route::post('exam-sessions/{examSession}/schedules', [ExamScheduleController::class, 'store']);
+    Route::get('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'show']);
+    Route::put('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'update']);
+    Route::delete('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'destroy']);
+    Route::post('exam-schedules/check-conflicts', [ExamScheduleController::class, 'checkConflicts']);
 
     // Deliberation Sessions
     Route::patch('deliberation-sessions/{id}/status', [DeliberationSessionController::class, 'changeStatus']);
@@ -84,7 +99,12 @@ Route::middleware('auth:api')->group(function () {
     Route::post('faculty', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'store']);
     Route::get('faculty/{faculty_member}', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'show']);
     Route::put('faculty/{faculty_member}', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'update']);
+    Route::get('maquette/export', [MaquetteController::class, 'export']);
+    Route::get('maquette', [MaquetteController::class, 'index']);
     Route::post('teaching-assignments/import', [TeachingAssignmentController::class, 'import']);
+    Route::get('teaching-assignments/planning/dashboard', [TeachingAssignmentController::class, 'planningDashboard']);
+    Route::get('teaching-assignments/planning', [TeachingAssignmentController::class, 'planning']);
+    Route::patch('teaching-assignments/{teachingAssignment}/delivery', [TeachingAssignmentController::class, 'updateDelivery']);
     Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->only(['index', 'store', 'destroy']);
 
 
@@ -227,6 +247,12 @@ Route::middleware('auth:api')->group(function () {
         Route::get('audits', [AuditLogController::class, 'index']);
         Route::get('audits/{audit}', [AuditLogController::class, 'show']);
         Route::get('audits/model/{model}/{id}', [AuditLogController::class, 'forModel']);
+
+        // CCAK sync
+        Route::middleware('role:ADMIN')->group(function () {
+            Route::get('sync-logs', [SyncController::class, 'index']);
+            Route::post('sync', [SyncController::class, 'trigger']);
+        });
     });
 
     // Admin roles

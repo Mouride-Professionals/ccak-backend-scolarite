@@ -11,30 +11,34 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     private array $constraints = [
-        'announcements'          => ['priority'],
-        'attendance_records'     => ['status'],
-        'enrollments'            => ['status'],
-        'guardians'              => ['relationship'],
-        'grades'                 => ['type', 'status'],
-        'faculty_members'        => ['rank', 'contract_type'],
-        'faculty_documents'      => ['type', 'status'],
-        'students'               => ['gender', 'status'],
-        'holidays'               => ['type'],
-        'course_enrollments'     => ['status'],
-        'deliberation_sessions'  => ['status'],
-        'rooms'                  => ['type'],
-        'faculty_contracts'      => ['contract_type', 'status'],
-        'course_units'           => ['type'],
-        'semester_results'       => ['decision'],
-        'generated_documents'    => ['type', 'status'],
-        'deliberation_results'   => ['decision', 'honor_level'],
-        'academic_programs'      => ['level'],
-        'teaching_assignments'   => ['role'],
-        'documents'              => ['type', 'status'],
+        'announcements' => ['priority'],
+        'attendance_records' => ['status'],
+        'enrollments' => ['status'],
+        'guardians' => ['relationship'],
+        'grades' => ['type', 'status'],
+        'faculty_members' => ['rank', 'contract_type'],
+        'faculty_documents' => ['type', 'status'],
+        'students' => ['gender', 'status'],
+        'holidays' => ['type'],
+        'course_enrollments' => ['status'],
+        'deliberation_sessions' => ['status'],
+        'rooms' => ['type'],
+        'faculty_contracts' => ['contract_type', 'status'],
+        'course_units' => ['type'],
+        'semester_results' => ['decision'],
+        'generated_documents' => ['type', 'status'],
+        'deliberation_results' => ['decision', 'honor_level'],
+        'academic_programs' => ['level'],
+        'teaching_assignments' => ['role'],
+        'documents' => ['type', 'status'],
     ];
 
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         foreach ($this->constraints as $table => $columns) {
             foreach ($columns as $column) {
                 // Drop the CHECK constraint PostgreSQL creates for enum columns.

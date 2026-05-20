@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\AcademicYearStatus;
 use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class AcademicYear extends Model
 {
@@ -16,6 +17,8 @@ class AcademicYear extends Model
 
     protected $fillable = [
         'name',
+        'code',
+        'status',
         'start_date',
         'end_date',
         'is_current',
@@ -100,11 +103,33 @@ class AcademicYear extends Model
         return static::current()->first();
     }
 
+    public function canBeCurrent(): bool
+    {
+        return $this->currentIneligibilityReason() === null;
+    }
+
+    public function currentIneligibilityReason(): ?string
+    {
+        if ($this->status === AcademicYearStatus::CLOSED->value) {
+            return 'Impossible de définir une année académique fermée comme actuelle.';
+        }
+
+        if ($this->is_active === false) {
+            return 'Impossible de définir une année académique inactive comme actuelle.';
+        }
+
+        if ($this->end_date !== null && $this->end_date->lt(Carbon::today(config('app.timezone')))) {
+            return 'Impossible de définir une année académique passée comme actuelle.';
+        }
+
+        return null;
+    }
+
     // Validation rules
     public static function validationRules($id = null): array
     {
         return [
-            'name' => 'required|string|max:255|unique:academic_years,name,' . $id,
+            'name' => 'required|string|max:255|unique:academic_years,name,'.$id,
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'is_current' => 'boolean',
@@ -116,6 +141,7 @@ class AcademicYear extends Model
     public function isDateInRange($date): bool
     {
         $checkDate = is_string($date) ? \Carbon\Carbon::parse($date) : $date;
+
         return $checkDate->between($this->start_date, $this->end_date);
     }
 }

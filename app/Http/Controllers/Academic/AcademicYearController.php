@@ -41,7 +41,17 @@ class AcademicYearController extends BaseApiController
 
     public function store(StoreAcademicYearRequest $request)
     {
-        $year = DB::transaction(fn() => AcademicYear::create($request->validated()));
+        $validated = $request->validated();
+
+        if ($request->boolean('is_current')) {
+            $candidate = new AcademicYear($validated);
+            $rejection = $this->rejectCurrentAcademicYearCandidate($candidate);
+            if ($rejection !== null) {
+                return $rejection;
+            }
+        }
+
+        $year = DB::transaction(fn () => AcademicYear::create($validated));
 
         return $this->success(new AcademicYearResource($year), 'Academic year created', Response::HTTP_CREATED);
     }
@@ -53,7 +63,18 @@ class AcademicYearController extends BaseApiController
 
     public function update(UpdateAcademicYearRequest $request, AcademicYear $academicYear)
     {
-        DB::transaction(fn() => $academicYear->update($request->validated()));
+        $validated = $request->validated();
+        $candidate = clone $academicYear;
+        $candidate->fill($validated);
+
+        if ($candidate->is_current) {
+            $rejection = $this->rejectCurrentAcademicYearCandidate($candidate);
+            if ($rejection !== null) {
+                return $rejection;
+            }
+        }
+
+        DB::transaction(fn () => $academicYear->update($validated));
 
         return $this->success(new AcademicYearResource($academicYear->refresh()), 'Academic year updated');
     }
@@ -62,7 +83,7 @@ class AcademicYearController extends BaseApiController
     {
         $academicYear = AcademicYear::find($id);
 
-        if (!$academicYear) {
+        if (! $academicYear) {
             return $this->error('Année académique non trouvée.', Response::HTTP_NOT_FOUND);
         }
 
@@ -71,7 +92,7 @@ class AcademicYearController extends BaseApiController
             return $this->error('Impossible de supprimer cette année académique car des inscriptions y sont associées.', Response::HTTP_CONFLICT);
         }
 
-        DB::transaction(fn() => $academicYear->delete());
+        DB::transaction(fn () => $academicYear->delete());
 
         return $this->success(null, 'Année académique supprimée avec succès.');
     }
@@ -83,7 +104,7 @@ class AcademicYearController extends BaseApiController
     {
         $currentYear = AcademicYear::getCurrentYear();
 
-        if (!$currentYear) {
+        if (! $currentYear) {
             return $this->error('Aucune année académique actuelle définie.', Response::HTTP_NOT_FOUND);
         }
 
@@ -97,8 +118,13 @@ class AcademicYearController extends BaseApiController
     {
         $academicYear = AcademicYear::find($id);
 
-        if (!$academicYear) {
+        if (! $academicYear) {
             return $this->error('Année académique non trouvée.', Response::HTTP_NOT_FOUND);
+        }
+
+        $rejection = $this->rejectCurrentAcademicYearCandidate($academicYear);
+        if ($rejection !== null) {
+            return $rejection;
         }
 
         DB::transaction(function () use ($academicYear, $id) {
@@ -107,5 +133,18 @@ class AcademicYearController extends BaseApiController
         });
 
         return $this->success(new AcademicYearResource($academicYear->fresh()), 'Année académique définie comme actuelle.');
+    }
+
+    private function rejectCurrentAcademicYearCandidate(AcademicYear $academicYear): ?JsonResponse
+    {
+        $reason = $academicYear->currentIneligibilityReason();
+
+        if ($reason === null) {
+            return null;
+        }
+
+        return $this->error($reason, Response::HTTP_UNPROCESSABLE_ENTITY, [
+            'is_current' => [$reason],
+        ]);
     }
 }

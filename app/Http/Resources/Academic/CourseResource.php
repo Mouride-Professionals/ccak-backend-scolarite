@@ -18,6 +18,8 @@ class CourseResource extends JsonResource
             'hours_lecture' => $this->hours_lecture,
             'hours_td' => $this->hours_td,
             'hours_tp' => $this->hours_tp,
+            'hours_tpe' => $this->hours_tpe,
+            'vht' => $this->vht,
             'coefficient' => $this->coefficient,
             'prerequisites' => $this->prerequisites,
             'is_active' => $this->is_active,

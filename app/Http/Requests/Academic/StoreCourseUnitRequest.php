@@ -21,6 +21,7 @@ class StoreCourseUnitRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'semester_number' => ['required', 'integer', 'min:1'],
             'credits' => ['required', 'integer', 'min:0'],
+            'coefficient' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'type' => ['required', Rule::in(CourseUnit::TYPES)],
             'is_active' => ['sometimes', 'boolean'],
         ];

@@ -13,13 +13,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
  * @property string $id
  * @property string $user_id
- * @property string $student_number
+ * @property string|null $student_number
  * @property string $full_name
  * @property string $gender
  * @property \Illuminate\Support\Carbon|null $date_of_birth
@@ -54,6 +56,7 @@ class Student extends Model implements AuditableContract
      * @var array<int, string>
      */
     protected $fillable = [
+        'id',
         'user_id',
         'keycloak_user_id',
         'student_number',
@@ -111,17 +114,17 @@ class Student extends Model implements AuditableContract
         return $this->hasOne(StudentBacInfo::class);
     }
 
-    public function socialProfile(): HasOne
+    public function socialProfile(): MorphOne
     {
         return $this->morphOne(SocialProfile::class, 'profilable');
     }
 
-    public function addresses(): HasMany
+    public function addresses(): MorphMany
     {
         return $this->morphMany(Address::class, 'addressable');
     }
 
-    public function priorDiplomas(): HasMany
+    public function priorDiplomas(): MorphMany
     {
         return $this->morphMany(PriorDiploma::class, 'diplomable');
     }

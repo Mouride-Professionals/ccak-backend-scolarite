@@ -23,6 +23,8 @@ class Course extends Model
         'hours_lecture',
         'hours_td',
         'hours_tp',
+        'hours_tpe',
+        'vht',
         'coefficient',
         'prerequisites',
         'is_active',

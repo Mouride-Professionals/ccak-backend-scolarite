@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Academic;
 
+use App\Enums\TeachingDeliveryStatus;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\ImportTeachingAssignmentRequest;
 use App\Http\Requests\Academic\StoreTeachingAssignmentRequest;
+use App\Http\Requests\Academic\UpdateDeliveryRequest;
 use App\Http\Resources\Academic\TeachingAssignmentResource;
 use App\Models\AcademicYear;
 use App\Models\Course;
@@ -23,7 +25,8 @@ class TeachingAssignmentController extends BaseApiController
     {
         $this->middleware('permission:teaching_assignments.create')->only(['store', 'import']);
         $this->middleware('permission:teaching_assignments.delete')->only('destroy');
-        $this->middleware('permission:teaching_assignments.view')->only('index');
+        $this->middleware('permission:teaching_assignments.view')->only(['index', 'planning', 'planningDashboard']);
+        $this->middleware('permission:teaching_assignments.update')->only('updateDelivery');
     }
 
     public function index(Request $request): JsonResponse
@@ -79,6 +82,81 @@ class TeachingAssignmentController extends BaseApiController
         DB::transaction(fn() => $teachingAssignment->delete());
 
         return $this->success(null, 'Teaching assignment removed');
+    }
+
+    public function planning(Request $request): JsonResponse
+    {
+        $request->validate([
+            'program_id'       => ['sometimes', 'uuid', 'exists:academic_programs,id'],
+            'academic_year_id' => ['sometimes', 'uuid', 'exists:academic_years,id'],
+        ]);
+
+        $assignments = QueryBuilder::for(TeachingAssignment::query())
+            ->with(['facultyMember', 'course.courseUnit.academicProgram', 'academicYear'])
+            ->allowedFilters([
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('role'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::scope('search'),
+                AllowedFilter::callback('program_id', function ($query, $value) {
+                    $query->whereHas('course.courseUnit', fn($q) => $q->where('academic_program_id', $value));
+                }),
+            ])
+            ->allowedSorts(['created_at', 'status', 'planned_start_date'])
+            ->defaultSort('status')
+            ->get();
+
+        return $this->success(TeachingAssignmentResource::collection($assignments), 'Planning retrieved successfully');
+    }
+
+    public function planningDashboard(Request $request): JsonResponse
+    {
+        $request->validate([
+            'academic_year_id' => ['sometimes', 'uuid', 'exists:academic_years,id'],
+            'program_id'       => ['sometimes', 'uuid', 'exists:academic_programs,id'],
+        ]);
+
+        $query = TeachingAssignment::query()
+            ->with('course.courseUnit.academicProgram')
+            ->where('academic_year_id', $request->academic_year_id);
+
+        if ($request->program_id) {
+            $query->whereHas('course.courseUnit', fn($q) => $q->where('academic_program_id', $request->program_id));
+        }
+
+        $assignments = $query->get();
+
+        $byProgram = $assignments->groupBy(fn($a) => $a->course?->courseUnit?->academicProgram?->id);
+
+        $dashboard = $byProgram->map(function ($items, $programId) {
+            $program = $items->first()?->course?->courseUnit?->academicProgram;
+            $total   = $items->count();
+
+            $completed  = $items->filter(fn($a) => $a->status === TeachingDeliveryStatus::COMPLETED)->count();
+            $started    = $items->filter(fn($a) => $a->status !== TeachingDeliveryStatus::NOT_STARTED)->count();
+
+            return [
+                'program_id'       => $programId,
+                'program_name'     => $program?->name,
+                'total'            => $total,
+                'completed'        => $completed,
+                'started'          => $started,
+                'taux_execution'   => $total > 0 ? round($started / $total * 100, 1) : 0,
+                'taux_achevement'  => $total > 0 ? round($completed / $total * 100, 1) : 0,
+            ];
+        })->values();
+
+        return $this->success($dashboard, 'Planning dashboard retrieved successfully');
+    }
+
+    public function updateDelivery(UpdateDeliveryRequest $request, TeachingAssignment $teachingAssignment): JsonResponse
+    {
+        $teachingAssignment->update($request->validated());
+
+        return $this->success(
+            new TeachingAssignmentResource($teachingAssignment->load(['course', 'facultyMember', 'academicYear'])),
+            'Delivery updated'
+        );
     }
 
     public function import(ImportTeachingAssignmentRequest $request): JsonResponse

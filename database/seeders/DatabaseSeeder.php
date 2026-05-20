@@ -19,33 +19,34 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             CcakReferentialSeeder::class,  // seeds: degree_cycles, levels, faculties, departments, programs, academic_years
-            CourseUnitSeeder::class,
-            CourseSeeder::class,
+            HecMaquetteSeeder::class,      // seeds real HEC course units (UE) and courses (ECUE) from maquette
+            // CourseUnitSeeder::class,     // fake
+            // CourseSeeder::class,         // fake
             AdminSeeder::class,
-            UserSeeder::class,
-            StudentSeeder::class,
-            EnrollmentSeeder::class,
-            CourseEnrollmentSeeder::class,
-            FacultyMemberSeeder::class,
-            GradeSeeder::class,
-            SemesterResultSeeder::class,
-            // DocumentSeeder::class,
-            // GeneratedDocumentSeeder::class,
-            ActivityTypeSeeder::class,
-            RoomSeeder::class,
-            AcademicCalendarSeeder::class,
-            HolidaySeeder::class,
-            ScheduleSeeder::class,
-            TeachingAssignmentSeeder::class,
-            // FacultyDocumentSeeder::class,
-            FacultyContractSeeder::class,
-            CourseLogSeeder::class,
-            AttendanceRecordSeeder::class,
-            EvaluationSeeder::class,
-            EvaluationResponseSeeder::class,
-            DeliberationSessionSeeder::class,
-            DeliberationResultSeeder::class,
-            NotificationSeeder::class,
+            // UserSeeder::class,           // fake
+            // StudentSeeder::class,        // fake
+            // EnrollmentSeeder::class,     // fake
+            // CourseEnrollmentSeeder::class, // fake
+            // FacultyMemberSeeder::class,  // fake
+            // GradeSeeder::class,          // fake
+            // SemesterResultSeeder::class, // fake
+            // DocumentSeeder::class,       // fake
+            // GeneratedDocumentSeeder::class, // fake
+            // ActivityTypeSeeder::class,   // fake
+            // RoomSeeder::class,           // fake
+            // AcademicCalendarSeeder::class, // fake
+            // HolidaySeeder::class,        // fake
+            // ScheduleSeeder::class,       // fake
+            // TeachingAssignmentSeeder::class, // fake
+            // FacultyDocumentSeeder::class, // fake
+            // FacultyContractSeeder::class, // fake
+            // CourseLogSeeder::class,      // fake
+            // AttendanceRecordSeeder::class, // fake
+            // EvaluationSeeder::class,     // fake
+            // EvaluationResponseSeeder::class, // fake
+            // DeliberationSessionSeeder::class, // fake
+            // DeliberationResultSeeder::class, // fake
+            // NotificationSeeder::class,   // fake
         ]);
 
         $admin = User::factory()->create([
