@@ -32,8 +32,8 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
             ->get();
 
         $title = 'MAQUETTE PÉDAGOGIQUE' . ($this->programName ? ' — ' . $this->programName : '');
-        $this->addRow([$title, ...array_fill(0, 12, null)], 'title');
-        $this->addRow(array_fill(0, 13, null), 'empty');
+        $this->addRow([$title, ...array_fill(0, 13, null)], 'title');
+        $this->addRow(array_fill(0, 14, null), 'empty');
 
         foreach ($units->groupBy('academic_program_id') as $programUnits) {
             $first       = $programUnits->first();
@@ -45,10 +45,10 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
 
             foreach ($programUnits->groupBy('semester_number') as $semester => $semUnits) {
                 $totalCr = $semUnits->sum('credits');
-                $this->addRow(["SEMESTRE {$semester}", ...array_fill(0, 11, null), "{$totalCr} crédits"], 'semester_header');
+                $this->addRow(["SEMESTRE {$semester}", ...array_fill(0, 12, null), "{$totalCr} crédits"], 'semester_header');
                 $this->addRow([
                     'Code UE', 'Nom UE', 'Type UE', 'Crédits UE', 'Coef UE',
-                    'Code ECUE', 'Intitulé ECUE', 'CM', 'TD', 'TPE', 'VHT', 'Crédits ECUE', 'Coef ECUE',
+                    'Code ECUE', 'Intitulé ECUE', 'CM', 'TD', 'TP', 'TPE', 'VHT', 'Crédits ECUE', 'Coef ECUE',
                 ], 'col_headers');
 
                 foreach ($semUnits as $unit) {
@@ -57,7 +57,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
 
                     for ($i = 0; $i < $count; $i++) {
                         $c   = $courses[$i] ?? null;
-                        $vht = $c ? ($c->vht ?? ($c->hours_lecture + $c->hours_td + ($c->hours_tpe ?? 0))) : null;
+                        $vht = $c ? ($c->vht ?? ($c->hours_lecture + $c->hours_td + ($c->hours_tp ?? 0) + ($c->hours_tpe ?? 0))) : null;
 
                         $this->addRow([
                             $i === 0 ? $unit->code        : null,
@@ -69,6 +69,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
                             $c ? $c->name          : null,
                             $c ? $c->hours_lecture : null,
                             $c ? $c->hours_td      : null,
+                            $c ? ($c->hours_tp  ?? 0) : null,
                             $c ? ($c->hours_tpe ?? 0) : null,
                             $c ? $vht              : null,
                             $c ? $c->credits       : null,
@@ -77,7 +78,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
                     }
                 }
 
-                $this->addRow(array_fill(0, 13, null), 'empty');
+                $this->addRow(array_fill(0, 14, null), 'empty');
             }
         }
 
@@ -94,7 +95,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
         return [
             'A' => 18, 'B' => 40, 'C' => 14, 'D' => 12, 'E' => 10,
             'F' => 20, 'G' => 46, 'H' => 8,  'I' => 8,  'J' => 8,
-            'K' => 8,  'L' => 14, 'M' => 10,
+            'K' => 8,  'L' => 8,  'M' => 14, 'N' => 10,
         ];
     }
 
@@ -103,7 +104,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet    = $event->sheet->getDelegate();
-                $lastCol  = 'M';
+                $lastCol  = 'N';
                 $total    = count($this->rowMeta);
 
                 for ($i = 0; $i < $total; $i++) {
@@ -121,8 +122,8 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
                     };
                 }
 
-                // Right-align numeric columns H–M
-                $sheet->getStyle("H1:M{$total}")->getAlignment()
+                // Right-align numeric columns H–N
+                $sheet->getStyle("H1:N{$total}")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 // Freeze below title + blank rows
@@ -166,15 +167,15 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
 
     private function styleSemesterHeader($sheet, int $row): void
     {
-        $sheet->mergeCells("A{$row}:L{$row}");
-        $fullRange = "A{$row}:M{$row}";
+        $sheet->mergeCells("A{$row}:M{$row}");
+        $fullRange = "A{$row}:N{$row}";
         $sheet->getStyle($fullRange)->applyFromArray([
             'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF00365F']],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
         $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
-        $sheet->getStyle("M{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("N{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getRowDimension($row)->setRowHeight(20);
     }
 

@@ -99,6 +99,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('faculty', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'store']);
     Route::get('faculty/{faculty_member}', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'show']);
     Route::put('faculty/{faculty_member}', [\App\Http\Controllers\Academic\FacultyMemberController::class, 'update']);
+    Route::get('maquette/template', [MaquetteController::class, 'downloadTemplate']);
+    Route::post('maquette/import', [MaquetteController::class, 'import']);
     Route::get('maquette/export', [MaquetteController::class, 'export']);
     Route::get('maquette', [MaquetteController::class, 'index']);
     Route::post('teaching-assignments/import', [TeachingAssignmentController::class, 'import']);
