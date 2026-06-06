@@ -11,10 +11,7 @@ use Illuminate\Http\Request;
 
 class SyncController extends BaseApiController
 {
-    public function __construct(private readonly SyncService $syncService)
-    {
-        parent::__construct();
-    }
+    public function __construct(private readonly SyncService $syncService) {}
 
     public function index(Request $request): JsonResponse
     {
