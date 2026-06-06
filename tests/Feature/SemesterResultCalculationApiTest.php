@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Jobs\CalculateSemesterResultsJob;
 use App\Enums\RegistrationStatus;
+use App\Jobs\CalculateSemesterResultsJob;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Course;

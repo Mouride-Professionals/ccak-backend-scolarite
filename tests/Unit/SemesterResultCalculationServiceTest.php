@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Enums\DecisionType;
 use App\Enums\RegistrationStatus;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
@@ -12,9 +13,6 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseUnit;
 use App\Models\Department;
 use App\Models\Enrollment;
-
-use App\Enums\DecisionType;
-
 use App\Models\Faculty;
 use App\Models\Grade;
 use App\Models\Student;

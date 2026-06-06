@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Enums\RegistrationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\EnrollmentsDashboardRequest;
-use App\Enums\RegistrationStatus;
 use App\Models\Enrollment;
 use App\Services\Dashboard\DashboardFilterService;
 use Carbon\CarbonImmutable;

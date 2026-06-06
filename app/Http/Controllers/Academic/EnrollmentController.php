@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Academic;
 
+use App\Enums\RegistrationStatus;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Enrollment\StoreEnrollmentRequest;
 use App\Http\Requests\Enrollment\UpdateEnrollmentRequest;
 use App\Http\Resources\EnrollmentResource;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
-use App\Enums\RegistrationStatus;
 use App\Models\Enrollment;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
