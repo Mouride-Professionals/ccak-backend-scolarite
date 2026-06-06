@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\FacultyMember;
 use App\Models\Department;
+use App\Models\FacultyMember;
 use App\Models\User;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
 use Illuminate\Database\Seeder;
@@ -120,6 +120,7 @@ class FacultyMemberSeeder extends Seeder
     {
         $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '.', $fullName));
         $slug = trim($slug ?? '', '.');
-        return $slug . '@ucak.sn';
+
+        return $slug.'@ucak.sn';
     }
 }

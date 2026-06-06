@@ -29,11 +29,12 @@ class CourseUnit extends Model
 
     protected $casts = [
         'coefficient' => 'decimal:2',
-        'is_active'   => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // Audit configuration
     public $auditEvents = ['created', 'updated', 'deleted'];
+
     public $auditExclude = ['created_at', 'updated_at'];
 
     public function academicProgram(): BelongsTo

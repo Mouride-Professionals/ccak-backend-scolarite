@@ -2,13 +2,13 @@
 
 namespace App\Services\Notification;
 
-use App\Models\Notification;
-use App\Models\User;
+use App\Jobs\SendEmailNotificationJob;
+use App\Jobs\SendSmsNotificationJob;
 use App\Models\Document;
 use App\Models\Enrollment;
 use App\Models\Grade;
-use App\Jobs\SendEmailNotificationJob;
-use App\Jobs\SendSmsNotificationJob;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 class NotificationService
@@ -17,9 +17,9 @@ class NotificationService
      * Send notification to user(s)
      */
     /**
-     * @param array<int, string>|string $userIds
-     * @param array<int, string> $channels
-     * @param array<string, mixed> $metadata
+     * @param  array<int, string>|string  $userIds
+     * @param  array<int, string>  $channels
+     * @param  array<string, mixed>  $metadata
      * @return Collection<int, Notification>
      */
     public function send(
@@ -100,12 +100,12 @@ class NotificationService
         $this->send(
             $user->id,
             'Nouvelle note disponible',
-            "Votre note pour {$grade->subject->name} a été publiée.",
+            "Votre note pour {$grade->course?->name} a été publiée.",
             Notification::TYPE_GRADE_PUBLISHED,
             ['in_app', 'email'],
             [
                 'grade_id' => $grade->id,
-                'subject' => $grade->subject->name,
+                'subject' => $grade->course?->name,
                 'score' => $grade->score,
             ]
         );
@@ -119,12 +119,12 @@ class NotificationService
         $this->send(
             $user->id,
             'Inscription confirmée',
-            "Votre inscription à {$enrollment->course->name} a été confirmée.",
+            "Votre inscription à {$enrollment->academicProgram?->name} a été confirmée.",
             Notification::TYPE_ENROLLMENT_CONFIRMED,
             ['in_app', 'email'],
             [
                 'enrollment_id' => $enrollment->id,
-                'course_name' => $enrollment->course->name,
+                'course_name' => $enrollment->academicProgram?->name,
             ]
         );
     }
@@ -186,6 +186,7 @@ class NotificationService
     public function markAsRead(string $notificationId): bool
     {
         $notification = Notification::findOrFail($notificationId);
+
         return $notification->markAsRead();
     }
 

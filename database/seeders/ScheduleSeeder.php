@@ -10,7 +10,6 @@ use App\Models\Room;
 use App\Models\Schedule;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 
 class ScheduleSeeder extends Seeder
 {
@@ -64,12 +63,12 @@ class ScheduleSeeder extends Seeder
                 $day = random_int(1, 6);
                 $slot = $slots[array_rand($slots)];
 
-                $key = $year->id . '|' . $day . '|' . $slot['start'] . '|' . $slot['end'];
+                $key = $year->id.'|'.$day.'|'.$slot['start'].'|'.$slot['end'];
                 $attempts = 0;
                 while (isset($used[$key]) && $attempts < 10) {
                     $day = random_int(1, 6);
                     $slot = $slots[array_rand($slots)];
-                    $key = $year->id . '|' . $day . '|' . $slot['start'] . '|' . $slot['end'];
+                    $key = $year->id.'|'.$day.'|'.$slot['start'].'|'.$slot['end'];
                     $attempts++;
                 }
                 $used[$key] = true;

@@ -4,21 +4,22 @@ namespace App\Exports;
 
 use App\Models\CourseUnit;
 use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEvents
+class MaquetteExport implements FromArray, WithColumnWidths, WithEvents, WithTitle
 {
-    private array $rows    = [];
+    private array $rows = [];
+
     private array $rowMeta = [];
 
     public function __construct(
-        private readonly ?string $programId   = null,
+        private readonly ?string $programId = null,
         private readonly ?string $programName = null,
     ) {}
 
@@ -31,12 +32,12 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
             ->orderBy('code')
             ->get();
 
-        $title = 'MAQUETTE PÉDAGOGIQUE' . ($this->programName ? ' — ' . $this->programName : '');
+        $title = 'MAQUETTE PÉDAGOGIQUE'.($this->programName ? ' — '.$this->programName : '');
         $this->addRow([$title, ...array_fill(0, 13, null)], 'title');
         $this->addRow(array_fill(0, 14, null), 'empty');
 
         foreach ($units->groupBy('academic_program_id') as $programUnits) {
-            $first       = $programUnits->first();
+            $first = $programUnits->first();
             $programName = $first->academicProgram?->name ?? 'Programme inconnu';
 
             if (! $this->programId) {
@@ -53,27 +54,27 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
 
                 foreach ($semUnits as $unit) {
                     $courses = $unit->courses;
-                    $count   = max($courses->count(), 1);
+                    $count = max($courses->count(), 1);
 
                     for ($i = 0; $i < $count; $i++) {
-                        $c   = $courses[$i] ?? null;
+                        $c = $courses[$i] ?? null;
                         $vht = $c ? ($c->vht ?? ($c->hours_lecture + $c->hours_td + ($c->hours_tp ?? 0) + ($c->hours_tpe ?? 0))) : null;
 
                         $this->addRow([
-                            $i === 0 ? $unit->code        : null,
-                            $i === 0 ? $unit->name        : null,
-                            $i === 0 ? $unit->type        : null,
-                            $i === 0 ? $unit->credits     : null,
+                            $i === 0 ? $unit->code : null,
+                            $i === 0 ? $unit->name : null,
+                            $i === 0 ? $unit->type : null,
+                            $i === 0 ? $unit->credits : null,
                             $i === 0 ? $unit->coefficient : null,
-                            $c ? $c->code          : null,
-                            $c ? $c->name          : null,
+                            $c ? $c->code : null,
+                            $c ? $c->name : null,
                             $c ? $c->hours_lecture : null,
-                            $c ? $c->hours_td      : null,
-                            $c ? ($c->hours_tp  ?? 0) : null,
+                            $c ? $c->hours_td : null,
+                            $c ? ($c->hours_tp ?? 0) : null,
                             $c ? ($c->hours_tpe ?? 0) : null,
-                            $c ? $vht              : null,
-                            $c ? $c->credits       : null,
-                            $c ? $c->coefficient   : null,
+                            $c ? $vht : null,
+                            $c ? $c->credits : null,
+                            $c ? $c->coefficient : null,
                         ], $i === 0 ? 'ue_row' : 'ecue_row');
                     }
                 }
@@ -103,22 +104,22 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                $sheet    = $event->sheet->getDelegate();
-                $lastCol  = 'N';
-                $total    = count($this->rowMeta);
+                $sheet = $event->sheet->getDelegate();
+                $lastCol = 'N';
+                $total = count($this->rowMeta);
 
                 for ($i = 0; $i < $total; $i++) {
-                    $row   = $i + 1;
+                    $row = $i + 1;
                     $range = "A{$row}:{$lastCol}{$row}";
 
                     match ($this->rowMeta[$i]) {
-                        'title'          => $this->styleTitle($sheet, $range, $row),
+                        'title' => $this->styleTitle($sheet, $range, $row),
                         'program_header' => $this->styleProgramHeader($sheet, $range, $row),
                         'semester_header' => $this->styleSemesterHeader($sheet, $row),
-                        'col_headers'    => $this->styleColHeaders($sheet, $range, $row),
-                        'ue_row'         => $this->styleUeRow($sheet, $range),
-                        'ecue_row'       => $this->styleEcueRow($sheet, $range),
-                        default          => null,
+                        'col_headers' => $this->styleColHeaders($sheet, $range, $row),
+                        'ue_row' => $this->styleUeRow($sheet, $range),
+                        'ecue_row' => $this->styleEcueRow($sheet, $range),
+                        default => null,
                     };
                 }
 
@@ -136,7 +137,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
 
     private function addRow(array $row, string $meta): void
     {
-        $this->rows[]    = $row;
+        $this->rows[] = $row;
         $this->rowMeta[] = $meta;
     }
 
@@ -159,7 +160,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF00365F']],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ]);
         $sheet->getRowDimension($row)->setRowHeight(26);
@@ -186,7 +187,7 @@ class MaquetteExport implements FromArray, WithTitle, WithColumnWidths, WithEven
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFF0F6FC']],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
             'borders' => [
                 'bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFBBBBBB']],

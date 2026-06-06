@@ -43,7 +43,7 @@ class DepartmentController extends BaseApiController
 
     public function store(StoreDepartmentRequest $request)
     {
-        $department = DB::transaction(fn() => Department::create($request->validated()));
+        $department = DB::transaction(fn () => Department::create($request->validated()));
 
         return $this->success(
             new DepartmentResource($department->load(['faculty', 'head', 'programs'])),
@@ -59,7 +59,7 @@ class DepartmentController extends BaseApiController
 
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
-        DB::transaction(fn() => $department->update($request->validated()));
+        DB::transaction(fn () => $department->update($request->validated()));
 
         return $this->success(
             new DepartmentResource($department->refresh()->load(['faculty', 'head', 'programs'])),
@@ -69,7 +69,7 @@ class DepartmentController extends BaseApiController
 
     public function destroy(Department $department)
     {
-        DB::transaction(fn() => $department->delete());
+        DB::transaction(fn () => $department->delete());
 
         return $this->success(null, 'Department deleted');
     }

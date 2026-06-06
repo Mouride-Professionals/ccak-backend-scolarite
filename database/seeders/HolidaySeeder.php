@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Holiday;
 use App\Models\AcademicYear;
+use App\Models\Holiday;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;

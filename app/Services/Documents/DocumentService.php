@@ -6,9 +6,8 @@ use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Document;
 use App\Repositories\DocumentRepository;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -16,8 +15,11 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class DocumentService
 {
     private DocumentRepository $repository;
+
     private DocumentValidationService $validationService;
+
     private DocumentStorageService $storageService;
+
     private DocumentNotificationService $notificationService;
 
     public function __construct(
@@ -104,7 +106,7 @@ class DocumentService
             'status' => DocumentStatus::APPROVED,
             'reviewed_by' => $reviewedBy,
             'reviewed_at' => now(),
-            'notes' => $notes ? trim($document->notes . "\n" . $notes) : $document->notes,
+            'notes' => $notes ? trim($document->notes."\n".$notes) : $document->notes,
         ]);
 
         $this->notificationService->notifyApproval($updatedDocument);
@@ -126,8 +128,8 @@ class DocumentService
 
         $this->validationService->validateReview($document, $reviewedBy);
 
-        $notes = trim($document->notes . "\n\nRejeté le " . now()->format('d/m/Y') .
-            " par " . $reviewedBy . "\nRaison: " . $reason);
+        $notes = trim($document->notes."\n\nRejeté le ".now()->format('d/m/Y').
+            ' par '.$reviewedBy."\nRaison: ".$reason);
 
         $updatedDocument = $this->repository->update($document->id, [
             'status' => DocumentStatus::REJECTED,
@@ -185,7 +187,7 @@ class DocumentService
             ];
         }
 
-        if (!$this->storageService->exists($document->file_path)) {
+        if (! $this->storageService->exists($document->file_path)) {
             throw new \RuntimeException('Le fichier n\'existe plus sur le serveur');
         }
 
@@ -238,19 +240,19 @@ class DocumentService
         $query = Document::where('student_id', $studentId);
 
         // Appliquer les filtres
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('uploaded_at', '>=', $filters['date_from']);
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('uploaded_at', '<=', $filters['date_to']);
         }
 
@@ -265,11 +267,11 @@ class DocumentService
     {
         $query = Document::where('status', DocumentStatus::PENDING);
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('uploaded_at', '>=', $filters['date_from']);
         }
 
@@ -322,7 +324,7 @@ class DocumentService
             $status['required_docs_status'][$requiredType] = $hasApproved;
         }
 
-        $status['all_required_approved'] = !in_array(false, $status['required_docs_status'], true);
+        $status['all_required_approved'] = ! in_array(false, $status['required_docs_status'], true);
 
         return $status;
     }
@@ -335,23 +337,23 @@ class DocumentService
     {
         $query = Document::query();
 
-        if (!empty($filters['student_id'])) {
+        if (! empty($filters['student_id'])) {
             $query->where('student_id', $filters['student_id']);
         }
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('uploaded_at', '>=', $filters['date_from']);
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('uploaded_at', '<=', $filters['date_to']);
         }
 
@@ -463,7 +465,7 @@ class DocumentService
      * Calculer le temps moyen de review
      */
     /**
-     * @param \Illuminate\Support\Collection<int, Document> $documents
+     * @param  \Illuminate\Support\Collection<int, Document>  $documents
      */
     private function calculateAverageReviewTime($documents): ?float
     {
@@ -484,7 +486,7 @@ class DocumentService
      * Calculer le taux de rejet
      */
     /**
-     * @param \Illuminate\Support\Collection<int, Document> $documents
+     * @param  \Illuminate\Support\Collection<int, Document>  $documents
      */
     private function calculateRejectionRate($documents): float
     {
@@ -503,7 +505,7 @@ class DocumentService
      * Obtenir les principaux reviewers
      */
     /**
-     * @param \Illuminate\Support\Collection<int, Document> $documents
+     * @param  \Illuminate\Support\Collection<int, Document>  $documents
      * @return array<string, mixed>
      */
     private function getTopReviewers($documents): array

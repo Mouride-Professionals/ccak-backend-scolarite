@@ -34,8 +34,8 @@ class FacultyContractSeeder extends Seeder
                     'end_date' => $endDate,
                     'salary' => $member->contract_type === 'HOURLY' ? null : 350000,
                     'terms' => 'Contrat standard UCAK.',
-                    'file_path' => 'faculty_contracts/' . $member->id . '/contract.pdf',
-                    'file_name' => 'contract_' . $member->staff_number . '.pdf',
+                    'file_path' => 'faculty_contracts/'.$member->id.'/contract.pdf',
+                    'file_name' => 'contract_'.$member->staff_number.'.pdf',
                     'status' => FacultyContract::STATUS_ACTIVE,
                     'is_current' => true,
                 ]

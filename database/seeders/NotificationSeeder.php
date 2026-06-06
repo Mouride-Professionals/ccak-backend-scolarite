@@ -19,6 +19,7 @@ class NotificationSeeder extends Seeder
 
         if ($users->isEmpty()) {
             $this->command->warn('No users found. Skipping notifications.');
+
             return;
         }
 

@@ -62,7 +62,7 @@ class TeachingAssignmentController extends BaseApiController
             return $this->error('Assignment already exists for this faculty, course, and academic year.', 422);
         }
 
-        $assignment = DB::transaction(fn() => TeachingAssignment::create($data));
+        $assignment = DB::transaction(fn () => TeachingAssignment::create($data));
 
         return $this->success(
             new TeachingAssignmentResource($assignment->load(['course', 'academicYear'])),
@@ -79,7 +79,7 @@ class TeachingAssignmentController extends BaseApiController
             return $this->error('Cannot remove assignment: grades already exist for this course.', 422);
         }
 
-        DB::transaction(fn() => $teachingAssignment->delete());
+        DB::transaction(fn () => $teachingAssignment->delete());
 
         return $this->success(null, 'Teaching assignment removed');
     }
@@ -87,7 +87,7 @@ class TeachingAssignmentController extends BaseApiController
     public function planning(Request $request): JsonResponse
     {
         $request->validate([
-            'program_id'       => ['sometimes', 'uuid', 'exists:academic_programs,id'],
+            'program_id' => ['sometimes', 'uuid', 'exists:academic_programs,id'],
             'academic_year_id' => ['sometimes', 'uuid', 'exists:academic_years,id'],
         ]);
 
@@ -99,7 +99,7 @@ class TeachingAssignmentController extends BaseApiController
                 AllowedFilter::exact('status'),
                 AllowedFilter::scope('search'),
                 AllowedFilter::callback('program_id', function ($query, $value) {
-                    $query->whereHas('course.courseUnit', fn($q) => $q->where('academic_program_id', $value));
+                    $query->whereHas('course.courseUnit', fn ($q) => $q->where('academic_program_id', $value));
                 }),
             ])
             ->allowedSorts(['created_at', 'status', 'planned_start_date'])
@@ -113,7 +113,7 @@ class TeachingAssignmentController extends BaseApiController
     {
         $request->validate([
             'academic_year_id' => ['sometimes', 'uuid', 'exists:academic_years,id'],
-            'program_id'       => ['sometimes', 'uuid', 'exists:academic_programs,id'],
+            'program_id' => ['sometimes', 'uuid', 'exists:academic_programs,id'],
         ]);
 
         $query = TeachingAssignment::query()
@@ -121,28 +121,28 @@ class TeachingAssignmentController extends BaseApiController
             ->where('academic_year_id', $request->academic_year_id);
 
         if ($request->program_id) {
-            $query->whereHas('course.courseUnit', fn($q) => $q->where('academic_program_id', $request->program_id));
+            $query->whereHas('course.courseUnit', fn ($q) => $q->where('academic_program_id', $request->program_id));
         }
 
         $assignments = $query->get();
 
-        $byProgram = $assignments->groupBy(fn($a) => $a->course?->courseUnit?->academicProgram?->id);
+        $byProgram = $assignments->groupBy(fn ($a) => $a->course?->courseUnit?->academicProgram?->id);
 
         $dashboard = $byProgram->map(function ($items, $programId) {
             $program = $items->first()?->course?->courseUnit?->academicProgram;
-            $total   = $items->count();
+            $total = $items->count();
 
-            $completed  = $items->filter(fn($a) => $a->status === TeachingDeliveryStatus::COMPLETED)->count();
-            $started    = $items->filter(fn($a) => $a->status !== TeachingDeliveryStatus::NOT_STARTED)->count();
+            $completed = $items->filter(fn ($a) => $a->status === TeachingDeliveryStatus::COMPLETED)->count();
+            $started = $items->filter(fn ($a) => $a->status !== TeachingDeliveryStatus::NOT_STARTED)->count();
 
             return [
-                'program_id'       => $programId,
-                'program_name'     => $program?->name,
-                'total'            => $total,
-                'completed'        => $completed,
-                'started'          => $started,
-                'taux_execution'   => $total > 0 ? round($started / $total * 100, 1) : 0,
-                'taux_achevement'  => $total > 0 ? round($completed / $total * 100, 1) : 0,
+                'program_id' => $programId,
+                'program_name' => $program?->name,
+                'total' => $total,
+                'completed' => $completed,
+                'started' => $started,
+                'taux_execution' => $total > 0 ? round($started / $total * 100, 1) : 0,
+                'taux_achevement' => $total > 0 ? round($completed / $total * 100, 1) : 0,
             ];
         })->values();
 
@@ -167,10 +167,10 @@ class TeachingAssignmentController extends BaseApiController
             return $this->error('Empty import file.', 422);
         }
 
-        $header = array_map(fn($value) => strtolower(trim((string) $value)), array_shift($rows));
+        $header = array_map(fn ($value) => strtolower(trim((string) $value)), array_shift($rows));
         $required = ['faculty_member_id', 'course_id', 'academic_year_id', 'role', 'hours_assigned', 'hourly_rate'];
         if ($header !== $required) {
-            return $this->error('Invalid header. Expected: ' . implode(',', $required), 422);
+            return $this->error('Invalid header. Expected: '.implode(',', $required), 422);
         }
 
         $errors = [];
@@ -180,6 +180,7 @@ class TeachingAssignmentController extends BaseApiController
             foreach ($rows as $index => $row) {
                 if (count($row) < 5) {
                     $errors[] = ['row' => $index + 2, 'error' => 'Missing required columns'];
+
                     continue;
                 }
 
@@ -188,18 +189,21 @@ class TeachingAssignmentController extends BaseApiController
                 $course = Course::find($courseId);
                 $year = AcademicYear::find($yearId);
 
-                if (!$faculty || !$course || !$year) {
+                if (! $faculty || ! $course || ! $year) {
                     $errors[] = ['row' => $index + 2, 'error' => 'Invalid faculty, course, or academic year'];
+
                     continue;
                 }
 
-                if (!in_array($role, ['TITULAR', 'TD', 'TP'], true)) {
+                if (! in_array($role, ['TITULAR', 'TD', 'TP'], true)) {
                     $errors[] = ['row' => $index + 2, 'error' => 'Invalid role'];
+
                     continue;
                 }
 
-                if (!is_numeric($hours) || (float) $hours < 0) {
+                if (! is_numeric($hours) || (float) $hours < 0) {
                     $errors[] = ['row' => $index + 2, 'error' => 'Invalid hours_assigned'];
+
                     continue;
                 }
 
@@ -210,6 +214,7 @@ class TeachingAssignmentController extends BaseApiController
 
                 if ($exists) {
                     $errors[] = ['row' => $index + 2, 'error' => 'Assignment already exists'];
+
                     continue;
                 }
 

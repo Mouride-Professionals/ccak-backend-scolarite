@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\View;
 class EmailService
 {
     /**
-     * @param string|array<int, string> $recipients
-     * @param array<string, mixed> $templateData
+     * @param  string|array<int, string>  $recipients
+     * @param  array<string, mixed>  $templateData
      */
     public function send(
         string|array $recipients,
@@ -27,6 +27,7 @@ class EmailService
                 $mail->to(Arr::wrap($recipients))
                     ->subject($subject);
             });
+
             return;
         }
 

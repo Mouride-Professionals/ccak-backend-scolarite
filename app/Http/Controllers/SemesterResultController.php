@@ -1,19 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Repositories\SemesterResultRepository;
 use App\Http\Requests\SemesterResult\StoreSemesterResultRequest;
 use App\Http\Requests\SemesterResult\UpdateSemesterResultRequest;
 use App\Http\Resources\SemesterResultResource;
-use App\Services\SemesterResultCalculationService;
 use App\Jobs\CalculateSemesterResultsJob;
+use App\Repositories\SemesterResultRepository;
+use App\Services\SemesterResultCalculationService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -54,7 +55,8 @@ class SemesterResultController extends BaseApiController
 
     public function store(StoreSemesterResultRequest $request): JsonResponse
     {
-        $item = DB::transaction(fn() => $this->repository->create($request->validated()));
+        $item = DB::transaction(fn () => $this->repository->create($request->validated()));
+
         return $this->success(new SemesterResultResource($item), 'Semester result created successfully', 201);
     }
 
@@ -65,13 +67,15 @@ class SemesterResultController extends BaseApiController
 
     public function update(UpdateSemesterResultRequest $request, int|string $semesterResult): JsonResponse
     {
-        $item = DB::transaction(fn() => $this->repository->update($semesterResult, $request->validated()));
+        $item = DB::transaction(fn () => $this->repository->update($semesterResult, $request->validated()));
+
         return $this->success(new SemesterResultResource($item), 'Semester result updated successfully');
     }
 
     public function destroy(int|string $semesterResult): JsonResponse
     {
-        DB::transaction(fn() => $this->repository->delete($semesterResult));
+        DB::transaction(fn () => $this->repository->delete($semesterResult));
+
         return $this->success(null, 'Semester result deleted successfully', 204);
     }
 
@@ -84,7 +88,7 @@ class SemesterResultController extends BaseApiController
     {
         // Validate admin authorization
         $user = $request->user();
-        if (!$user || !$user->hasRole('ADMIN')) {
+        if (! $user || ! $user->hasRole('ADMIN')) {
             return $this->error('Only administrators are authorized to calculate semester results.', 403, ['authorization' => ['Admin role required']]);
         }
 
@@ -92,7 +96,7 @@ class SemesterResultController extends BaseApiController
         $validated = $request->validate([
             'academic_year_id' => 'bail|required|uuid|exists:academic_years,id',
             'semester' => 'required|integer|min:1|max:2',
-            'async' => 'boolean'
+            'async' => 'boolean',
         ]);
 
         $academicYearId = $validated['academic_year_id'];
@@ -115,7 +119,7 @@ class SemesterResultController extends BaseApiController
                 'job_id' => $jobId,
                 'academic_year_id' => $academicYearId,
                 'semester' => $semester,
-                'status' => 'queued'
+                'status' => 'queued',
             ], 'Semester results calculation has been queued and will be processed asynchronously.', 202);
         } else {
             // Process synchronously (for small datasets or testing)
@@ -133,7 +137,7 @@ class SemesterResultController extends BaseApiController
                 }
 
             } catch (\Exception $e) {
-                return $this->error('Failed to calculate semester results: ' . $e->getMessage(), 500, ['calculation' => [$e->getMessage()]]);
+                return $this->error('Failed to calculate semester results: '.$e->getMessage(), 500, ['calculation' => [$e->getMessage()]]);
             }
         }
     }
@@ -158,7 +162,7 @@ class SemesterResultController extends BaseApiController
             return $this->success($statistics, 'Semester statistics retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->error('Failed to retrieve semester statistics: ' . $e->getMessage(), 500, ['statistics' => [$e->getMessage()]]);
+            return $this->error('Failed to retrieve semester statistics: '.$e->getMessage(), 500, ['statistics' => [$e->getMessage()]]);
         }
     }
 
@@ -170,11 +174,11 @@ class SemesterResultController extends BaseApiController
     {
         // Validate admin authorization
         $user = $request->user();
-        if (!$user || !$user->hasRole('ADMIN')) {
+        if (! $user || ! $user->hasRole('ADMIN')) {
             return $this->error('Only administrators are authorized to recalculate student results.', 403, ['authorization' => ['Admin role required']]);
         }
 
-        if (!Str::isUuid($studentId)) {
+        if (! Str::isUuid($studentId)) {
             return $this->error('Student not found.', 404);
         }
 
@@ -202,7 +206,7 @@ class SemesterResultController extends BaseApiController
         } catch (ModelNotFoundException $e) {
             return $this->error('Student not found.', 404);
         } catch (\Exception $e) {
-            return $this->error('Failed to recalculate student result: ' . $e->getMessage(), 500, ['calculation' => [$e->getMessage()]]);
+            return $this->error('Failed to recalculate student result: '.$e->getMessage(), 500, ['calculation' => [$e->getMessage()]]);
         }
     }
 }

@@ -42,7 +42,7 @@ class FacultyController extends BaseApiController
 
     public function store(StoreFacultyRequest $request)
     {
-        $faculty = DB::transaction(fn() => Faculty::create($request->validated()));
+        $faculty = DB::transaction(fn () => Faculty::create($request->validated()));
 
         return $this->success(
             new FacultyResource($faculty->load(['dean', 'departments'])),
@@ -58,7 +58,7 @@ class FacultyController extends BaseApiController
 
     public function update(UpdateFacultyRequest $request, Faculty $faculty)
     {
-        DB::transaction(fn() => $faculty->update($request->validated()));
+        DB::transaction(fn () => $faculty->update($request->validated()));
 
         return $this->success(
             new FacultyResource($faculty->refresh()->load(['dean', 'departments'])),
@@ -68,7 +68,7 @@ class FacultyController extends BaseApiController
 
     public function destroy(Faculty $faculty)
     {
-        DB::transaction(fn() => $faculty->delete());
+        DB::transaction(fn () => $faculty->delete());
 
         return $this->success(null, 'Faculty deleted');
     }

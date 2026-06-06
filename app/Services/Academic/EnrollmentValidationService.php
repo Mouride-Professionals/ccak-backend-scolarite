@@ -2,9 +2,9 @@
 
 namespace App\Services\Academic;
 
+use App\Enums\GradeStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Enums\GradeStatus;
 use App\Models\Grade;
 
 class EnrollmentValidationService
@@ -47,7 +47,7 @@ class EnrollmentValidationService
                 return (((float) $grade->score / (float) $grade->max_score) * 20) >= 10;
             })
             ->pluck('course_id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->unique()
             ->values()
             ->all();
@@ -58,7 +58,7 @@ class EnrollmentValidationService
             })
             ->where('status', CourseEnrollment::STATUS_COMPLETED)
             ->pluck('course_id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->unique()
             ->values()
             ->all();
@@ -107,7 +107,7 @@ class EnrollmentValidationService
     }
 
     /**
-     * @param array<int, string> $courseIds
+     * @param  array<int, string>  $courseIds
      * @return array<int, string>
      */
     private function courseNames(array $courseIds): array

@@ -9,6 +9,7 @@ enum StudentStatus: string
     case SUSPENDED = 'SUSPENDED';
     case GRADUATED = 'GRADUATED';
     case WITHDRAWN = 'WITHDRAWN';
+    case EXPELLED = 'EXPELLED';
     case CANCELLED = 'CANCELLED';
     case INACTIVE = 'INACTIVE';
 

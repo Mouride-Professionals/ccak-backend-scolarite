@@ -7,8 +7,8 @@ use App\Http\Requests\Notification\SendNotificationRequest;
 use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
 use App\Services\Notification\NotificationService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -16,8 +16,7 @@ class NotificationController extends BaseApiController
 {
     public function __construct(
         protected NotificationService $notificationService
-    ) {
-    }
+    ) {}
 
     /**
      * NOT-008: Get user notifications
@@ -122,12 +121,12 @@ class NotificationController extends BaseApiController
         $filters = (array) $request->query('filter', []);
 
         foreach ($keys as $key) {
-            if ($request->filled($key) && !array_key_exists($key, $filters)) {
+            if ($request->filled($key) && ! array_key_exists($key, $filters)) {
                 $filters[$key] = $request->query($key);
             }
         }
 
-        if (!empty($filters)) {
+        if (! empty($filters)) {
             $request->merge(['filter' => $filters]);
         }
     }

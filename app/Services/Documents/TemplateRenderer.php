@@ -2,8 +2,8 @@
 
 namespace App\Services\Documents;
 
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
 
 class TemplateRenderer
 {
@@ -20,9 +20,9 @@ class TemplateRenderer
     {
         $templatePath = $this->getTemplatePath($documentType);
 
-        if (!View::exists($templatePath)) {
+        if (! View::exists($templatePath)) {
             throw new \RuntimeException(
-                "Template non trouvé pour le type de document: {$documentType}. " .
+                "Template non trouvé pour le type de document: {$documentType}. ".
                 "Chemin recherché: {$templatePath}"
             );
         }
@@ -35,7 +35,7 @@ class TemplateRenderer
     /** @param array<string, mixed> $metadata */
     public function renderWithCustomTemplate(string $templatePath, array $metadata = []): string
     {
-        if (!View::exists($templatePath)) {
+        if (! View::exists($templatePath)) {
             throw new \RuntimeException(
                 "Template personnalisé non trouvé: {$templatePath}"
             );
@@ -69,7 +69,7 @@ class TemplateRenderer
     /** @return array<int, string> */
     public function getTemplateVariables(string $templatePath): array
     {
-        if (!View::exists($templatePath)) {
+        if (! View::exists($templatePath)) {
             return [];
         }
 
@@ -84,7 +84,7 @@ class TemplateRenderer
     }
 
     /**
-     * @param array<string, mixed> $metadata
+     * @param  array<string, mixed>  $metadata
      * @return array<string, mixed>
      */
     private function prepareTemplateData(string $documentType, array $metadata): array
@@ -107,19 +107,19 @@ class TemplateRenderer
 
         // Trouver les variables Blade simples {{ $variable }}
         preg_match_all('/\{\{\s*\$(\w+)\s*\}\}/', $bladeContent, $matches);
-        if (!empty($matches[1])) {
+        if (! empty($matches[1])) {
             $variables = array_merge($variables, $matches[1]);
         }
 
         // Trouver les variables dans les structures de contrôle
         preg_match_all('/@(?:if|foreach|for|while)\(.*?\$(\w+).*?\)/', $bladeContent, $matches);
-        if (!empty($matches[1])) {
+        if (! empty($matches[1])) {
             $variables = array_merge($variables, $matches[1]);
         }
 
         // Trouver les variables dans les appels de fonctions
         preg_match_all('/\{\{\s*.*?\$(\w+).*?\s*\}\}/', $bladeContent, $matches);
-        if (!empty($matches[1])) {
+        if (! empty($matches[1])) {
             $variables = array_merge($variables, $matches[1]);
         }
 
@@ -127,7 +127,7 @@ class TemplateRenderer
     }
 
     /**
-     * @param array<string, mixed> $metadata
+     * @param  array<string, mixed>  $metadata
      * @return array<string, mixed>
      */
     public function compileTemplate(string $documentType, array $metadata): array
@@ -140,11 +140,11 @@ class TemplateRenderer
             array_keys($metadata)
         );
 
-        if (!empty($missingVariables)) {
+        if (! empty($missingVariables)) {
             throw new \InvalidArgumentException(
-                "Variables manquantes dans les métadonnées: " .
-                implode(', ', $missingVariables) .
-                ". Variables requises par le template: " .
+                'Variables manquantes dans les métadonnées: '.
+                implode(', ', $missingVariables).
+                '. Variables requises par le template: '.
                 implode(', ', $requiredVariables)
             );
         }

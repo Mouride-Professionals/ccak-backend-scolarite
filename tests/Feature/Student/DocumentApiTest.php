@@ -14,8 +14,8 @@ use Tests\TestCase;
 
 class DocumentApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'documents.view',

@@ -44,7 +44,7 @@ class CourseUnitController extends BaseApiController
 
     public function store(StoreCourseUnitRequest $request)
     {
-        $unit = DB::transaction(fn() => CourseUnit::create($request->validated()));
+        $unit = DB::transaction(fn () => CourseUnit::create($request->validated()));
 
         return $this->success(
             new CourseUnitResource($unit->load(['academicProgram', 'courses'])),
@@ -60,7 +60,7 @@ class CourseUnitController extends BaseApiController
 
     public function update(UpdateCourseUnitRequest $request, CourseUnit $courseUnit)
     {
-        DB::transaction(fn() => $courseUnit->update($request->validated()));
+        DB::transaction(fn () => $courseUnit->update($request->validated()));
 
         return $this->success(
             new CourseUnitResource($courseUnit->refresh()->load(['academicProgram', 'courses'])),
@@ -70,7 +70,7 @@ class CourseUnitController extends BaseApiController
 
     public function destroy(CourseUnit $courseUnit)
     {
-        DB::transaction(fn() => $courseUnit->delete());
+        DB::transaction(fn () => $courseUnit->delete());
 
         return $this->success(null, 'Course unit deleted');
     }

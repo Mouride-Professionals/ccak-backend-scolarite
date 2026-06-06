@@ -20,7 +20,7 @@ class ExamSessionResource extends JsonResource
             'end_date' => $this->end_date?->toDateString(),
             'status' => $this->status?->value,
             'status_label' => $this->status?->label(),
-            'schedules_count' => $this->whenLoaded('schedules', fn() => $this->schedules->count()),
+            'schedules_count' => $this->whenLoaded('schedules', fn () => $this->schedules->count()),
             'schedules' => ExamScheduleResource::collection($this->whenLoaded('schedules')),
             'created_at' => optional($this->created_at)->toISOString(),
             'updated_at' => optional($this->updated_at)->toISOString(),

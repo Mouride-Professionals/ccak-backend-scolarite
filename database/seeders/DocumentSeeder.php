@@ -1,14 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Document;
 use App\Models\Admin;
+use App\Models\Document;
 use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 class DocumentSeeder extends Seeder
@@ -25,6 +26,7 @@ class DocumentSeeder extends Seeder
 
         if ($students->isEmpty()) {
             $this->command->warn('No students found. Skipping documents.');
+
             return;
         }
 
@@ -79,7 +81,7 @@ class DocumentSeeder extends Seeder
                 'type' => $documentTypes[array_rand($documentTypes)],
                 'status' => $status,
                 'file_path' => '',
-                'file_name' => fake()->word() . '.pdf',
+                'file_name' => fake()->word().'.pdf',
                 'media_id' => null,
                 'notes' => $notes,
                 'uploaded_at' => $uploadedAt,

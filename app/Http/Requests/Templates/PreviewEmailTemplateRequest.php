@@ -25,7 +25,7 @@ class PreviewEmailTemplateRequest extends FormRequest
     public function after(): array
     {
         return [function ($validator): void {
-            if (!$this->filled('name') && !$this->filled('path')) {
+            if (! $this->filled('name') && ! $this->filled('path')) {
                 $validator->errors()->add('name', 'Either name or path is required.');
             }
         }];

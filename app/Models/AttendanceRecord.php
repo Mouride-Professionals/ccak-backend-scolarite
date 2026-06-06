@@ -12,8 +12,11 @@ class AttendanceRecord extends Model
     use HasFactory, UsesUuidV7;
 
     public const STATUS_PRESENT = 'PRESENT';
+
     public const STATUS_ABSENT = 'ABSENT';
+
     public const STATUS_LATE = 'LATE';
+
     public const STATUS_EXCUSED = 'EXCUSED';
 
     protected $fillable = [

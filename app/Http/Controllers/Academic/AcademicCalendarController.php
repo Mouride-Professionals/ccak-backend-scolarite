@@ -35,7 +35,7 @@ class AcademicCalendarController extends BaseApiController
     {
         $calendar = AcademicCalendar::where('academic_year_id', $academic_year_id)->first();
 
-        if (!$calendar) {
+        if (! $calendar) {
             return $this->error('Academic calendar not found', 404);
         }
 

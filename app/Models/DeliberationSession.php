@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuidV7;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,9 +14,7 @@ class DeliberationSession extends Model
     use HasFactory;
     use UsesUuidV7;
 
-
     protected $table = 'deliberation_sessions';
-
 
     // Champs remplissables
     protected $fillable = [
@@ -47,8 +45,11 @@ class DeliberationSession extends Model
 
     // Optionnel : Enum pour le status
     const STATUS_SCHEDULED = 'SCHEDULED';
+
     const STATUS_IN_PROGRESS = 'IN_PROGRESS';
+
     const STATUS_COMPLETED = 'COMPLETED';
+
     const STATUS_CLOSED = 'CLOSED';
 
     public static function getStatuses(): array

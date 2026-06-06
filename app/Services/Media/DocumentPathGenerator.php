@@ -18,12 +18,12 @@ class DocumentPathGenerator implements PathGenerator
 
     public function getPathForConversions(Media $media): string
     {
-        return $this->basePath($media) . 'conversions/';
+        return $this->basePath($media).'conversions/';
     }
 
     public function getPathForResponsiveImages(Media $media): string
     {
-        return $this->basePath($media) . 'responsive-images/';
+        return $this->basePath($media).'responsive-images/';
     }
 
     private function basePath(Media $media): string
@@ -33,22 +33,26 @@ class DocumentPathGenerator implements PathGenerator
         if ($model instanceof Document) {
             $studentId = $model->student_id;
             $type = $model->type?->value ?? $collection;
+
             return "documents/{$studentId}/{$type}/";
         }
 
         if ($model instanceof FacultyDocument) {
             $facultyId = $model->faculty_member_id;
             $type = $model->type ?? $collection;
+
             return "faculty-documents/{$facultyId}/{$type}/";
         }
 
         if ($model instanceof GeneratedDocument) {
             $studentId = $model->student_id;
             $number = $model->document_number ?? (string) ($media->uuid ?: $media->id);
+
             return "generated-documents/{$studentId}/{$number}/";
         }
 
         $modelType = Str::snake(class_basename($model));
+
         return "media/{$modelType}/{$collection}/";
     }
 }

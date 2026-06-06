@@ -3,18 +3,21 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuidV7;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
 
 class FacultyContract extends Model
 {
     use HasFactory, UsesUuidV7;
 
     public const STATUS_DRAFT = 'DRAFT';
+
     public const STATUS_ACTIVE = 'ACTIVE';
+
     public const STATUS_EXPIRED = 'EXPIRED';
+
     public const STATUS_TERMINATED = 'TERMINATED';
 
     protected $fillable = [
@@ -38,6 +41,7 @@ class FacultyContract extends Model
     ];
 
     public $auditEvents = ['created', 'updated', 'deleted'];
+
     public $auditExclude = ['created_at', 'updated_at'];
 
     public function facultyMember(): BelongsTo

@@ -18,9 +18,9 @@ class FacultyDocumentSeeder extends Seeder
 
         foreach ($facultyMembers as $member) {
             $documents = [
-                ['type' => FacultyDocument::TYPE_CV, 'file_name' => 'cv_' . $member->staff_number . '.pdf'],
-                ['type' => FacultyDocument::TYPE_DIPLOMA, 'file_name' => 'diploma_' . $member->staff_number . '.pdf'],
-                ['type' => FacultyDocument::TYPE_CNI, 'file_name' => 'cni_' . $member->staff_number . '.pdf'],
+                ['type' => FacultyDocument::TYPE_CV, 'file_name' => 'cv_'.$member->staff_number.'.pdf'],
+                ['type' => FacultyDocument::TYPE_DIPLOMA, 'file_name' => 'diploma_'.$member->staff_number.'.pdf'],
+                ['type' => FacultyDocument::TYPE_CNI, 'file_name' => 'cni_'.$member->staff_number.'.pdf'],
             ];
 
             foreach ($documents as $doc) {
@@ -50,7 +50,7 @@ class FacultyDocumentSeeder extends Seeder
             return;
         }
 
-        $tmpFile = $tmpPath . '.' . $extension;
+        $tmpFile = $tmpPath.'.'.$extension;
         rename($tmpPath, $tmpFile);
 
         if ($extension === 'png') {

@@ -1,9 +1,9 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Enums\RegistrationStatus;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
@@ -11,8 +11,8 @@ use App\Models\Enrollment;
 use App\Models\Level;
 use App\Models\Student;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class EnrollmentSeeder extends Seeder
 {

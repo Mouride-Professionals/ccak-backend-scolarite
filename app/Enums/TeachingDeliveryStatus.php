@@ -11,11 +11,11 @@ enum TeachingDeliveryStatus: string
 
     public function label(): string
     {
-        return match($this) {
-            self::COMPLETED    => 'Achevé',
-            self::IN_PROGRESS  => 'En cours',
-            self::LATE         => 'En retard',
-            self::NOT_STARTED  => 'Non commencé',
+        return match ($this) {
+            self::COMPLETED => 'Achevé',
+            self::IN_PROGRESS => 'En cours',
+            self::LATE => 'En retard',
+            self::NOT_STARTED => 'Non commencé',
         };
     }
 }

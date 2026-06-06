@@ -14,7 +14,7 @@ enum GradeStatus: string
      */
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::DRAFT => 'Brouillon',
             self::SUBMITTED => 'Soumis',
             self::VALIDATED => 'Validé',

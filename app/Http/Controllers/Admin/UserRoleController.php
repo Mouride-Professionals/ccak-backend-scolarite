@@ -18,7 +18,7 @@ class UserRoleController extends BaseApiController
     {
         $roles = $request->validated()['roles'] ?? [];
 
-        DB::transaction(fn() => $user->syncRoles($roles));
+        DB::transaction(fn () => $user->syncRoles($roles));
 
         return $this->success($user->load('roles'), 'User roles updated');
     }

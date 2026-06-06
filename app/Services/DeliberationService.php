@@ -7,8 +7,8 @@ use App\Models\DeliberationResult;
 use App\Models\DeliberationSession;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -21,10 +21,10 @@ class DeliberationService
             ->with(['academicProgram', 'academicYear', 'president', 'juryMembers'])
             ->allowedIncludes(['academicProgram', 'academicYear', 'president', 'juryMembers', 'results'])
             ->allowedFilters([
-            AllowedFilter::exact('academic_program_id'),
-            AllowedFilter::exact('academic_year_id'),
-            AllowedFilter::exact('status'),
-            AllowedFilter::exact('semester'),
+                AllowedFilter::exact('academic_program_id'),
+                AllowedFilter::exact('academic_year_id'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::exact('semester'),
             ])
             ->allowedSorts(['session_date', 'created_at'])
             ->defaultSort('-session_date');
@@ -65,7 +65,7 @@ class DeliberationService
     {
         $session = DeliberationSession::find($id);
 
-        if (!$session) {
+        if (! $session) {
             return null;
         }
 
@@ -87,7 +87,7 @@ class DeliberationService
     {
         $session = DeliberationSession::find($id);
 
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
@@ -98,7 +98,7 @@ class DeliberationService
     {
         $session = DeliberationSession::find($id);
 
-        if (!$session) {
+        if (! $session) {
             return null;
         }
 
@@ -106,11 +106,11 @@ class DeliberationService
             'SCHEDULED' => ['IN_PROGRESS', 'COMPLETED'],
             'IN_PROGRESS' => ['COMPLETED'],
             'COMPLETED' => ['CLOSED'],
-            'CLOSED' => []
+            'CLOSED' => [],
         ];
 
-        if (!isset($validTransitions[$session->status]) ||
-            !in_array($status, $validTransitions[$session->status])) {
+        if (! isset($validTransitions[$session->status]) ||
+            ! in_array($status, $validTransitions[$session->status])) {
             return null;
         }
 
@@ -118,7 +118,6 @@ class DeliberationService
 
         return $session->load(['academicProgram', 'academicYear', 'president']);
     }
-
 
     /**
      * Fetch eligible students for a deliberation session
@@ -158,10 +157,18 @@ class DeliberationService
      */
     public function determineHonors(float $average): ?string
     {
-        if ($average >= 16) return DeliberationResult::HONOR_LEVEL_TRES_BIEN;
-        if ($average >= 14) return DeliberationResult::HONOR_LEVEL_BIEN;
-        if ($average >= 12) return DeliberationResult::HONOR_LEVEL_ASSEZ_BIEN;
-        if ($average >= 10) return DeliberationResult::HONOR_LEVEL_PASSABLE;
+        if ($average >= 16) {
+            return DeliberationResult::HONOR_LEVEL_TRES_BIEN;
+        }
+        if ($average >= 14) {
+            return DeliberationResult::HONOR_LEVEL_BIEN;
+        }
+        if ($average >= 12) {
+            return DeliberationResult::HONOR_LEVEL_ASSEZ_BIEN;
+        }
+        if ($average >= 10) {
+            return DeliberationResult::HONOR_LEVEL_PASSABLE;
+        }
 
         return null;
     }
@@ -228,8 +235,7 @@ class DeliberationService
             return [
                 'session' => $session->fresh(),
                 'students' => $students,
-                'recommendations' => $students->map(fn($s) =>
-                    $this->generateRecommendations($s['id'], $session)
+                'recommendations' => $students->map(fn ($s) => $this->generateRecommendations($s['id'], $session)
                 ),
             ];
 
@@ -251,7 +257,7 @@ class DeliberationService
             ->count();
 
         if ($pendingResults > 0) {
-            throw new \Exception("All student decisions must be set before completing");
+            throw new \Exception('All student decisions must be set before completing');
         }
 
         DB::beginTransaction();

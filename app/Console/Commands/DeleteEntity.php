@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
@@ -10,7 +11,8 @@ use Illuminate\Support\Str;
 class DeleteEntity extends Command
 {
     protected $signature = 'delete:entity {name : Nom d\'entité en StudlyCase, ex: Post} {--force : Supprimer sans confirmation}';
-    protected $description = "Supprime tous les fichiers générés par make:entity pour une entité donnée.";
+
+    protected $description = 'Supprime tous les fichiers générés par make:entity pour une entité donnée.';
 
     public function handle(): int
     {
@@ -33,7 +35,7 @@ class DeleteEntity extends Command
 
         foreach ($paths as $path) {
             if (File::exists($path)) {
-                if (!$this->option('force') && !$this->confirm("Supprimer {$path} ?")) {
+                if (! $this->option('force') && ! $this->confirm("Supprimer {$path} ?")) {
                     continue;
                 }
                 File::delete($path);
@@ -43,6 +45,7 @@ class DeleteEntity extends Command
 
         if (empty($deleted)) {
             $this->warn("Aucun fichier trouvé pour {$name}.");
+
             return self::SUCCESS;
         }
 

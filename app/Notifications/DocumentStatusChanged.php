@@ -11,14 +11,13 @@ class DocumentStatusChanged extends Notification
     use Queueable;
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function __construct(
         private readonly string $event,
         private readonly Document $document,
         private readonly array $data = []
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {

@@ -36,7 +36,7 @@ class MaquetteController extends BaseApiController
         ]);
 
         $units = QueryBuilder::for(CourseUnit::class)
-            ->with(['courses' => fn($q) => $q->orderBy('code'), 'academicProgram'])
+            ->with(['courses' => fn ($q) => $q->orderBy('code'), 'academicProgram'])
             ->allowedFilters([
                 AllowedFilter::exact('program_id', 'academic_program_id'),
             ])
@@ -47,30 +47,31 @@ class MaquetteController extends BaseApiController
 
         $byProgram = $units->groupBy('academic_program_id')->map(function ($programUnits) {
             $first = $programUnits->first();
+
             return [
-                'program_id'   => $first->academic_program_id,
+                'program_id' => $first->academic_program_id,
                 'program_name' => $first->academicProgram?->name ?? 'Programme inconnu',
-                'semesters'    => $programUnits->groupBy('semester_number')->map(function ($semUnits, $semester) {
+                'semesters' => $programUnits->groupBy('semester_number')->map(function ($semUnits, $semester) {
                     return [
-                        'semester'     => $semester,
-                        'course_units' => $semUnits->map(fn($u) => [
-                            'id'          => $u->id,
-                            'code'        => $u->code,
-                            'name'        => $u->name,
-                            'credits'     => $u->credits,
+                        'semester' => $semester,
+                        'course_units' => $semUnits->map(fn ($u) => [
+                            'id' => $u->id,
+                            'code' => $u->code,
+                            'name' => $u->name,
+                            'credits' => $u->credits,
                             'coefficient' => $u->coefficient,
-                            'type'        => $u->type,
-                            'courses'     => $u->courses->map(fn($c) => [
-                                'id'            => $c->id,
-                                'code'          => $c->code,
-                                'name'          => $c->name,
-                                'credits'       => $c->credits,
-                                'coefficient'   => $c->coefficient,
+                            'type' => $u->type,
+                            'courses' => $u->courses->map(fn ($c) => [
+                                'id' => $c->id,
+                                'code' => $c->code,
+                                'name' => $c->name,
+                                'credits' => $c->credits,
+                                'coefficient' => $c->coefficient,
                                 'hours_lecture' => $c->hours_lecture,
-                                'hours_td'      => $c->hours_td,
-                                'hours_tp'      => $c->hours_tp,
-                                'hours_tpe'     => $c->hours_tpe,
-                                'vht'           => $c->vht,
+                                'hours_td' => $c->hours_td,
+                                'hours_tp' => $c->hours_tp,
+                                'hours_tpe' => $c->hours_tpe,
+                                'vht' => $c->vht,
                             ]),
                         ]),
                     ];
@@ -83,13 +84,13 @@ class MaquetteController extends BaseApiController
 
     public function downloadTemplate(): BinaryFileResponse
     {
-        return Excel::download(new MaquetteTemplateExport(), 'modele-maquette-lmd.xlsx');
+        return Excel::download(new MaquetteTemplateExport, 'modele-maquette-lmd.xlsx');
     }
 
     public function import(ImportMaquetteRequest $request): JsonResponse
     {
-        $importer = new MaquetteImport();
-        $sheets   = Excel::toArray($importer, $request->file('file'));
+        $importer = new MaquetteImport;
+        $sheets = Excel::toArray($importer, $request->file('file'));
 
         // Merge all sheets into a single row list so multi-sheet files
         // (one sheet per semester group) are parsed in one pass.
@@ -119,9 +120,9 @@ class MaquetteController extends BaseApiController
             'filter.program_id' => ['sometimes', 'uuid', 'exists:academic_programs,id'],
         ]);
 
-        $programId   = $request->input('filter.program_id');
+        $programId = $request->input('filter.program_id');
         $programName = $programId ? AcademicProgram::find($programId)?->name : null;
-        $filename    = 'maquette' . ($programName ? '-' . Str::slug($programName) : '') . '.xlsx';
+        $filename = 'maquette'.($programName ? '-'.Str::slug($programName) : '').'.xlsx';
 
         return Excel::download(new MaquetteExport($programId, $programName), $filename);
     }

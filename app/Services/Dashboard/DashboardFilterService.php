@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 class DashboardFilterService
 {
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     public function applyEnrollmentFilters(Builder $query, array $filters): Builder
     {
@@ -51,7 +51,7 @@ class DashboardFilterService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     public function applyDeliberationFilters(Builder $query, array $filters): Builder
     {

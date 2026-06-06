@@ -15,6 +15,7 @@ Artisan::command('sms:test {phone} {message?}', function (string $phone, ?string
         $this->info('SMS sent.');
     } catch (\Throwable $e) {
         $this->error($e->getMessage());
+
         return \Symfony\Component\Console\Command\Command::FAILURE;
     }
 })->purpose('Send a test SMS using the configured SMS provider.');

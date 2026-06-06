@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
@@ -22,32 +23,35 @@ class MakeEntity extends Command
         {--force : Écraser les fichiers existants}
     ';
 
-    protected $description = "Génère Model, Repository, FormRequests, Controller, Resources, Factory, Seeder et une collection API JSON — sans vues.";
+    protected $description = 'Génère Model, Repository, FormRequests, Controller, Resources, Factory, Seeder et une collection API JSON — sans vues.';
 
     public function handle(): int
     {
-        $name   = Str::studly($this->argument('name'));
+        $name = Str::studly($this->argument('name'));
         $source = $this->option('source') ?: 'db';
-        $table  = $this->option('table') ?: Str::snake(Str::pluralStudly($name));
-        $force  = (bool) $this->option('force');
+        $table = $this->option('table') ?: Str::snake(Str::pluralStudly($name));
+        $force = (bool) $this->option('force');
 
         // ---------- Inférence ----------
         if ($source === 'db') {
             $meta = $this->inferFromDatabase($table);
         } elseif ($source === 'migration') {
             $migration = (string) $this->option('migration');
-            if (!$migration || !File::exists($migration)) {
+            if (! $migration || ! File::exists($migration)) {
                 $this->error('--migration est requis et doit exister.');
+
                 return self::FAILURE;
             }
             $meta = $this->inferFromMigration($migration, $table);
         } else {
             $this->error("--source doit être 'db' ou 'migration'.");
+
             return self::FAILURE;
         }
 
         if (empty($meta['fields'])) {
             $this->error('Aucune colonne déduite.');
+
             return self::FAILURE;
         }
 
@@ -57,16 +61,16 @@ class MakeEntity extends Command
         $this->generateFormRequests($name, $meta, $force);
         $this->generateController($name, $force);
 
-        if (!$this->option('no-resources')) {
+        if (! $this->option('no-resources')) {
             $this->generateApiResources($name, $meta, $force);
         }
-        if (!$this->option('no-factory')) {
+        if (! $this->option('no-factory')) {
             $this->generateFactory($name, $meta, $force);
         }
-        if (!$this->option('no-seeder')) {
+        if (! $this->option('no-seeder')) {
             $this->generateSeeder($name, $force);
         }
-        if (!$this->option('no-collection-json')) {
+        if (! $this->option('no-collection-json')) {
             $this->generateApiCollectionJson($name, $meta);
         }
 
@@ -92,18 +96,18 @@ class MakeEntity extends Command
      * - foreign_keys:  assoc [col => ['table'=>..., 'col'=>...]]
      * - soft_deletes:  bool
      */
-private function inferFromDatabase(string $table): array
-{
-    $driver = DB::getDriverName();
-    $database = DB::getDatabaseName();
-    $schema = $driver === 'pgsql' ? 'public' : $database;
+    private function inferFromDatabase(string $table): array
+    {
+        $driver = DB::getDriverName();
+        $database = DB::getDatabaseName();
+        $schema = $driver === 'pgsql' ? 'public' : $database;
 
-    // =========================================================
-    // Colonnes
-    // =========================================================
-    if ($driver === 'mysql') {
-        $cols = DB::select(
-            <<<SQL
+        // =========================================================
+        // Colonnes
+        // =========================================================
+        if ($driver === 'mysql') {
+            $cols = DB::select(
+                <<<'SQL'
             SELECT
                 column_name,
                 data_type,
@@ -118,11 +122,11 @@ private function inferFromDatabase(string $table): array
               AND table_name = ?
             ORDER BY ordinal_position
             SQL,
-            [$database, $table]
-        );
+                [$database, $table]
+            );
 
-        $constraints = DB::select(
-            <<<SQL
+            $constraints = DB::select(
+                <<<'SQL'
             SELECT
                 tc.constraint_type,
                 kcu.column_name,
@@ -135,13 +139,13 @@ private function inferFromDatabase(string $table): array
             WHERE kcu.table_schema = ?
               AND kcu.table_name = ?
             SQL,
-            [$database, $table]
-        );
+                [$database, $table]
+            );
 
-    } elseif ($driver === 'pgsql') {
+        } elseif ($driver === 'pgsql') {
 
-        $cols = DB::select(
-            <<<SQL
+            $cols = DB::select(
+                <<<'SQL'
             SELECT
                 column_name,
                 data_type,
@@ -156,11 +160,11 @@ private function inferFromDatabase(string $table): array
               AND table_name = ?
             ORDER BY ordinal_position
             SQL,
-            [$schema, $table]
-        );
+                [$schema, $table]
+            );
 
-        $constraints = DB::select(
-            <<<SQL
+            $constraints = DB::select(
+                <<<'SQL'
             SELECT
                 tc.constraint_type,
                 kcu.column_name,
@@ -176,100 +180,99 @@ private function inferFromDatabase(string $table): array
             WHERE tc.table_schema = ?
               AND kcu.table_name = ?
             SQL,
-            [$schema, $table]
-        );
+                [$schema, $table]
+            );
 
-    } else {
-        throw new \RuntimeException("Driver non supporté : {$driver}");
+        } else {
+            throw new \RuntimeException("Driver non supporté : {$driver}");
+        }
+
+        // =========================================================
+        // Normalisation
+        // =========================================================
+        $skip = ['id', 'created_at', 'updated_at', 'deleted_at'];
+
+        $fields = [];
+        $casts = [];
+        $rulesStore = [];
+        $rulesUpdate = [];
+        $uniqueFields = [];
+        $foreignKeys = [];
+        $softDeletes = false;
+
+        // ---------- Contraintes ----------
+        foreach ($constraints as $c) {
+            $c = (array) $c;
+            $type = strtoupper((string) ($c['constraint_type'] ?? ''));
+            $col = (string) ($c['column_name'] ?? '');
+
+            if ($type === 'UNIQUE') {
+                $uniqueFields[] = $col;
+            }
+
+            if ($type === 'FOREIGN KEY') {
+                $foreignKeys[$col] = [
+                    'table' => (string) ($c['referenced_table_name'] ?? ''),
+                    'col' => (string) ($c['referenced_column_name'] ?? 'id'),
+                ];
+            }
+        }
+
+        // ---------- Colonnes ----------
+        foreach ($cols as $r) {
+            $r = (array) $r;
+
+            $col = (string) $r['column_name'];
+            if ($col === 'deleted_at') {
+                $softDeletes = true;
+            }
+            if (in_array($col, $skip, true)) {
+                continue;
+            }
+
+            $type = strtolower((string) $r['data_type']);
+            $nullable = strtoupper((string) $r['is_nullable']) === 'YES';
+            $len = $r['character_maximum_length'] ?? null;
+            $prec = $r['numeric_precision'] ?? null;
+            $scale = $r['numeric_scale'] ?? null;
+            $ctype = (string) ($r['column_type'] ?? '');
+
+            $fields[] = $col;
+            $casts[$col] = $this->sqlTypeToCast($type);
+
+            // Enum (MySQL uniquement)
+            $enumValues = $this->extractEnumValues($ctype);
+
+            [$store, $update] = $this->sqlMetaToRules(
+                $table,
+                $col,
+                $type,
+                $nullable,
+                $len,
+                $prec,
+                $scale,
+                in_array($col, $uniqueFields, true),
+                $foreignKeys[$col] ?? null,
+                $enumValues
+            );
+
+            $rulesStore[$col] = $store;
+            $rulesUpdate[$col] = $update;
+        }
+
+        $this->info("📦 Inférence DB réussie ({$driver}) : {$table}");
+
+        return [
+            'table' => $table,
+            'fields' => $fields,
+            'casts' => $casts,
+            'rules_store' => $rulesStore,
+            'rules_update' => $rulesUpdate,
+            'unique_fields' => $uniqueFields,
+            'foreign_keys' => $foreignKeys,
+            'soft_deletes' => $softDeletes,
+        ];
     }
-
-    // =========================================================
-    // Normalisation
-    // =========================================================
-    $skip = ['id', 'created_at', 'updated_at', 'deleted_at'];
-
-    $fields = [];
-    $casts = [];
-    $rulesStore = [];
-    $rulesUpdate = [];
-    $uniqueFields = [];
-    $foreignKeys = [];
-    $softDeletes = false;
-
-    // ---------- Contraintes ----------
-    foreach ($constraints as $c) {
-        $c = (array) $c;
-        $type = strtoupper((string) ($c['constraint_type'] ?? ''));
-        $col  = (string) ($c['column_name'] ?? '');
-
-        if ($type === 'UNIQUE') {
-            $uniqueFields[] = $col;
-        }
-
-        if ($type === 'FOREIGN KEY') {
-            $foreignKeys[$col] = [
-                'table' => (string) ($c['referenced_table_name'] ?? ''),
-                'col'   => (string) ($c['referenced_column_name'] ?? 'id'),
-            ];
-        }
-    }
-
-    // ---------- Colonnes ----------
-    foreach ($cols as $r) {
-        $r = (array) $r;
-
-        $col = (string) $r['column_name'];
-        if ($col === 'deleted_at') {
-            $softDeletes = true;
-        }
-        if (in_array($col, $skip, true)) {
-            continue;
-        }
-
-        $type     = strtolower((string) $r['data_type']);
-        $nullable = strtoupper((string) $r['is_nullable']) === 'YES';
-        $len      = $r['character_maximum_length'] ?? null;
-        $prec     = $r['numeric_precision'] ?? null;
-        $scale    = $r['numeric_scale'] ?? null;
-        $ctype    = (string) ($r['column_type'] ?? '');
-
-        $fields[] = $col;
-        $casts[$col] = $this->sqlTypeToCast($type);
-
-        // Enum (MySQL uniquement)
-        $enumValues = $this->extractEnumValues($ctype);
-
-        [$store, $update] = $this->sqlMetaToRules(
-            $table,
-            $col,
-            $type,
-            $nullable,
-            $len,
-            $prec,
-            $scale,
-            in_array($col, $uniqueFields, true),
-            $foreignKeys[$col] ?? null,
-            $enumValues
-        );
-
-        $rulesStore[$col] = $store;
-        $rulesUpdate[$col] = $update;
-    }
-
-    $this->info("📦 Inférence DB réussie ({$driver}) : {$table}");
-
-    return [
-        'table'         => $table,
-        'fields'        => $fields,
-        'casts'         => $casts,
-        'rules_store'   => $rulesStore,
-        'rules_update'  => $rulesUpdate,
-        'unique_fields' => $uniqueFields,
-        'foreign_keys'  => $foreignKeys,
-        'soft_deletes'  => $softDeletes,
-    ];
-}
-
 
     private function inferFromMigration(string $path, string $tableGuess): array
     {
@@ -279,30 +282,34 @@ private function inferFromDatabase(string $table): array
             $table = $tm[1];
         }
 
-        $skip = ['id','created_at','updated_at','deleted_at'];
+        $skip = ['id', 'created_at', 'updated_at', 'deleted_at'];
         $fields = [];
-        $casts  = [];
-        $store  = [];
+        $casts = [];
+        $store = [];
         $update = [];
         $unique = [];
-        $fks    = [];
-        $soft   = str_contains($code, 'softDeletes(') || str_contains($code, 'softDeletes()');
+        $fks = [];
+        $soft = str_contains($code, 'softDeletes(') || str_contains($code, 'softDeletes()');
 
         $pattern = '/\$table->([a-zA-Z_]+)\(\s*[\'"]([^\'"]+)[\'"]\s*(?:,\s*([0-9]+))?\s*\)([^;]*);/m';
         if (preg_match_all($pattern, $code, $m, PREG_SET_ORDER)) {
             foreach ($m as $match) {
-                [, $method, $col, $argLen, $chain] = $match + [null,null,null,null,null];
-                if (in_array($col, $skip, true)) continue;
+                [, $method, $col, $argLen, $chain] = $match + [null, null, null, null, null];
+                if (in_array($col, $skip, true)) {
+                    continue;
+                }
 
-                $method   = strtolower($method);
+                $method = strtolower($method);
                 $nullable = str_contains($chain, 'nullable()');
                 $isUnique = str_contains($chain, 'unique()');
-                $len      = $argLen ? (int)$argLen : null;
-                $type     = $this->methodToSqlType($method);
+                $len = $argLen ? (int) $argLen : null;
+                $type = $this->methodToSqlType($method);
 
                 $fields[] = $col;
                 $casts[$col] = $this->sqlTypeToCast($type);
-                if ($isUnique) $unique[] = $col;
+                if ($isUnique) {
+                    $unique[] = $col;
+                }
 
                 if ($method === 'foreignid') {
                     $refTable = $this->extractConstrainedTable($chain) ?: Str::plural(Str::beforeLast($col, '_id'));
@@ -312,7 +319,7 @@ private function inferFromDatabase(string $table): array
                 $enumValues = ($method === 'enum') ? $this->extractEnumValuesFromMethod($chain) : [];
 
                 [$s, $u] = $this->sqlMetaToRules($table, $col, $type, $nullable, $len, null, null, $isUnique, $fks[$col] ?? null, $enumValues);
-                $store[$col]  = $s;
+                $store[$col] = $s;
                 $update[$col] = $u;
             }
         }
@@ -320,38 +327,45 @@ private function inferFromDatabase(string $table): array
         $this->info("Inférence migration OK: table={$table}");
 
         return [
-            'table'         => $table,
-            'fields'        => array_values(array_unique($fields)),
-            'casts'         => $casts,
-            'rules_store'   => $store,
-            'rules_update'  => $update,
+            'table' => $table,
+            'fields' => array_values(array_unique($fields)),
+            'casts' => $casts,
+            'rules_store' => $store,
+            'rules_update' => $update,
             'unique_fields' => array_values(array_unique($unique)),
-            'foreign_keys'  => $fks,
-            'soft_deletes'  => $soft,
+            'foreign_keys' => $fks,
+            'soft_deletes' => $soft,
         ];
     }
 
     private function extractEnumValues(string $columnType): array
     {
-        if (preg_match("/^enum\\((.*)\\)$/i", $columnType, $m)) {
+        if (preg_match('/^enum\\((.*)\\)$/i', $columnType, $m)) {
             preg_match_all("/'([^']+)'/", $m[1], $vals);
+
             return $vals[1] ?? [];
         }
+
         return [];
     }
+
     private function extractEnumValuesFromMethod(string $chain): array
     {
-        if (preg_match("/\\[([^\\]]+)\\]/", $chain, $m)) {
+        if (preg_match('/\\[([^\\]]+)\\]/', $chain, $m)) {
             preg_match_all("/'([^']+)'/", $m[1], $vals);
+
             return $vals[1] ?? [];
         }
+
         return [];
     }
+
     private function extractConstrainedTable(string $chain): ?string
     {
         if (preg_match("/->constrained\\(['\"]([^'\"]+)['\"]\\)/", $chain, $m)) {
             return $m[1];
         }
+
         return null;
     }
 
@@ -380,8 +394,8 @@ private function inferFromDatabase(string $table): array
             $type === 'enum' => 'string',
             str_contains($type, 'int') => 'integer',
             str_contains($type, 'bool') => 'boolean',
-            in_array($type, ['decimal','numeric','double','float'], true) => 'float',
-            in_array($type, ['json','jsonb'], true) => 'array',
+            in_array($type, ['decimal', 'numeric', 'double', 'float'], true) => 'float',
+            in_array($type, ['json', 'jsonb'], true) => 'array',
             $type === 'date' => 'date',
             str_contains($type, 'time') || str_contains($type, 'date') => 'datetime',
             default => 'string',
@@ -400,30 +414,36 @@ private function inferFromDatabase(string $table): array
         ?array $fk = null,
         array $enumValues = []
     ): array {
-        $baseStore  = $nullable ? 'nullable' : 'required';
+        $baseStore = $nullable ? 'nullable' : 'required';
         $baseUpdate = $nullable ? 'nullable' : 'sometimes';
 
         $tail = match (true) {
-            $type === 'enum' => 'in:'.implode(',', array_map(fn($v)=>str_replace(',', '\,', $v), $enumValues)),
+            $type === 'enum' => 'in:'.implode(',', array_map(fn ($v) => str_replace(',', '\,', $v), $enumValues)),
             str_contains($type, 'int') => 'integer',
             str_contains($type, 'bool') => 'boolean',
-            in_array($type, ['decimal','numeric','double','float'], true) => 'numeric',
-            in_array($type, ['json','jsonb'], true) => 'array',
+            in_array($type, ['decimal', 'numeric', 'double', 'float'], true) => 'numeric',
+            in_array($type, ['json', 'jsonb'], true) => 'array',
             $type === 'date' => 'date',
             str_contains($type, 'time') || str_contains($type, 'date') => 'date',
             default => 'string',
         };
 
         $extra = [];
-        if ($tail === 'string' && $len) $extra[] = "max:{$len}";
-        if ($fk)       $extra[] = "exists:{$fk['table']},{$fk['col']}";
+        if ($tail === 'string' && $len) {
+            $extra[] = "max:{$len}";
+        }
+        if ($fk) {
+            $extra[] = "exists:{$fk['table']},{$fk['col']}";
+        }
 
         // pour STORE, on inclut unique
         $extraStore = $extra;
-        if ($isUnique) $extraStore[] = "unique:{$table},{$col}";
+        if ($isUnique) {
+            $extraStore[] = "unique:{$table},{$col}";
+        }
 
-        $storeRules  = $baseStore  . '|' . $tail . (empty($extraStore) ? '' : '|' . implode('|', $extraStore));
-        $updateRules = $baseUpdate . '|' . $tail . (empty($extra) ? '' : '|' . implode('|', $extra));
+        $storeRules = $baseStore.'|'.$tail.(empty($extraStore) ? '' : '|'.implode('|', $extraStore));
+        $updateRules = $baseUpdate.'|'.$tail.(empty($extra) ? '' : '|'.implode('|', $extra));
 
         return [$storeRules, $updateRules];
     }
@@ -434,25 +454,28 @@ private function inferFromDatabase(string $table): array
 
     private function generateModel(string $name, array $meta, bool $force): void
     {
-        $dir  = app_path('Models');
+        $dir = app_path('Models');
         $path = $dir.DIRECTORY_SEPARATOR.$name.'.php';
-        if (!File::exists($dir)) File::makeDirectory($dir, 0755, true);
-        if (File::exists($path) && !$force) {
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0755, true);
+        }
+        if (File::exists($path) && ! $force) {
             $this->warn("⚠️ Model existe déjà: app/Models/{$name}.php");
+
             return;
         }
 
         $fillable = $this->exportArray($meta['fields'] ?? []);
-        $casts    = $this->exportAssocArray($meta['casts'] ?? []);
-        $softUse  = !empty($meta['soft_deletes']) ? "use Illuminate\\Database\\Eloquent\\SoftDeletes;\n" : '';
-        $soft     = !empty($meta['soft_deletes']) ? "    use SoftDeletes;\n" : '';
+        $casts = $this->exportAssocArray($meta['casts'] ?? []);
+        $softUse = ! empty($meta['soft_deletes']) ? "use Illuminate\\Database\\Eloquent\\SoftDeletes;\n" : '';
+        $soft = ! empty($meta['soft_deletes']) ? "    use SoftDeletes;\n" : '';
 
         // belongsTo
         $belongsMethods = '';
-        if (!empty($meta['foreign_keys'])) {
+        if (! empty($meta['foreign_keys'])) {
             foreach ($meta['foreign_keys'] as $fkCol => $fk) {
                 $related = Str::studly(Str::singular($fk['table']));
-                $method  = Str::camel(Str::beforeLast($fkCol, '_id')) ?: Str::camel($related);
+                $method = Str::camel(Str::beforeLast($fkCol, '_id')) ?: Str::camel($related);
                 $belongsMethods .= <<<PHP
 
     public function {$method}()
@@ -492,11 +515,14 @@ PHP;
 
     private function generateRepository(string $name, bool $force): void
     {
-        $dir  = app_path('Repositories');
+        $dir = app_path('Repositories');
         $path = $dir.DIRECTORY_SEPARATOR.$name.'Repository.php';
-        if (!File::exists($dir)) File::makeDirectory($dir, 0755, true);
-        if (File::exists($path) && !$force) {
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0755, true);
+        }
+        if (File::exists($path) && ! $force) {
             $this->warn("⚠️ Repository existe déjà: app/Repositories/{$name}Repository.php");
+
             return;
         }
 
@@ -556,9 +582,11 @@ PHP;
     private function generateFormRequests(string $name, array $meta, bool $force): void
     {
         $dir = app_path('Http/Requests/'.$name);
-        if (!File::exists($dir)) File::makeDirectory($dir, 0755, true);
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0755, true);
+        }
 
-        $storeRulesStr  = $this->exportAssocArray($meta['rules_store']  ?? []);
+        $storeRulesStr = $this->exportAssocArray($meta['rules_store'] ?? []);
         // Update : on gèrera unique(ignore) dans la classe, donc on enlève unique de la chaîne
         $updateRulesBase = $this->stripUniqueFromRules($meta['rules_update'] ?? []);
 
@@ -569,9 +597,10 @@ PHP;
     private function writeStoreRequest(string $name, string $rulesArray, bool $force): void
     {
         $class = "Store{$name}Request";
-        $path  = app_path("Http/Requests/{$name}/{$class}.php");
-        if (File::exists($path) && !$force) {
+        $path = app_path("Http/Requests/{$name}/{$class}.php");
+        if (File::exists($path) && ! $force) {
             $this->warn("⚠️ FormRequest existe déjà: Http/Requests/{$name}/{$class}.php");
+
             return;
         }
 
@@ -604,9 +633,10 @@ PHP;
     private function writeUpdateRequest(string $name, string $table, array $rulesBase, array $uniqueFields, bool $force): void
     {
         $class = "Update{$name}Request";
-        $path  = app_path("Http/Requests/{$name}/{$class}.php");
-        if (File::exists($path) && !$force) {
+        $path = app_path("Http/Requests/{$name}/{$class}.php");
+        if (File::exists($path) && ! $force) {
             $this->warn("⚠️ FormRequest existe déjà: Http/Requests/{$name}/{$class}.php");
+
             return;
         }
 
@@ -615,7 +645,7 @@ PHP;
         foreach ($rulesBase as $field => $rulePipe) {
             $parts = array_filter(explode('|', $rulePipe));
             $php = implode("','", $parts);
-            $arr = empty($php) ? "" : "'{$php}', ";
+            $arr = empty($php) ? '' : "'{$php}', ";
 
             if (in_array($field, $uniqueFields, true)) {
                 $lines[] = "            '{$field}' => [{$arr}\\Illuminate\\Validation\\Rule::unique('{$table}', '{$field}')->ignore(\$id)],";
@@ -623,7 +653,7 @@ PHP;
                 $lines[] = "            '{$field}' => [{$arr}],";
             }
         }
-        $rulesBody = empty($lines) ? "" : "\n".implode("\n", $lines)."\n        ";
+        $rulesBody = empty($lines) ? '' : "\n".implode("\n", $lines)."\n        ";
 
         $stub = <<<PHP
 <?php
@@ -657,19 +687,23 @@ PHP;
     {
         $out = [];
         foreach ($rules as $field => $pipe) {
-            $parts = array_filter(explode('|', $pipe), fn($p) => !str_starts_with($p, 'unique:'));
+            $parts = array_filter(explode('|', $pipe), fn ($p) => ! str_starts_with($p, 'unique:'));
             $out[$field] = implode('|', $parts);
         }
+
         return $out;
     }
 
     private function generateController(string $name, bool $force): void
     {
-        $dir  = app_path('Http/Controllers');
+        $dir = app_path('Http/Controllers');
         $path = $dir.DIRECTORY_SEPARATOR.$name.'Controller.php';
-        if (!\Illuminate\Support\Facades\File::exists($dir)) \Illuminate\Support\Facades\File::makeDirectory($dir, 0755, true);
-        if (\Illuminate\Support\Facades\File::exists($path) && !$force) {
+        if (! \Illuminate\Support\Facades\File::exists($dir)) {
+            \Illuminate\Support\Facades\File::makeDirectory($dir, 0755, true);
+        }
+        if (\Illuminate\Support\Facades\File::exists($path) && ! $force) {
             $this->warn("⚠️ Controller existe déjà: app/Http/Controllers/{$name}Controller.php");
+
             return;
         }
 
@@ -728,21 +762,22 @@ PHP;
         $this->info("✅ Controller : app/Http/Controllers/{$name}Controller.php");
     }
 
-
     private function generateApiResources(string $name, array $meta, bool $force): void
     {
         $rDir = app_path('Http/Resources');
-        if (!File::exists($rDir)) File::makeDirectory($rDir, 0755, true);
+        if (! File::exists($rDir)) {
+            File::makeDirectory($rDir, 0755, true);
+        }
 
         $resPath = $rDir.DIRECTORY_SEPARATOR.$name.'Resource.php';
         $colPath = $rDir.DIRECTORY_SEPARATOR.$name.'Collection.php';
 
         $fields = $meta['fields'] ?? [];
         $arrayBody = empty($fields)
-            ? "return parent::toArray(\$request);"
-            : "return [\n".implode("\n", array_map(fn($f)=>"            '{$f}' => \$this->{$f},", $fields))."\n        ];";
+            ? 'return parent::toArray($request);'
+            : "return [\n".implode("\n", array_map(fn ($f) => "            '{$f}' => \$this->{$f},", $fields))."\n        ];";
 
-        if (!File::exists($resPath) || $force) {
+        if (! File::exists($resPath) || $force) {
             $resStub = <<<PHP
 <?php
 declare(strict_types=1);
@@ -766,7 +801,7 @@ PHP;
             $this->warn("⚠️ Resource existe déjà: {$name}Resource.php");
         }
 
-        if (!File::exists($colPath) || $force) {
+        if (! File::exists($colPath) || $force) {
             $colStub = <<<PHP
 <?php
 declare(strict_types=1);
@@ -797,11 +832,14 @@ PHP;
 
     private function generateFactory(string $name, array $meta, bool $force): void
     {
-        $dir  = base_path('database/factories');
+        $dir = base_path('database/factories');
         $path = $dir.DIRECTORY_SEPARATOR.$name.'Factory.php';
-        if (!File::exists($dir)) File::makeDirectory($dir, 0755, true);
-        if (File::exists($path) && !$force) {
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0755, true);
+        }
+        if (File::exists($path) && ! $force) {
             $this->warn("⚠️ Factory existe déjà: database/factories/{$name}Factory.php");
+
             return;
         }
 
@@ -833,11 +871,14 @@ PHP;
 
     private function generateSeeder(string $name, bool $force): void
     {
-        $dir  = base_path('database/seeders');
+        $dir = base_path('database/seeders');
         $path = $dir.DIRECTORY_SEPARATOR.$name.'Seeder.php';
-        if (!File::exists($dir)) File::makeDirectory($dir, 0755, true);
-        if (File::exists($path) && !$force) {
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0755, true);
+        }
+        if (File::exists($path) && ! $force) {
             $this->warn("⚠️ Seeder existe déjà: database/seeders/{$name}Seeder.php");
+
             return;
         }
 
@@ -867,7 +908,7 @@ PHP;
     private function generateApiCollectionJson(string $name, array $meta): void
     {
         $slug = Str::kebab(Str::pluralStudly($name));
-        $env  = '{{base_url}}';
+        $env = '{{base_url}}';
         $sampleBody = $this->sampleJson($meta['fields'] ?? [], $meta['casts'] ?? [], $meta['foreign_keys'] ?? []);
 
         $collection = [
@@ -877,35 +918,37 @@ PHP;
                 'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
             ],
             'item' => [
-                ['name' => 'Index',  'request' => ['method'=>'GET',  'url'=> "{$env}/api/{$slug}"]],
+                ['name' => 'Index',  'request' => ['method' => 'GET',  'url' => "{$env}/api/{$slug}"]],
                 [
                     'name' => 'Store',
                     'request' => [
-                        'method'=>'POST',
-                        'header' => [['key'=>'Content-Type','value'=>'application/json']],
-                        'body' => ['mode'=>'raw','raw'=> json_encode($sampleBody, JSON_PRETTY_PRINT)],
-                        'url'=> "{$env}/api/{$slug}"
-                    ]
+                        'method' => 'POST',
+                        'header' => [['key' => 'Content-Type', 'value' => 'application/json']],
+                        'body' => ['mode' => 'raw', 'raw' => json_encode($sampleBody, JSON_PRETTY_PRINT)],
+                        'url' => "{$env}/api/{$slug}",
+                    ],
                 ],
-                ['name' => 'Show',   'request' => ['method'=>'GET',  'url'=> "{$env}/api/{$slug}/1"]],
+                ['name' => 'Show',   'request' => ['method' => 'GET',  'url' => "{$env}/api/{$slug}/1"]],
                 [
                     'name' => 'Update',
                     'request' => [
-                        'method'=>'PUT',
-                        'header' => [['key'=>'Content-Type','value'=>'application/json']],
-                        'body' => ['mode'=>'raw','raw'=> json_encode($sampleBody, JSON_PRETTY_PRINT)],
-                        'url'=> "{$env}/api/{$slug}/1"
-                    ]
+                        'method' => 'PUT',
+                        'header' => [['key' => 'Content-Type', 'value' => 'application/json']],
+                        'body' => ['mode' => 'raw', 'raw' => json_encode($sampleBody, JSON_PRETTY_PRINT)],
+                        'url' => "{$env}/api/{$slug}/1",
+                    ],
                 ],
-                ['name' => 'Destroy','request' => ['method'=>'DELETE','url'=> "{$env}/api/{$slug}/1"]],
+                ['name' => 'Destroy', 'request' => ['method' => 'DELETE', 'url' => "{$env}/api/{$slug}/1"]],
             ],
-            'variable' => [['key'=>'base_url','value'=>'http://localhost:8000']],
+            'variable' => [['key' => 'base_url', 'value' => 'http://localhost:8000']],
         ];
 
         $dir = storage_path('api-collections');
-        if (!File::exists($dir)) File::makeDirectory($dir, 0755, true);
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0755, true);
+        }
         $path = $dir.DIRECTORY_SEPARATOR.$name.'_collection.json';
-        File::put($path, json_encode($collection, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
+        File::put($path, json_encode($collection, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         $this->info("✅ Collection API JSON : storage/api-collections/{$name}_collection.json");
     }
 
@@ -921,20 +964,22 @@ PHP;
                 // FK → par défaut, créer une référence à une factory si elle existe
                 $related = Str::studly(Str::singular($fks[$f]['table']));
                 $lines[] = "            '{$f}' => fn() => \\App\\Models\\{$related}::factory(),";
+
                 continue;
             }
             $cast = $casts[$f] ?? 'string';
             $lines[] = match ($cast) {
                 'integer' => "            '{$f}' => \$this->faker->numberBetween(1, 9999),",
                 'boolean' => "            '{$f}' => \$this->faker->boolean(),",
-                'float'   => "            '{$f}' => \$this->faker->randomFloat(2, 0, 9999),",
-                'array'   => "            '{$f}' => [],",
-                'date'    => "            '{$f}' => \$this->faker->date('Y-m-d'),",
-                'datetime'=> "            '{$f}' => \$this->faker->dateTime()->format('Y-m-d H:i:s'),",
-                default   => "            '{$f}' => \$this->faker->sentence(),",
+                'float' => "            '{$f}' => \$this->faker->randomFloat(2, 0, 9999),",
+                'array' => "            '{$f}' => [],",
+                'date' => "            '{$f}' => \$this->faker->date('Y-m-d'),",
+                'datetime' => "            '{$f}' => \$this->faker->dateTime()->format('Y-m-d H:i:s'),",
+                default => "            '{$f}' => \$this->faker->sentence(),",
             };
         }
-        $body = empty($lines) ? "[]" : "[\n".implode("\n", $lines)."\n        ]";
+        $body = empty($lines) ? '[]' : "[\n".implode("\n", $lines)."\n        ]";
+
         return $body;
     }
 
@@ -942,36 +987,47 @@ PHP;
     {
         $out = [];
         foreach ($fields as $f) {
-            if (isset($fks[$f])) { $out[$f] = 1; continue; }
+            if (isset($fks[$f])) {
+                $out[$f] = 1;
+
+                continue;
+            }
             $cast = $casts[$f] ?? 'string';
             $out[$f] = match ($cast) {
                 'integer' => 1,
                 'boolean' => true,
-                'float'   => 10.5,
-                'array'   => [],
-                'date'    => '2025-01-01',
-                'datetime'=> '2025-01-01 12:00:00',
-                default   => 'exemple',
+                'float' => 10.5,
+                'array' => [],
+                'date' => '2025-01-01',
+                'datetime' => '2025-01-01 12:00:00',
+                default => 'exemple',
             };
         }
+
         return $out;
     }
 
     private function exportArray(array $values): string
     {
-        if (empty($values)) return '[]';
-        $items = array_map(fn($v) => "'".$v."'", $values);
+        if (empty($values)) {
+            return '[]';
+        }
+        $items = array_map(fn ($v) => "'".$v."'", $values);
+
         return '['.implode(', ', $items).']';
     }
 
     /** @param array<string,string> $assoc */
     private function exportAssocArray(array $assoc): string
     {
-        if (empty($assoc)) return '[]';
+        if (empty($assoc)) {
+            return '[]';
+        }
         $lines = [];
         foreach ($assoc as $k => $v) {
             $lines[] = "        '{$k}' => '{$v}',";
         }
+
         return "[\n".implode("\n", $lines)."\n    ]";
     }
 }

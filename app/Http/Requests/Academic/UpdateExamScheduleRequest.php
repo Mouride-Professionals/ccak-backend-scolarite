@@ -14,14 +14,14 @@ class UpdateExamScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'course_id'         => ['sometimes', 'uuid', 'exists:courses,id'],
-            'room_id'           => ['sometimes', 'uuid', 'exists:rooms,id'],
-            'date'              => ['sometimes', 'date'],
-            'start_time'        => ['sometimes', 'date_format:H:i'],
-            'end_time'          => ['sometimes', 'date_format:H:i', 'after:start_time'],
-            'invigilator_ids'   => ['sometimes', 'array', 'min:1'],
+            'course_id' => ['sometimes', 'uuid', 'exists:courses,id'],
+            'room_id' => ['sometimes', 'uuid', 'exists:rooms,id'],
+            'date' => ['sometimes', 'date'],
+            'start_time' => ['sometimes', 'date_format:H:i'],
+            'end_time' => ['sometimes', 'date_format:H:i', 'after:start_time'],
+            'invigilator_ids' => ['sometimes', 'array', 'min:1'],
             'invigilator_ids.*' => ['uuid', 'exists:faculty_members,id'],
-            'notes'             => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

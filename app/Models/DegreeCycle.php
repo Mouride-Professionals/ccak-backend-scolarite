@@ -11,6 +11,7 @@ class DegreeCycle extends Model
     protected $table = 'degree_cycles';
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [

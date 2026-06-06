@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Academic;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\CourseEnrollment\CheckAvailabilityRequest;
 use App\Http\Requests\CourseEnrollment\EnrollCourseRequest;
-use App\Repositories\CourseEnrollmentRepository;
 use App\Http\Requests\CourseEnrollment\StoreCourseEnrollmentRequest;
 use App\Http\Requests\CourseEnrollment\UpdateCourseEnrollmentRequest;
 use App\Http\Resources\CourseEnrollmentResource;
@@ -14,10 +13,11 @@ use App\Models\AcademicProgram;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\Enrollment;
+use App\Repositories\CourseEnrollmentRepository;
 use App\Services\Academic\CourseEnrollmentService;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -58,7 +58,8 @@ class CourseEnrollmentController extends BaseApiController
 
     public function store(StoreCourseEnrollmentRequest $request): JsonResponse
     {
-        $item = DB::transaction(fn() => $this->repository->create($request->validated()));
+        $item = DB::transaction(fn () => $this->repository->create($request->validated()));
+
         return $this->success(new CourseEnrollmentResource($item), 'Course enrollment created', 201);
     }
 
@@ -69,7 +70,8 @@ class CourseEnrollmentController extends BaseApiController
 
     public function update(UpdateCourseEnrollmentRequest $request, int|string $courseEnrollment): JsonResponse
     {
-        $item = DB::transaction(fn() => $this->repository->update($courseEnrollment, $request->validated()));
+        $item = DB::transaction(fn () => $this->repository->update($courseEnrollment, $request->validated()));
+
         return $this->success(new CourseEnrollmentResource($item), 'Course enrollment updated');
     }
 
@@ -112,7 +114,6 @@ class CourseEnrollmentController extends BaseApiController
         ], 'Inscription au cours réussie.', 201);
     }
 
-
     /**
      * Get all course enrollments for an enrollment
      */
@@ -130,7 +131,7 @@ class CourseEnrollmentController extends BaseApiController
 
     /**
      * Drop a course (change status to DROPPED)
-    */
+     */
     public function dropCourse(Enrollment $enrollment, CourseEnrollment $courseEnrollment, Request $request): JsonResponse
     {
         if ($courseEnrollment->enrollment_id !== $enrollment->id) {
@@ -164,7 +165,7 @@ class CourseEnrollmentController extends BaseApiController
 
     /**
      * Get available courses for a program
-    */
+     */
     public function getAvailableCoursesByProgram(Request $request, AcademicProgram $program): JsonResponse
     {
         $result = $this->service->getAvailableCoursesByProgram($program, $request->only([

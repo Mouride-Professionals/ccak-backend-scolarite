@@ -10,8 +10,8 @@ use Tests\TestCase;
 
 class UserRoleApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'users.assign_roles',

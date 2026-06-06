@@ -14,7 +14,7 @@ enum GradeType: string
      */
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::CC => 'Contrôle Continu',
             self::EXAM => 'Examen Final',
             self::TP => 'Travaux Pratiques',

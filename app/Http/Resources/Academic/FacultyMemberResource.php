@@ -3,9 +3,6 @@
 namespace App\Http\Resources\Academic;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\Academic\TeachingAssignmentResource;
-use App\Http\Resources\Academic\FacultyDocumentResource;
-use App\Http\Resources\Academic\FacultyContractResource;
 
 class FacultyMemberResource extends JsonResource
 {

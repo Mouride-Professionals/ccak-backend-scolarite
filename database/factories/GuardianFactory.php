@@ -37,17 +37,17 @@ class GuardianFactory extends Factory
         $firstName = $gender === 'F'
             ? $this->faker->randomElement($femaleFirstNames)
             : $this->faker->randomElement($maleFirstNames);
-        $fullName = $firstName . ' ' . $this->faker->randomElement($lastNames);
-        $email = strtolower(str_replace(' ', '.', $fullName)) . '@example.sn';
+        $fullName = $firstName.' '.$this->faker->randomElement($lastNames);
+        $email = strtolower(str_replace(' ', '.', $fullName)).'@example.sn';
         $phonePrefix = $this->faker->randomElement(['70', '75', '76', '77', '78']);
 
         return [
             'student_id' => Student::factory(),
             'full_name' => $fullName,
             'relationship' => $this->faker->randomElement(['FATHER', 'MOTHER', 'GUARDIAN']),
-            'phone' => $phonePrefix . sprintf('%07d', rand(0, 9999999)),
+            'phone' => $phonePrefix.sprintf('%07d', rand(0, 9999999)),
             'email' => $email,
-            'address' => $this->faker->randomElement($cities) . ', Senegal',
+            'address' => $this->faker->randomElement($cities).', Senegal',
             'occupation' => $this->faker->randomElement($occupations),
         ];
     }
@@ -57,7 +57,7 @@ class GuardianFactory extends Factory
      */
     public function father(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'relationship' => 'FATHER',
         ]);
     }
@@ -67,7 +67,7 @@ class GuardianFactory extends Factory
      */
     public function mother(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'relationship' => 'MOTHER',
         ]);
     }
@@ -77,7 +77,7 @@ class GuardianFactory extends Factory
      */
     public function guardian(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'relationship' => 'GUARDIAN',
         ]);
     }

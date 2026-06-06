@@ -24,17 +24,19 @@ class DeliberationSessionSeeder extends Seeder
 
         if ($facultyMembers->count() < 3) {
             $this->command->warn('Not enough faculty members for deliberation sessions.');
+
             return;
         }
 
         $program = AcademicProgram::query()->inRandomOrder()->first();
-        if (!$program) {
+        if (! $program) {
             $this->call(AcademicProgramSeeder::class);
             $program = AcademicProgram::query()->inRandomOrder()->first();
         }
 
-        if (!$program) {
+        if (! $program) {
             $this->command->warn('No academic program found. Skipping deliberation sessions.');
+
             return;
         }
 
@@ -47,8 +49,9 @@ class DeliberationSessionSeeder extends Seeder
         $currentYearName = $this->currentAcademicYearName();
         $academicYear = $academicYears->firstWhere('name', $currentYearName)
             ?? $academicYears->sortByDesc('name')->first();
-        if (!$academicYear) {
+        if (! $academicYear) {
             $this->command->warn('No academic year found. Skipping deliberation sessions.');
+
             return;
         }
 

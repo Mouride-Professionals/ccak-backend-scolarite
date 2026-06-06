@@ -49,7 +49,7 @@ class DepartmentSeeder extends Seeder
 
         foreach ($departments as $facultyCode => $rows) {
             $faculty = $faculties->firstWhere('code', $facultyCode);
-            if (!$faculty) {
+            if (! $faculty) {
                 continue;
             }
 

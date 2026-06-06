@@ -3,15 +3,16 @@
 namespace App\Services\Templates;
 
 use App\Contracts\Templates\DocumentTemplateInterface;
-use App\Models\Student;
-use App\Models\Enrollment;
+use App\Enums\RegistrationStatus;
 use App\Models\AcademicProgram;
 use App\Models\DeliberationResult;
+use App\Models\Enrollment;
+use App\Models\Student;
 
 class DiplomaTemplate implements DocumentTemplateInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getName(): string
     {
@@ -19,7 +20,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getView(): string
     {
@@ -27,7 +28,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     /** @return array<string, mixed> */
     public function getRequiredData(): array
@@ -59,113 +60,113 @@ class DiplomaTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     /** @param array<string, mixed> $data */
     public function validateData(array $data): bool
     {
         $requiredFields = $this->getRequiredData();
-        
+
         // Check all required model instances exist
         foreach (['student', 'enrollment', 'academic_program', 'deliberation_result'] as $modelKey) {
-            if (!isset($data[$modelKey]) || !$this->validateModelInstance($modelKey, $data[$modelKey])) {
+            if (! isset($data[$modelKey]) || ! $this->validateModelInstance($modelKey, $data[$modelKey])) {
                 return false;
             }
         }
-        
+
         // Check student is graduated
         if ($data['student']->status !== Student::STATUS_GRADUATED) {
             return false;
         }
-        
+
         // Check enrollment is completed
-        if ($data['enrollment']->status !== Enrollment::STATUS_COMPLETED) {
+        if ($data['enrollment']->status !== RegistrationStatus::VALIDATED) {
             return false;
         }
-        
+
         // Check deliberation result is positive
-        if (!in_array($data['deliberation_result']->decision, ['ADMITTED', 'ADMITTED_COMPENSATION'], true)) {
+        if (! in_array($data['deliberation_result']->decision, ['ADMITTED', 'ADMITTED_COMPENSATION'], true)) {
             return false;
         }
-        
+
         // Validate signatures
-        if (!$this->validateSignatures($data['signatures'] ?? [])) {
+        if (! $this->validateSignatures($data['signatures'] ?? [])) {
             return false;
         }
-        
+
         return true;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     public function processData(array $data): array
     {
         /** @var Student $student */
         $student = $data['student'];
-        
+
         /** @var Enrollment $enrollment */
         $enrollment = $data['enrollment'];
-        
+
         /** @var AcademicProgram $academicProgram */
         $academicProgram = $data['academic_program'];
-        
+
         /** @var DeliberationResult $deliberationResult */
         $deliberationResult = $data['deliberation_result'];
-        
+
         $processed = $data;
-        
+
         // Add student information
         $processed['student_info'] = $this->prepareStudentInfo($student);
-        
+
         // Add academic information
         $processed['academic_info'] = $this->prepareAcademicInfo($enrollment, $academicProgram);
-        
+
         // Add deliberation information
         $processed['deliberation_info'] = $this->prepareDeliberationInfo($deliberationResult);
-        
+
         // Format dates
         $processed['issue_date_formatted'] = $this->formatDate(now()->toDateString());
         $processed['completion_date_formatted'] = $this->formatDate($enrollment->enrollment_date);
-        
+
         // Get GPA from semester results
         $processed['gpa'] = $this->getStudentGPA($student, $enrollment);
         $processed['gpa_formatted'] = number_format($processed['gpa'], 2, ',', ' ');
-        
+
         // Determine honors level
         $processed['honors_level'] = $this->determineHonorsLevel(
             $processed['gpa'],
             $deliberationResult->is_with_honors ? $deliberationResult->honor_level : null
         );
-        
+
         // Generate diploma title
         $processed['diploma_title'] = $this->generateDiplomaTitle($academicProgram);
-        
+
         // Generate degree level in French
         $processed['degree_level_fr'] = $this->getFrenchDegreeLevel($academicProgram->level);
-        
+
         // Prepare signatures
         $processed['signatures'] = $this->prepareSignatures($data['signatures'] ?? []);
-        
+
         // Add seal and signature image paths
         $processed['university_seal'] = storage_path('app/branding/university_seal.png');
         $processed['official_stamp'] = storage_path('app/branding/official_stamp.png');
-        
+
         // Add document validity info
         $processed['validity_info'] = $this->getValidityInfo($processed);
-        
+
         // Add registration number based on student and program
         $processed['registration_number'] = $this->generateRegistrationNumber($student, $academicProgram);
-        
+
         return $processed;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getStyles(): string
     {
@@ -198,21 +199,21 @@ class DiplomaTemplate implements DocumentTemplateInterface
     private function validateSignatures(array $signatures): bool
     {
         $requiredSignatures = ['rector', 'dean', 'registrar', 'department_head'];
-        
+
         foreach ($requiredSignatures as $type) {
-            if (!isset($signatures[$type])) {
+            if (! isset($signatures[$type])) {
                 return false;
             }
-            
-            if (!isset($signatures[$type]['name']) || empty(trim($signatures[$type]['name']))) {
+
+            if (! isset($signatures[$type]['name']) || empty(trim($signatures[$type]['name']))) {
                 return false;
             }
-            
-            if (!isset($signatures[$type]['title']) || empty(trim($signatures[$type]['title']))) {
+
+            if (! isset($signatures[$type]['title']) || empty(trim($signatures[$type]['title']))) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -247,7 +248,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
     {
         return [
             'program_name' => $academicProgram->name,
-            'program_code' => $academicProgram->department->code . '-' . $academicProgram->level,
+            'program_code' => $academicProgram->department->code.'-'.$academicProgram->level,
             'faculty' => $academicProgram->department->faculty->name,
             'department' => $academicProgram->department->name,
             'level' => $academicProgram->level,
@@ -256,7 +257,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
             'enrollment_date' => $enrollment->enrollment_date->format('d/m/Y'),
             'academic_year' => $enrollment->academicYear->name,
             'current_semester' => $enrollment->current_semester,
-            'is_scholarship' => $enrollment->is_scholarship,
+            'is_scholarship' => $enrollment->is_scholarship_holder,
         ];
     }
 
@@ -286,7 +287,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
             ->where('academic_year_id', $enrollment->academic_year_id)
             ->orderBy('semester', 'desc')
             ->first();
-        
+
         return $semesterResult ? $semesterResult->semester_gpa : 0.0;
     }
 
@@ -303,10 +304,10 @@ class DiplomaTemplate implements DocumentTemplateInterface
                 'BIEN' => 'BIEN',
                 'TRES_BIEN' => 'TRÈS BIEN',
             ];
-            
+
             return $honorMap[$honorLevel] ?? null;
         }
-        
+
         // Otherwise determine from GPA
         if ($gpa >= 3.9) {
             return 'AVEC LA PLUS HAUTE DISTINCTION';
@@ -315,7 +316,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
         } elseif ($gpa >= 3.5) {
             return 'AVEC DISTINCTION';
         }
-        
+
         return null;
     }
 
@@ -324,9 +325,9 @@ class DiplomaTemplate implements DocumentTemplateInterface
      */
     private function generateDiplomaTitle(AcademicProgram $academicProgram): string
     {
-        $level = $this->getFrenchDegreeLevel($academicProgram->level->value);
+        $level = $this->getFrenchDegreeLevel($academicProgram->level);
         $field = $academicProgram->department->name;
-        
+
         return "DIPLÔME DE $level EN $field";
     }
 
@@ -340,7 +341,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
             'MASTER' => 'MASTER',
             'DOCTORAT' => 'DOCTORAT',
         ];
-        
+
         return $degreeMap[$degreeType] ?? strtoupper($degreeType);
     }
 
@@ -348,11 +349,11 @@ class DiplomaTemplate implements DocumentTemplateInterface
      * Prepare signatures
      */
     /**
-     * @param array<string, mixed> $signatures
+     * @param  array<string, mixed>  $signatures
      * @return array<string, mixed>
      */
     private function prepareSignatures(array $signatures): array
-    {           
+    {
         $defaultSignatures = [
             'rector' => [
                 'name' => 'Dr. Lamine Gueye',
@@ -375,7 +376,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
                 'signature_image' => storage_path('app/branding/signature_department_head.png'),
             ],
         ];
-        
+
         return array_merge($defaultSignatures, $signatures);
     }
 
@@ -387,7 +388,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
         $programCode = $academicProgram->department->code;
         $year = substr($student->student_number ?? '00000000', 4, 4);
         $sequence = substr($student->student_number ?? '000000000', -4);
-        
+
         return "UCAK-{$programCode}-{$year}-{$sequence}";
     }
 
@@ -395,7 +396,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
      * Get validity information
      */
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function getValidityInfo(array $data): array
@@ -418,7 +419,7 @@ class DiplomaTemplate implements DocumentTemplateInterface
         $date = now()->format('Ymd');
         $studentNumber = $data['student_info']['student_number'] ?? '000000';
         $programCode = $data['academic_info']['program_code'] ?? 'XXX';
-        
+
         return "MESR-{$programCode}-{$studentNumber}-{$date}";
     }
 
@@ -430,9 +431,10 @@ class DiplomaTemplate implements DocumentTemplateInterface
         if (empty($date)) {
             return false;
         }
-        
+
         try {
             new \DateTime(is_string($date) ? $date : $date->format(\DateTimeInterface::ATOM));
+
             return true;
         } catch (\Exception $e) {
             return false;
@@ -445,23 +447,23 @@ class DiplomaTemplate implements DocumentTemplateInterface
     private function formatDate(string|\DateTimeInterface $date): string
     {
         try {
-            if (!$this->isValidDate($date)) {
+            if (! $this->isValidDate($date)) {
                 return (string) $date;
             }
 
             $dateTime = new \DateTime(is_string($date) ? $date : $date->format(\DateTimeInterface::ATOM));
-            
+
             // French month names
             $months = [
                 1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril',
                 5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'août',
-                9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre'
+                9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
             ];
-            
+
             $day = $dateTime->format('j');
-            $month = $months[(int)$dateTime->format('n')];
+            $month = $months[(int) $dateTime->format('n')];
             $year = $dateTime->format('Y');
-            
+
             return "le {$day} {$month} {$year}";
         } catch (\Exception $e) {
             return (string) $date;

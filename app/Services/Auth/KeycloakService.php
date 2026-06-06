@@ -18,7 +18,7 @@ class KeycloakService
     /**
      * Create a generic Keycloak user (for any role).
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createUser(array $data): ?string
     {
@@ -74,7 +74,7 @@ class KeycloakService
     /**
      * Create a student user in Keycloak (legacy method - uses createUser).
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createStudentUser(array $data): ?string
     {
@@ -98,7 +98,7 @@ class KeycloakService
         $roleResponse = Http::timeout(15)
             ->withToken($token)
             ->acceptJson()
-            ->get($this->adminBaseUrl() . '/roles/' . $roleName);
+            ->get($this->adminBaseUrl().'/roles/'.$roleName);
 
         if (! $roleResponse->successful()) {
             Log::warning('Keycloak role lookup failed', [
@@ -116,7 +116,7 @@ class KeycloakService
         $assignResponse = Http::timeout(15)
             ->withToken($token)
             ->acceptJson()
-            ->post($this->adminBaseUrl() . "/users/{$userId}/role-mappings/realm", [$rolePayload]);
+            ->post($this->adminBaseUrl()."/users/{$userId}/role-mappings/realm", [$rolePayload]);
 
         if (! $assignResponse->successful()) {
             Log::warning('Keycloak role assignment failed', [
@@ -134,7 +134,7 @@ class KeycloakService
 
     private function adminUsersEndpoint(): string
     {
-        return $this->adminBaseUrl() . '/users';
+        return $this->adminBaseUrl().'/users';
     }
 
     private function adminBaseUrl(): string

@@ -6,43 +6,44 @@ class MaquetteParserService
 {
     // ── Our canonical template column indices (A=0 … N=13) ─────────────────
     private const DEFAULT_COL_MAP = [
-        'ue_code'   => 0,
-        'ue_name'   => 1,
-        'ue_type'   => 2,
-        'ue_cr'     => 3,
-        'ue_coef'   => 4,
+        'ue_code' => 0,
+        'ue_name' => 1,
+        'ue_type' => 2,
+        'ue_cr' => 3,
+        'ue_coef' => 4,
         'ecue_code' => 5,
         'ecue_name' => 6,
-        'cm'        => 7,
-        'td'        => 8,
-        'tp'        => 9,
-        'tpe'       => 10,
-        'vht'       => 11,
-        'ecue_cr'   => 12,
+        'cm' => 7,
+        'td' => 8,
+        'tp' => 9,
+        'tpe' => 10,
+        'vht' => 11,
+        'ecue_cr' => 12,
         'ecue_coef' => 13,
     ];
 
     // Normalized (lowercase) header cell values for each field
     private const HEADER_MATCHERS = [
-        'ue_code'   => ['code ue', "code de l'ue", "code de l\u{2019}ue"],
-        'ue_name'   => ["unités d'enseignement", "unités d\u{2019}enseignement", 'nom ue', 'intitulé ue'],
-        'ue_type'   => ['type ue', 'type'],
+        'ue_code' => ['code ue', "code de l'ue", "code de l\u{2019}ue"],
+        'ue_name' => ["unités d'enseignement", "unités d\u{2019}enseignement", 'nom ue', 'intitulé ue'],
+        'ue_type' => ['type ue', 'type'],
         // "Crédits" in CAMES files is UE-level (one value per UE row)
-        'ue_cr'     => ['crédits ue', 'credits ue', 'crédit ue', 'crédits', 'credits'],
-        'ue_coef'   => ['coef ue', 'coefficient ue', 'coef. ue'],
+        'ue_cr' => ['crédits ue', 'credits ue', 'crédit ue', 'crédits', 'credits'],
+        'ue_coef' => ['coef ue', 'coefficient ue', 'coef. ue'],
         'ecue_code' => ["code de l'ec", "code de l\u{2019}ec", 'code ecue', 'code ec', 'code écue'],
         'ecue_name' => ['eléments constitutifs', 'éléments constitutifs', 'intitulé ecue', 'intitulé ec', 'ecue'],
-        'cm'        => ['cm', 'cours magistral', 'cours magistraux'],
-        'td'        => ['td', 'travaux dirigés'],
-        'tp'        => ['tp', 'travaux pratiques'],
-        'tpe'       => ['tpe', 'travail personnel', 'travail personnel encadré'],
-        'vht'       => ['vht', 'volume horaire total', 'vht (h)'],
-        'ecue_cr'   => ['crédits ecue', 'crédits ec', 'credits ecue', 'crédit ecue'],
+        'cm' => ['cm', 'cours magistral', 'cours magistraux'],
+        'td' => ['td', 'travaux dirigés'],
+        'tp' => ['tp', 'travaux pratiques'],
+        'tpe' => ['tpe', 'travail personnel', 'travail personnel encadré'],
+        'vht' => ['vht', 'volume horaire total', 'vht (h)'],
+        'ecue_cr' => ['crédits ecue', 'crédits ec', 'credits ecue', 'crédit ecue'],
         // "Coeff" in CAMES files is ECUE-level coefficient
         'ecue_coef' => ['coef ecue', 'coefficient ecue', 'coef ec', 'coef. ecue', 'coeff', 'coef'],
     ];
 
-    private const UE_CODE_PATTERN   = '/^[A-Z]{2,8}\d{2,5}$/';
+    private const UE_CODE_PATTERN = '/^[A-Z]{2,8}\d{2,5}$/';
+
     private const ECUE_CODE_PATTERN = '/^[A-Z]{2,8}\d{3,6}$/';
 
     /**
@@ -57,18 +58,18 @@ class MaquetteParserService
     public function parse(array $rows): array
     {
         $result = [
-            'program'   => ['name' => null],
+            'program' => ['name' => null],
             'semesters' => [],
-            'warnings'  => [],
-            'errors'    => [],
+            'warnings' => [],
+            'errors' => [],
         ];
 
         $normalized = array_map(fn ($r) => $this->normalizeRow($r), $rows);
-        $colMap     = $this->detectColMap($normalized);
+        $colMap = $this->detectColMap($normalized);
 
         $currentSemester = null;
-        $currentUe       = null;
-        $rowIndex        = 0;
+        $currentUe = null;
+        $rowIndex = 0;
 
         foreach ($normalized as $row) {
             $rowIndex++;
@@ -94,11 +95,12 @@ class MaquetteParserService
                 }
             }
             if ($semesterNum !== null) {
-                $currentUe       = $this->flushUe($currentUe, $currentSemester, $result);
+                $currentUe = $this->flushUe($currentUe, $currentSemester, $result);
                 $currentSemester = $semesterNum;
                 if (! isset($result['semesters'][$currentSemester])) {
                     $result['semesters'][$currentSemester] = ['course_units' => []];
                 }
+
                 continue;
             }
 
@@ -119,24 +121,25 @@ class MaquetteParserService
                 continue;
             }
 
-            $ueCode   = $this->str($row, $colMap['ue_code']);
+            $ueCode = $this->str($row, $colMap['ue_code']);
             $ecueCode = $this->str($row, $colMap['ecue_code']);
 
             // ── UE row ───────────────────────────────────────────────────────
             if ($ueCode !== '') {
                 if (! preg_match(self::UE_CODE_PATTERN, $ueCode)) {
                     $result['warnings'][] = "Ligne {$rowIndex} : code UE \"{$ueCode}\" ignoré (format invalide — attendu ex. APV111).";
+
                     continue;
                 }
 
                 $currentUe = $this->flushUe($currentUe, $currentSemester, $result);
                 $currentUe = [
-                    'code'        => $ueCode,
-                    'name'        => isset($colMap['ue_name']) ? $this->str($row, $colMap['ue_name']) : $ueCode,
-                    'type'        => isset($colMap['ue_type']) ? ($this->str($row, $colMap['ue_type']) ?: 'OBLIGATOIRE') : 'OBLIGATOIRE',
-                    'credits'     => isset($colMap['ue_cr']) ? $this->num($row, $colMap['ue_cr']) : null,
+                    'code' => $ueCode,
+                    'name' => isset($colMap['ue_name']) ? $this->str($row, $colMap['ue_name']) : $ueCode,
+                    'type' => isset($colMap['ue_type']) ? ($this->str($row, $colMap['ue_type']) ?: 'OBLIGATOIRE') : 'OBLIGATOIRE',
+                    'credits' => isset($colMap['ue_cr']) ? $this->num($row, $colMap['ue_cr']) : null,
                     'coefficient' => isset($colMap['ue_coef']) ? $this->float($row, $colMap['ue_coef']) : null,
-                    'courses'     => [],
+                    'courses' => [],
                 ];
 
                 // First ECUE may be on the same row as the UE
@@ -146,6 +149,7 @@ class MaquetteParserService
                         $currentUe['courses'][] = $ecue;
                     }
                 }
+
                 continue;
             }
 
@@ -155,6 +159,7 @@ class MaquetteParserService
                 if ($ecue) {
                     $currentUe['courses'][] = $ecue;
                 }
+
                 continue;
             }
         }
@@ -204,7 +209,7 @@ class MaquetteParserService
         $lower = array_map(fn ($v) => is_string($v) ? mb_strtolower(trim($v)) : '', $row);
 
         // A header row must have at least ue_code AND ecue_code columns.
-        $ueCodeCol   = null;
+        $ueCodeCol = null;
         $ecueCodeCol = null;
 
         foreach ($lower as $col => $val) {
@@ -260,9 +265,9 @@ class MaquetteParserService
             return null;
         }
 
-        $cm  = isset($colMap['cm'])  ? $this->num($row, $colMap['cm'])  : null;
-        $td  = isset($colMap['td'])  ? $this->num($row, $colMap['td'])  : null;
-        $tp  = isset($colMap['tp'])  ? $this->num($row, $colMap['tp'])  : null;
+        $cm = isset($colMap['cm']) ? $this->num($row, $colMap['cm']) : null;
+        $td = isset($colMap['td']) ? $this->num($row, $colMap['td']) : null;
+        $tp = isset($colMap['tp']) ? $this->num($row, $colMap['tp']) : null;
         $tpe = isset($colMap['tpe']) ? $this->num($row, $colMap['tpe']) : null;
         $vht = isset($colMap['vht']) ? $this->num($row, $colMap['vht']) : null;
 
@@ -273,15 +278,15 @@ class MaquetteParserService
         }
 
         return [
-            'code'          => $code,
-            'name'          => isset($colMap['ecue_name']) ? $this->str($row, $colMap['ecue_name']) : $code,
+            'code' => $code,
+            'name' => isset($colMap['ecue_name']) ? $this->str($row, $colMap['ecue_name']) : $code,
             'hours_lecture' => $cm ?? 0,
-            'hours_td'      => $td ?? 0,
-            'hours_tp'      => $tp ?? 0,
-            'hours_tpe'     => $tpe ?? 0,
-            'vht'           => $vht ?? 0,
-            'credits'       => isset($colMap['ecue_cr']) ? $this->num($row, $colMap['ecue_cr']) : null,
-            'coefficient'   => isset($colMap['ecue_coef']) ? $this->float($row, $colMap['ecue_coef']) : null,
+            'hours_td' => $td ?? 0,
+            'hours_tp' => $tp ?? 0,
+            'hours_tpe' => $tpe ?? 0,
+            'vht' => $vht ?? 0,
+            'credits' => isset($colMap['ecue_cr']) ? $this->num($row, $colMap['ecue_cr']) : null,
+            'coefficient' => isset($colMap['ecue_coef']) ? $this->float($row, $colMap['ecue_coef']) : null,
         ];
     }
 
@@ -342,6 +347,7 @@ class MaquetteParserService
         // "LA MAQUETTE DE LICENCE EN ELEVAGE..." → "LICENCE EN ELEVAGE..."
         if (preg_match('/MAQUETTE\s+(?:P[ÉE]DAGOGIQUE\s+)?(?:DE\s+|D[UE]\s+|EN\s+)?(.+)$/iu', $titleCell, $m)) {
             $name = trim($m[1]);
+
             return $name !== '' ? $name : null;
         }
 

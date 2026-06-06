@@ -20,7 +20,7 @@ class StoreDeliberationSessionRequest extends FormRequest
             'semester' => ['required', 'integer', 'min:1', 'max:12'],
             'session_name' => ['required', 'string', 'max:255'],
             'session_date' => ['required', 'date'],
-            'status' => ['nullable', 'in:' . implode(',', DeliberationSession::getStatuses())],
+            'status' => ['nullable', 'in:'.implode(',', DeliberationSession::getStatuses())],
             'presided_by' => ['required', 'uuid', 'exists:users,id'],
             'jury_members' => ['nullable', 'array'],
             'jury_members.*' => ['uuid', 'exists:users,id'],

@@ -4,18 +4,20 @@ namespace App\Models;
 
 use App\Enums\TeachingDeliveryStatus;
 use App\Models\Concerns\UsesUuidV7;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class TeachingAssignment extends Model
 {
-    use HasFactory, UsesUuidV7, SoftDeletes;
+    use HasFactory, SoftDeletes, UsesUuidV7;
 
     public const ROLE_TITULAR = 'TITULAR';
+
     public const ROLE_TD = 'TD';
+
     public const ROLE_TP = 'TP';
 
     protected $fillable = [
@@ -34,17 +36,18 @@ class TeachingAssignment extends Model
     ];
 
     protected $casts = [
-        'hours_assigned'       => 'decimal:2',
-        'hourly_rate'          => 'decimal:2',
-        'hours_cm'             => 'decimal:2',
-        'hours_td'             => 'decimal:2',
-        'planned_start_date'   => 'date',
+        'hours_assigned' => 'decimal:2',
+        'hourly_rate' => 'decimal:2',
+        'hours_cm' => 'decimal:2',
+        'hours_td' => 'decimal:2',
+        'planned_start_date' => 'date',
         'effective_start_date' => 'date',
-        'end_date'             => 'date',
-        'status'               => TeachingDeliveryStatus::class,
+        'end_date' => 'date',
+        'status' => TeachingDeliveryStatus::class,
     ];
 
     public $auditEvents = ['created', 'updated', 'deleted'];
+
     public $auditExclude = ['created_at', 'updated_at', 'deleted_at'];
 
     public function facultyMember(): BelongsTo

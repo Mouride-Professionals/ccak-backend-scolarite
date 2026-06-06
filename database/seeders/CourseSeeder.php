@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Course;
 use App\Models\CourseUnit;
+use Illuminate\Database\Seeder;
 
 class CourseSeeder extends Seeder
 {
@@ -18,11 +19,12 @@ class CourseSeeder extends Seeder
         $courseUnits = CourseUnit::all();
         if ($courseUnits->isEmpty()) {
             $this->command->warn('No course units found. Skipping courses.');
+
             return;
         }
 
         $courseUnits->each(function (CourseUnit $courseUnit) {
-            $codeBase = 'EC-' . $courseUnit->code;
+            $codeBase = 'EC-'.$courseUnit->code;
             $name = $courseUnit->name;
             $credits = (int) $courseUnit->credits;
             $hours = $this->hoursForUnit($courseUnit->code, $name);
@@ -32,7 +34,7 @@ class CourseSeeder extends Seeder
                 [
                     'course_unit_id' => $courseUnit->id,
                     'name' => $name,
-                    'description' => 'Cours principal pour ' . $name,
+                    'description' => 'Cours principal pour '.$name,
                     'credits' => $credits,
                     'hours_lecture' => $hours['lecture'],
                     'hours_td' => $hours['td'],
@@ -50,7 +52,7 @@ class CourseSeeder extends Seeder
      */
     private function hoursForUnit(string $code, string $name): array
     {
-        $lower = strtolower($code . ' ' . $name);
+        $lower = strtolower($code.' '.$name);
         $isScience = str_contains($lower, 'info')
             || str_contains($lower, 'chimie')
             || str_contains($lower, 'physique')

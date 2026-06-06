@@ -11,11 +11,13 @@ use Tests\TestCase;
 
 class NotificationTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     protected User $user;
+
     protected User $admin;
+
     protected array $permissions = [
         'notifications.view',
         'notifications.create',
@@ -84,7 +86,7 @@ class NotificationTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user, 'api')
-            ->getJson('/api/v1/notifications?filter[type]=' . Notification::TYPE_GRADE_PUBLISHED);
+            ->getJson('/api/v1/notifications?filter[type]='.Notification::TYPE_GRADE_PUBLISHED);
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')

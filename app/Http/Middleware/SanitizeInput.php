@@ -16,7 +16,7 @@ class SanitizeInput
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function sanitizeArray(array $data): array
@@ -24,6 +24,7 @@ class SanitizeInput
         foreach ($data as $key => $value) {
             if (is_array($value)) {
                 $data[$key] = $this->sanitizeArray($value);
+
                 continue;
             }
 

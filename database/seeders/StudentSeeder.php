@@ -8,11 +8,11 @@ use App\Models\Guardian;
 use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
-use Faker\Factory as Faker;
 
 class StudentSeeder extends Seeder
 {
@@ -155,7 +155,7 @@ class StudentSeeder extends Seeder
                 ? Arr::random($this->femaleFirstNames)
                 : Arr::random($this->maleFirstNames);
             $lastName = Arr::random($this->lastNames);
-            $fullName = $firstName . ' ' . $lastName;
+            $fullName = $firstName.' '.$lastName;
             $slugName = strtolower(str_replace(' ', '.', $fullName));
 
             $student = Student::create([
@@ -169,12 +169,12 @@ class StudentSeeder extends Seeder
                 'phone' => $this->senegalPhone(),
                 'phone_2' => $faker->boolean(30) ? $this->senegalPhone() : null,
                 'email' => $faker->unique()->safeEmail(),
-                'email_university' => $slugName . '.' . strtolower($studentNumber) . '@etudiant.ucak.sn',
+                'email_university' => $slugName.'.'.strtolower($studentNumber).'@etudiant.ucak.sn',
                 'type_of_id' => $faker->randomElement(['PASSPORT', 'NATIONAL_ID', 'DRIVING_LICENSE']),
                 'id_details' => $faker->bothify('SN-########'),
                 'emergency_contact_name' => $this->pickFullName($faker->randomElement(['M', 'F'])),
                 'emergency_contact_phone' => $this->senegalPhone(),
-                'address' => Arr::random($this->senegalCities) . ', Senegal',
+                'address' => Arr::random($this->senegalCities).', Senegal',
                 'photo_url' => null,
                 'status' => $faker->randomElement(['ACTIVE', 'ACTIVE', 'ACTIVE', 'SUSPENDED', 'GRADUATED', 'INACTIVE']),
             ]);
@@ -191,12 +191,12 @@ class StudentSeeder extends Seeder
                     'student_id' => $student->id,
                     'first_name' => $guardianFirst,
                     'last_name' => $guardianLast,
-                    'full_name' => $guardianFirst . ' ' . $guardianLast,
+                    'full_name' => $guardianFirst.' '.$guardianLast,
                     'relationship' => $faker->randomElement(['Père', 'Mère', 'Tuteur', 'Oncle', 'Tante']),
                     'phone' => $this->senegalPhone(),
                     'phone_2' => $faker->boolean(20) ? $this->senegalPhone() : null,
                     'email' => $faker->email(),
-                    'address' => Arr::random($this->senegalCities) . ', Senegal',
+                    'address' => Arr::random($this->senegalCities).', Senegal',
                     'occupation' => $faker->jobTitle(),
                 ]);
             }
@@ -245,19 +245,18 @@ class StudentSeeder extends Seeder
             ? Arr::random($this->femaleFirstNames)
             : Arr::random($this->maleFirstNames);
 
-        return $first . ' ' . Arr::random($this->lastNames);
+        return $first.' '.Arr::random($this->lastNames);
     }
 
     private function senegalPhone(): string
     {
         $prefix = Arr::random(['70', '75', '76', '77', '78']);
 
-        return $prefix . sprintf('%07d', rand(0, 9999999));
+        return $prefix.sprintf('%07d', rand(0, 9999999));
     }
 
     private function uniqueSeedEmail(string $prefix): string
     {
         return sprintf('%s+%s@seed.ucak.sn', $prefix, (string) Str::uuid());
     }
-
 }

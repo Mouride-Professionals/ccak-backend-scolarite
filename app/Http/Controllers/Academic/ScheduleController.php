@@ -52,11 +52,11 @@ class ScheduleController extends BaseApiController
         $data = $request->validated();
 
         $conflicts = $this->findConflicts($data);
-        if (!empty($conflicts)) {
+        if (! empty($conflicts)) {
             return $this->error('Schedule conflicts detected.', 422, ['conflicts' => $conflicts]);
         }
 
-        $schedule = DB::transaction(fn() => Schedule::create($data));
+        $schedule = DB::transaction(fn () => Schedule::create($data));
 
         return $this->success(
             new ScheduleResource($schedule->load(['course', 'facultyMember', 'room', 'activityType'])),
@@ -86,7 +86,7 @@ class ScheduleController extends BaseApiController
 
         return $this->success([
             'program_id' => $program->id,
-            'days' => $schedules->map(fn($items) => ScheduleResource::collection($items)->resolve()),
+            'days' => $schedules->map(fn ($items) => ScheduleResource::collection($items)->resolve()),
         ]);
     }
 
@@ -105,6 +105,7 @@ class ScheduleController extends BaseApiController
         $totalHours = $schedules->sum(function ($schedule) {
             $start = strtotime($schedule->start_time);
             $end = strtotime($schedule->end_time);
+
             return max(0, ($end - $start) / 3600);
         });
 
@@ -138,7 +139,7 @@ class ScheduleController extends BaseApiController
 
         return $this->success([
             'student_id' => $student->id,
-            'days' => $schedules->map(fn($items) => ScheduleResource::collection($items)->resolve()),
+            'days' => $schedules->map(fn ($items) => ScheduleResource::collection($items)->resolve()),
         ]);
     }
 
@@ -149,7 +150,7 @@ class ScheduleController extends BaseApiController
         $conflicts = $this->findConflicts($data);
 
         return $this->success([
-            'has_conflicts' => !empty($conflicts),
+            'has_conflicts' => ! empty($conflicts),
             'conflicts' => $conflicts,
         ]);
     }
@@ -171,7 +172,7 @@ class ScheduleController extends BaseApiController
 
         $conflicts = [];
 
-        if (!empty($data['room_id'])) {
+        if (! empty($data['room_id'])) {
             $roomConflicts = (clone $baseQuery)
                 ->where('room_id', $data['room_id'])
                 ->with(['room'])
@@ -182,7 +183,7 @@ class ScheduleController extends BaseApiController
             }
         }
 
-        if (!empty($data['faculty_member_id'])) {
+        if (! empty($data['faculty_member_id'])) {
             $facultyConflicts = (clone $baseQuery)
                 ->where('faculty_member_id', $data['faculty_member_id'])
                 ->with(['facultyMember'])

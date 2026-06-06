@@ -1,15 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Grade;
+use App\Enums\GradeStatus;
+use App\Enums\GradeType;
 use App\Models\CourseEnrollment;
+use App\Models\Grade;
 use App\Models\User;
-use App\Models\Enums\GradeType;
-use App\Models\Enums\GradeStatus;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 class GradeSeeder extends Seeder
@@ -23,6 +24,7 @@ class GradeSeeder extends Seeder
 
         if ($enrollments->isEmpty()) {
             $this->command->warn('No course enrollments found. Skipping grades.');
+
             return;
         }
 
@@ -43,7 +45,7 @@ class GradeSeeder extends Seeder
         // Create 2-4 grades per enrollment (CC, EXAM, TP, etc.)
         $enrollments->each(function (CourseEnrollment $enrollment) use ($teachers) {
             $studentId = $enrollment->enrollment?->student_id;
-            if (!$studentId) {
+            if (! $studentId) {
                 return;
             }
 

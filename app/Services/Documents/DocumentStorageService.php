@@ -4,14 +4,15 @@ namespace App\Services\Documents;
 
 use App\Models\Document;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentStorageService
 {
     private const DISK = 'documents';
+
     private const STORAGE_PATHS = [
         'TRANSCRIPT' => 'transcripts',
         'CERTIFICATE' => 'certificates',
@@ -19,9 +20,11 @@ class DocumentStorageService
         'ID_CARD' => 'id_cards',
         'DIPLOMA' => 'diplomas',
     ];
+
     private const BASE_PATH = 'student_documents';
 
     private ?string $disk;
+
     private string $basePath;
 
     public function __construct(?string $disk = null, ?string $basePath = null)
@@ -36,8 +39,7 @@ class DocumentStorageService
         string $documentNumber,
         string $studentId,
         string $format = 'pdf'
-    ): string
-    {
+    ): string {
         $filename = $this->generateFilename($documentNumber, $format);
         $path = $this->getStoragePath($documentType, $studentId, $filename);
 
@@ -48,7 +50,7 @@ class DocumentStorageService
 
     public function getDocumentContent(string $filePath): string
     {
-        if (!$this->documentExists($filePath)) {
+        if (! $this->documentExists($filePath)) {
             throw new RuntimeException("Le fichier n'existe pas: $filePath");
         }
 
@@ -57,7 +59,7 @@ class DocumentStorageService
 
     public function downloadDocument(string $filePath, string $downloadName): StreamedResponse
     {
-        if (!$this->documentExists($filePath)) {
+        if (! $this->documentExists($filePath)) {
             throw new RuntimeException("Le fichier n'existe pas: $filePath");
         }
 
@@ -65,7 +67,7 @@ class DocumentStorageService
 
         return Storage::disk($this->resolveDisk())->download(
             $filePath,
-            $this->sanitizeFilename($downloadName . '.' . $extension)
+            $this->sanitizeFilename($downloadName.'.'.$extension)
         );
     }
 
@@ -79,17 +81,16 @@ class DocumentStorageService
         $timestamp = now()->format('Ymd_His');
         $safeDocumentNumber = preg_replace('/[^A-Z0-9-]/', '', $documentNumber);
 
-        return $safeDocumentNumber . '_' . $timestamp . '.' . $format;
+        return $safeDocumentNumber.'_'.$timestamp.'.'.$format;
     }
 
     private function getStoragePath(string $documentType, string $studentId, string $filename): string
     {
         $typeFolder = self::STORAGE_PATHS[$documentType] ?? 'other';
-        $studentFolder = 'students/' . $studentId;
+        $studentFolder = 'students/'.$studentId;
 
         return "$studentFolder/$typeFolder/$filename";
     }
-
 
     /**
      * Préparer les informations de stockage
@@ -122,7 +123,7 @@ class DocumentStorageService
         $directory = dirname($path);
 
         // Créer le répertoire s'il n'existe pas
-        if (!Storage::disk($this->resolveDisk())->exists($directory)) {
+        if (! Storage::disk($this->resolveDisk())->exists($directory)) {
             Storage::disk($this->resolveDisk())->makeDirectory($directory);
         }
 
@@ -133,7 +134,7 @@ class DocumentStorageService
             basename($path)
         );
 
-        if (!$stored) {
+        if (! $stored) {
             throw new \RuntimeException('Échec du stockage du fichier');
         }
 
@@ -145,7 +146,7 @@ class DocumentStorageService
      */
     public function get(string $path): string
     {
-        if (!$this->exists($path)) {
+        if (! $this->exists($path)) {
             throw new \RuntimeException("Le fichier n'existe pas: {$path}");
         }
 
@@ -177,7 +178,7 @@ class DocumentStorageService
      */
     public function mimeType(string $path): ?string
     {
-        if (!$this->exists($path)) {
+        if (! $this->exists($path)) {
             return null;
         }
 
@@ -189,7 +190,7 @@ class DocumentStorageService
      */
     public function size(string $path): ?int
     {
-        if (!$this->exists($path)) {
+        if (! $this->exists($path)) {
             return null;
         }
 
@@ -201,7 +202,7 @@ class DocumentStorageService
      */
     public function url(string $path): ?string
     {
-        if (!$this->exists($path)) {
+        if (! $this->exists($path)) {
             return null;
         }
 

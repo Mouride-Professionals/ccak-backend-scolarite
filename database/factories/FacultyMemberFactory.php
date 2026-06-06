@@ -5,8 +5,8 @@ namespace Database\Factories;
 use App\Models\Department;
 use App\Models\FacultyMember;
 use App\Models\User;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\FacultyMember>
@@ -30,15 +30,15 @@ class FacultyMemberFactory extends Factory
         $firstName = $gender === 'F'
             ? $this->faker->randomElement($femaleFirstNames)
             : $this->faker->randomElement($maleFirstNames);
-        $fullName = $firstName . ' ' . $this->faker->randomElement($lastNames);
+        $fullName = $firstName.' '.$this->faker->randomElement($lastNames);
         $phonePrefix = $this->faker->randomElement(['70', '75', '76', '77', '78']);
 
         return [
             'id' => (string) Str::uuid(),
             'user_id' => User::factory(),
-            'staff_number' => 'FM-' . str_pad((string) $sequence++, 3, '0', STR_PAD_LEFT),
+            'staff_number' => 'FM-'.str_pad((string) $sequence++, 3, '0', STR_PAD_LEFT),
             'full_name' => $fullName,
-            'phone' => $phonePrefix . sprintf('%07d', rand(0, 9999999)),
+            'phone' => $phonePrefix.sprintf('%07d', rand(0, 9999999)),
             'address' => $this->faker->randomElement(['Dakar', 'Thies', 'Saint-Louis', 'Kaolack', 'Ziguinchor']),
             'department_id' => Department::factory(),
             'rank' => $this->faker->randomElement(['PROFESSEUR', 'MAITRE_CONF', 'MAITRE_ASS', 'ASSISTANT']),

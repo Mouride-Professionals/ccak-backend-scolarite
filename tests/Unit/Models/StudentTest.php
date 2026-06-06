@@ -48,7 +48,7 @@ class StudentTest extends TestCase
         $activeStudents = Student::active()->get();
 
         $this->assertCount(1, $activeStudents);
-        $this->assertEquals('ACTIVE', $activeStudents->first()->status);
+        $this->assertEquals('ACTIVE', $activeStudents->first()->status->value);
     }
 
     public function test_graduated_scope(): void
@@ -59,7 +59,7 @@ class StudentTest extends TestCase
         $graduatedStudents = Student::graduated()->get();
 
         $this->assertCount(1, $graduatedStudents);
-        $this->assertEquals('GRADUATED', $graduatedStudents->first()->status);
+        $this->assertEquals('GRADUATED', $graduatedStudents->first()->status->value);
     }
 
     public function test_age_attribute(): void
@@ -96,20 +96,33 @@ class StudentTest extends TestCase
     public function test_fillable_attributes(): void
     {
         $fillable = [
+            'id',
             'user_id',
             'keycloak_user_id',
             'student_number',
+            'first_name',
+            'last_name',
             'full_name',
             'gender',
             'date_of_birth',
             'place_of_birth',
             'nationality',
+            'type_of_id',
+            'id_details',
+            'ine',
+            'email',
+            'email_university',
             'phone',
+            'phone_2',
             'emergency_contact_name',
             'emergency_contact_phone',
             'address',
             'photo_url',
             'status',
+            'registration_number',
+            'provenance',
+            'synced_from',
+            'last_synced_at',
         ];
 
         $this->assertEquals($fillable, (new Student)->getFillable());

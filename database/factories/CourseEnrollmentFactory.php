@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Factories;
@@ -21,10 +22,10 @@ class CourseEnrollmentFactory extends Factory
             : null;
 
         return [
-            'student_id' => fn() => \App\Models\Student::factory(),
-            'course_id' => fn() => \App\Models\Course::factory(),
-            'enrollment_id' => fn() => \App\Models\Enrollment::factory(),
-            'academic_year_id' => fn() => \App\Models\AcademicYear::factory(),
+            'student_id' => fn () => \App\Models\Student::factory(),
+            'course_id' => fn () => \App\Models\Course::factory(),
+            'enrollment_id' => fn () => \App\Models\Enrollment::factory(),
+            'academic_year_id' => fn () => \App\Models\AcademicYear::factory(),
             'semester' => $this->faker->numberBetween(1, 12),
             'status' => $status,
             'enrollment_date' => $enrollmentDate,

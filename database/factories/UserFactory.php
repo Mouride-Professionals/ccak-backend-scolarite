@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,11 +28,11 @@ class UserFactory extends Factory
         $lastNames = ['ndiaye', 'diop', 'ba', 'sow', 'fall', 'gueye', 'cisse', 'seck'];
         $domains = ['ucak.sn', 'etu.ucak.sn', 'admin.ucak.sn'];
         $email = $firstNames[$sequence % count($firstNames)]
-            . '.'
-            . $lastNames[$sequence % count($lastNames)]
-            . $sequence
-            . '@'
-            . $domains[$sequence % count($domains)];
+            .'.'
+            .$lastNames[$sequence % count($lastNames)]
+            .$sequence
+            .'@'
+            .$domains[$sequence % count($domains)];
         $sequence++;
 
         return [
@@ -51,7 +50,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
     }

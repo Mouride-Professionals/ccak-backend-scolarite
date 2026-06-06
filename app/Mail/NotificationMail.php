@@ -1,4 +1,5 @@
 <?php
+
 // app/Mail/NotificationMail.php
 
 namespace App\Mail;

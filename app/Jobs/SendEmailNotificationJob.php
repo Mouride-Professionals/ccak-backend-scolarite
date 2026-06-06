@@ -24,7 +24,7 @@ class SendEmailNotificationJob implements ShouldQueue
         /** @var User $user */
         $user = $this->notification->user;
 
-        if (!$user->email) {
+        if (! $user->email) {
             return;
         }
 

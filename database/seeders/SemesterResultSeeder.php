@@ -1,15 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Enums\DecisionType;
+use App\Models\AcademicYear;
 use App\Models\SemesterResult;
 use App\Models\Student;
-use App\Models\AcademicYear;
 use App\Models\User;
-use App\Models\Enums\DecisionType;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 class SemesterResultSeeder extends Seeder
@@ -24,11 +25,13 @@ class SemesterResultSeeder extends Seeder
 
         if ($students->isEmpty()) {
             $this->command->warn('No students found. Skipping semester results.');
+
             return;
         }
 
         if ($academicYears->isEmpty()) {
             $this->command->warn('No academic years found. Skipping semester results.');
+
             return;
         }
 

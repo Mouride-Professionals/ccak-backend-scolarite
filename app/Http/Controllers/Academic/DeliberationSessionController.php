@@ -22,6 +22,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 class DeliberationSessionController extends BaseApiController
 {
     protected $service;
+
     protected $minutesService;
 
     public function __construct(DeliberationService $service, MinutesGeneratorService $minutesService)
@@ -59,7 +60,7 @@ class DeliberationSessionController extends BaseApiController
 
     public function store(StoreDeliberationSessionRequest $request)
     {
-        $session = DB::transaction(fn() => $this->service->create($request->validated()));
+        $session = DB::transaction(fn () => $this->service->create($request->validated()));
 
         return $this->success(
             new DeliberationSessionResource($session),
@@ -71,6 +72,7 @@ class DeliberationSessionController extends BaseApiController
     public function show($id)
     {
         $session = $this->service->getById($id);
+
         return $session
             ? $this->success(new DeliberationSessionResource($session))
             : $this->error('Not found', 404);
@@ -78,7 +80,7 @@ class DeliberationSessionController extends BaseApiController
 
     public function update(UpdateDeliberationSessionRequest $request, $id)
     {
-        $session = DB::transaction(fn() => $this->service->update($id, $request->validated()));
+        $session = DB::transaction(fn () => $this->service->update($id, $request->validated()));
 
         return $session
             ? $this->success(new DeliberationSessionResource($session))
@@ -95,10 +97,10 @@ class DeliberationSessionController extends BaseApiController
     public function changeStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:SCHEDULED,IN_PROGRESS,COMPLETED,CLOSED'
+            'status' => 'required|in:SCHEDULED,IN_PROGRESS,COMPLETED,CLOSED',
         ]);
 
-        $session = DB::transaction(fn() => $this->service->changeStatus($id, $request->status));
+        $session = DB::transaction(fn () => $this->service->changeStatus($id, $request->status));
 
         return $session
             ? $this->success(new DeliberationSessionResource($session))
@@ -122,7 +124,7 @@ class DeliberationSessionController extends BaseApiController
                 'recommendations' => $started['recommendations'],
             ], 'Deliberation session started successfully');
         } catch (\Throwable $e) {
-            return $this->error('Impossible de démarrer la session de délibération: ' . $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->error('Impossible de démarrer la session de délibération: '.$e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -135,9 +137,9 @@ class DeliberationSessionController extends BaseApiController
         }
 
         $validated = $request->validate([
-            'decision' => ['required', 'in:' . implode(',', DeliberationResult::DECISIONS)],
+            'decision' => ['required', 'in:'.implode(',', DeliberationResult::DECISIONS)],
             'is_with_honors' => ['sometimes', 'boolean'],
-            'honor_level' => ['nullable', 'in:' . implode(',', DeliberationResult::HONOR_LEVELS)],
+            'honor_level' => ['nullable', 'in:'.implode(',', DeliberationResult::HONOR_LEVELS)],
             'comments' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -178,7 +180,7 @@ class DeliberationSessionController extends BaseApiController
                 'Deliberation session completed successfully'
             );
         } catch (\Throwable $e) {
-            return $this->error('Impossible de finaliser la session: ' . $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->error('Impossible de finaliser la session: '.$e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -210,7 +212,6 @@ class DeliberationSessionController extends BaseApiController
             'students' => $students,
         ], 'Students for deliberation session retrieved successfully');
     }
-
 
     /**
      * Generate minutes for a deliberation session

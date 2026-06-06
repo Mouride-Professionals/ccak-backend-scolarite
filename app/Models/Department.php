@@ -30,8 +30,10 @@ class Department extends Model
 
     // Audit configuration for SoftDeletes
     public $auditEvents = ['created', 'updated', 'deleted', 'restored', 'forceDeleted'];
+
     public $auditExclude = ['created_at', 'updated_at', 'deleted_at'];
 
+    /** @return BelongsTo<Faculty, Department> */
     public function faculty(): BelongsTo
     {
         return $this->belongsTo(Faculty::class);

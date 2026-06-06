@@ -8,7 +8,6 @@ use App\Models\Admin;
 use App\Models\Document;
 use App\Models\Student;
 use App\Models\User;
-use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,8 +17,8 @@ use Tests\TestCase;
 
 class DocumentApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private Student $student;
 
@@ -31,7 +30,6 @@ class DocumentApiTest extends TestCase
         'documents.review',
         'documents.download',
     ];
-
 
     protected function setUp(): void
     {
@@ -83,7 +81,6 @@ class DocumentApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonCount(2, 'data');
     }
-
 
     #[Test]
     public function it_can_upload_a_new_document(): void
@@ -142,7 +139,7 @@ class DocumentApiTest extends TestCase
                 'data' => [
                     'file_name',
                     'student_id',
-                ]
+                ],
             ])
             ->assertJsonPath('data.id', $document->id);
     }
@@ -153,7 +150,6 @@ class DocumentApiTest extends TestCase
         $response = $this->getJson('/api/v1/documents/nonexistent-id');
         $response->assertStatus(404);
     }
-
 
     #[Test]
     public function student_cannot_update_approved_document(): void
@@ -205,7 +201,6 @@ class DocumentApiTest extends TestCase
     public function admin_can_reject_a_document(): void
     {
 
-
         $document = Document::factory()->pending()->create([
             'student_id' => $this->student->id,
         ]);
@@ -223,7 +218,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function reject_requires_a_reason(): void
     {
-
 
         $document = Document::factory()->pending()->create([
             'student_id' => $this->student->id,
@@ -268,14 +262,13 @@ class DocumentApiTest extends TestCase
                     'file_name',
                     'file_size',
                     'mime_type',
-                ]
+                ],
             ]);
     }
 
     #[Test]
     public function it_can_download_document_file(): void
     {
-
 
         // Créer un vrai fichier dans le storage fake
         $fileName = 'test.pdf';
@@ -300,7 +293,6 @@ class DocumentApiTest extends TestCase
     public function download_returns_404_for_nonexistent_file(): void
     {
 
-
         $document = Document::factory()->create([
             'student_id' => $this->student->id,
             'file_path' => 'nonexistent.pdf',
@@ -314,7 +306,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function admin_can_delete_any_document(): void
     {
-
 
         $document = Document::factory()->create([
             'student_id' => $this->student->id,
@@ -332,7 +323,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function student_can_delete_own_pending_document(): void
     {
-
 
         $document = Document::factory()->pending()->create([
             'student_id' => $this->student->id,
@@ -369,7 +359,6 @@ class DocumentApiTest extends TestCase
     public function it_can_check_student_document_status(): void
     {
 
-
         // Créer quelques documents pour l'étudiant
         Document::factory()->approved()->create([
             'student_id' => $this->student->id,
@@ -394,7 +383,7 @@ class DocumentApiTest extends TestCase
                     'by_type',
                     'required_docs_status',
                     'all_required_approved',
-                ]
+                ],
             ])
             ->assertJsonPath('data.total', 2)
             ->assertJsonPath('data.approved', 1)
@@ -404,7 +393,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_can_generate_report(): void
     {
-
 
         // Créer des documents pour différents statuts
         Document::factory()->pending()->count(5)->create();
@@ -425,7 +413,7 @@ class DocumentApiTest extends TestCase
                         'pending_count',
                     ],
                     'details',
-                ]
+                ],
             ])
             ->assertJsonPath('data.summary.total', 10)
             ->assertJsonPath('data.summary.pending_count', 5);
@@ -434,7 +422,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_can_filter_report_by_date(): void
     {
-
 
         $dateFrom = now()->subDays(7)->format('Y-m-d');
         $dateTo = now()->format('Y-m-d');
@@ -459,7 +446,6 @@ class DocumentApiTest extends TestCase
     public function it_can_list_pending_documents(): void
     {
 
-
         Document::factory()->pending()->count(3)->create();
         Document::factory()->approved()->count(2)->create();
 
@@ -472,7 +458,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_can_list_student_documents(): void
     {
-
 
         // Créer un autre étudiant
         $anotherStudent = Student::factory()->create();
@@ -497,7 +482,6 @@ class DocumentApiTest extends TestCase
     public function it_can_filter_student_documents_by_type(): void
     {
 
-
         Document::factory()->create([
             'student_id' => $this->student->id,
             'type' => DocumentType::CNI,
@@ -518,7 +502,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_enforces_upload_limits(): void
     {
-
 
         // Créer le maximum de documents autorisés pour un type
         $maxPerType = config('documents.max_per_type', 3);
@@ -545,7 +528,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_validates_document_type_on_upload(): void
     {
-
 
         $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
@@ -585,7 +567,6 @@ class DocumentApiTest extends TestCase
     public function it_can_upload_image_document(): void
     {
 
-
         $file = UploadedFile::fake()->image('photo.jpg', 400, 500);
 
         $payload = [
@@ -604,7 +585,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_rejects_invalid_image_dimensions_for_photo(): void
     {
-
 
         // Image trop petite
         $file = UploadedFile::fake()->image('photo.jpg', 200, 200);
@@ -625,7 +605,6 @@ class DocumentApiTest extends TestCase
     public function it_can_paginate_results(): void
     {
 
-
         Document::factory()->count(25)->create();
 
         $response = $this->getJson('/api/v1/documents?per_page=10');
@@ -639,7 +618,6 @@ class DocumentApiTest extends TestCase
     #[Test]
     public function it_can_update_multiple_metadata_fields(): void
     {
-
 
         $document = Document::factory()->create();
 

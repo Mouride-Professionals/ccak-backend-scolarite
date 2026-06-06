@@ -13,8 +13,8 @@ use Tests\TestCase;
 
 class StudentApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'students.view',

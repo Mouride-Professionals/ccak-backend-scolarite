@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Jobs;
@@ -41,11 +42,11 @@ class CalculateSemesterResultsJob implements ShouldQueue
      */
     public function handle(SemesterResultCalculationService $calculationService): void
     {
-        Log::info("Starting semester results calculation job", [
+        Log::info('Starting semester results calculation job', [
             'job_id' => $this->jobId,
             'academic_year_id' => $this->academicYearId,
             'semester' => $this->semester,
-            'calculated_by' => $this->calculatedByUserId
+            'calculated_by' => $this->calculatedByUserId,
         ]);
 
         try {
@@ -57,12 +58,12 @@ class CalculateSemesterResultsJob implements ShouldQueue
                 $user
             );
 
-            Log::info("Semester results calculation job completed", [
+            Log::info('Semester results calculation job completed', [
                 'job_id' => $this->jobId,
                 'success' => $result['success'],
                 'students_processed' => $result['data']['students_processed'] ?? 0,
                 'results_created' => $result['data']['results_created'] ?? 0,
-                'errors' => count($result['data']['errors'] ?? [])
+                'errors' => count($result['data']['errors'] ?? []),
             ]);
 
             // TODO: Notify admin of completion
@@ -70,12 +71,12 @@ class CalculateSemesterResultsJob implements ShouldQueue
             // dispatch(new NotifyAdminOfCalculationCompletion($result, $user));
 
         } catch (\Exception $e) {
-            Log::error("Semester results calculation job failed", [
+            Log::error('Semester results calculation job failed', [
                 'job_id' => $this->jobId,
                 'academic_year_id' => $this->academicYearId,
                 'semester' => $this->semester,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Re-throw the exception to mark the job as failed
@@ -88,12 +89,12 @@ class CalculateSemesterResultsJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error("Semester results calculation job failed permanently", [
+        Log::error('Semester results calculation job failed permanently', [
             'job_id' => $this->jobId,
             'academic_year_id' => $this->academicYearId,
             'semester' => $this->semester,
             'error' => $exception->getMessage(),
-            'attempts' => $this->attempts()
+            'attempts' => $this->attempts(),
         ]);
 
         // TODO: Notify admin of failure

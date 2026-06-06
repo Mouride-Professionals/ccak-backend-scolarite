@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use App\Models\Admin;
 use App\Models\Document;
 use App\Models\Student;
-use App\Enums\DocumentStatus;
-use App\Enums\DocumentType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

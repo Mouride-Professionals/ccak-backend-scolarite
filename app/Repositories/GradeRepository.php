@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repositories;
@@ -37,6 +38,7 @@ class GradeRepository
     {
         $item = $this->find($id);
         $item->update($data);
+
         return $item;
     }
 
@@ -49,7 +51,6 @@ class GradeRepository
     /**
      * Get all grades by status
      *
-     * @param string $status
      * @return Collection<int, Grade>
      */
     public function getByStatus(string $status): Collection
@@ -60,7 +61,7 @@ class GradeRepository
     /**
      * Bulk publish grades by IDs
      *
-     * @param array<int|string> $ids
+     * @param  array<int|string>  $ids
      * @return int Number of grades updated
      */
     public function bulkPublish(array $ids): int

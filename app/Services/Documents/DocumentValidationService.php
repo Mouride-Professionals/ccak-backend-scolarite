@@ -2,7 +2,6 @@
 
 namespace App\Services\Documents;
 
-use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Document;
 use Illuminate\Http\UploadedFile;
@@ -15,14 +14,14 @@ class DocumentValidationService
      * Valider les données d'upload
      */
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     public function validateUploadData(array $data): array
     {
         $rules = [
             'student_id' => ['required', 'uuid'],
-            'type' => ['required', 'string', 'in:' . implode(',', DocumentType::values())],
+            'type' => ['required', 'string', 'in:'.implode(',', DocumentType::values())],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
 
@@ -42,7 +41,7 @@ class DocumentValidationService
     {
         $type = DocumentType::tryFrom($documentType);
 
-        if (!$type) {
+        if (! $type) {
             throw new \InvalidArgumentException("Type de document invalide: {$documentType}");
         }
 
@@ -50,9 +49,9 @@ class DocumentValidationService
             'document_file' => [
                 'required',
                 'file',
-                'mimes:' . implode(',', $type->allowedExtensions()),
-                'max:' . $type->maxSizeInKB(),
-            ]
+                'mimes:'.implode(',', $type->allowedExtensions()),
+                'max:'.$type->maxSizeInKB(),
+            ],
         ];
 
         // Règles supplémentaires pour les images
@@ -111,7 +110,7 @@ class DocumentValidationService
      */
     public function validateReview(Document $document, string $reviewedBy): void
     {
-        if (!$document->status->canBeReviewed()) {
+        if (! $document->status->canBeReviewed()) {
             throw new \InvalidArgumentException(
                 "Ce document ne peut pas être revu. Statut actuel: {$document->status->label()}"
             );
@@ -121,7 +120,7 @@ class DocumentValidationService
         // (implémentation dépend de votre système d'authentification)
         if ($this->isSamePerson($document->student_id, $reviewedBy)) {
             throw new \InvalidArgumentException(
-                "Vous ne pouvez pas revoir vos propres documents"
+                'Vous ne pouvez pas revoir vos propres documents'
             );
         }
     }

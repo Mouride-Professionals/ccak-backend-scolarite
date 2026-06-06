@@ -42,21 +42,21 @@ class HolidayController extends BaseApiController
 
     public function store(StoreHolidayRequest $request): JsonResponse
     {
-        $holiday = DB::transaction(fn() => Holiday::create($request->validated()));
+        $holiday = DB::transaction(fn () => Holiday::create($request->validated()));
 
         return $this->success(new HolidayResource($holiday), 'Holiday created', 201);
     }
 
     public function update(UpdateHolidayRequest $request, Holiday $holiday): JsonResponse
     {
-        DB::transaction(fn() => $holiday->update($request->validated()));
+        DB::transaction(fn () => $holiday->update($request->validated()));
 
         return $this->success(new HolidayResource($holiday->refresh()), 'Holiday updated');
     }
 
     public function destroy(Holiday $holiday): JsonResponse
     {
-        DB::transaction(fn() => $holiday->delete());
+        DB::transaction(fn () => $holiday->delete());
 
         return $this->success(null, 'Holiday deleted');
     }

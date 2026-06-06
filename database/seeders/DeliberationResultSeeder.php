@@ -51,7 +51,7 @@ class DeliberationResultSeeder extends Seeder
                     ],
                     [
                         'decision' => $decision,
-                        'jury_remarks' => 'Remarks for ' . $student->full_name,
+                        'jury_remarks' => 'Remarks for '.$student->full_name,
                         'is_with_honors' => $isWithHonors,
                         'honor_level' => $isWithHonors ? $honorLevels[array_rand($honorLevels)] : null,
                         'created_at' => $createdAt,
