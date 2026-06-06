@@ -8,6 +8,7 @@ use App\Http\Requests\Enrollment\UpdateEnrollmentRequest;
 use App\Http\Resources\EnrollmentResource;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
+use App\Enums\RegistrationStatus;
 use App\Models\Enrollment;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
@@ -57,19 +58,19 @@ class EnrollmentController extends BaseApiController
 
         // Check if student exists and is active
         $student = Student::find($request->student_id);
-        if (!$student || !$student->is_active) {
+        if (! $student || ! $student->is_active) {
             return $this->error('Étudiant non trouvé ou inactif.', 404);
         }
 
         // Check if academic program exists and is active
         $program = AcademicProgram::find($request->academic_program_id);
-        if (!$program || !$program->is_active) {
+        if (! $program || ! $program->is_active) {
             return $this->error('Programme académique non trouvé ou inactif.', 404);
         }
 
         // Check if academic year exists and is active
         $year = AcademicYear::find($request->academic_year_id);
-        if (!$year || !$year->is_active) {
+        if (! $year || ! $year->is_active) {
             return $this->error('Année académique non trouvée ou inactive.', 404);
         }
 
@@ -83,7 +84,7 @@ class EnrollmentController extends BaseApiController
                 $enrollmentData = $request->all();
                 $enrollmentData['current_semester'] = $enrollmentData['current_semester'] ?? 1;
                 $enrollmentData['enrollment_date'] = $enrollmentData['enrollment_date'] ?? now();
-                $enrollmentData['status'] = $enrollmentData['status'] ?? Enrollment::STATUS_PENDING;
+                $enrollmentData['status'] = $enrollmentData['status'] ?? RegistrationStatus::PENDING_VALIDATION->value;
 
                 return Enrollment::create($enrollmentData);
             });
@@ -104,10 +105,10 @@ class EnrollmentController extends BaseApiController
             'student',
             'academicProgram',
             'academicYear',
-            'courseEnrollments.course'
+            'courseEnrollments.course',
         ])->find($id);
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return $this->error('Inscription non trouvée.', 404);
         }
 
@@ -117,7 +118,7 @@ class EnrollmentController extends BaseApiController
     public function update(UpdateEnrollmentRequest $request, int|string $id): JsonResponse
     {
         $enrollment = Enrollment::find($id);
-        if (!$enrollment) {
+        if (! $enrollment) {
             return $this->error('Inscription non trouvée.', 404);
         }
         $validator = Validator::make($request->all(), Enrollment::validationRules($id));
@@ -150,23 +151,23 @@ class EnrollmentController extends BaseApiController
     {
         $enrollment = Enrollment::find($id);
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return $this->error('Inscription non trouvée.', 404);
         }
 
-        DB::transaction(fn() => $enrollment->delete());
+        DB::transaction(fn () => $enrollment->delete());
 
         return $this->success(null, 'Inscription supprimée avec succès.');
     }
 
     /**
      * Get all enrollments for a student
-    */
+     */
     public function getByStudent(Request $request, string $studentId): JsonResponse
     {
         $student = Student::find($studentId);
 
-        if (!$student) {
+        if (! $student) {
             return $this->error('Étudiant non trouvé.', 404);
         }
 
@@ -174,7 +175,7 @@ class EnrollmentController extends BaseApiController
             ->with([
                 'academicProgram:id,name,level',
                 'academicYear:id,name,start_date,end_date',
-                'courseEnrollments.course:id,code,name,credits'
+                'courseEnrollments.course:id,code,name,credits',
             ])
             ->allowedFilters([
                 AllowedFilter::exact('academic_year_id'),

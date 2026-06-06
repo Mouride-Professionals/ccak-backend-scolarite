@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Enums\RegistrationStatus;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Course;
@@ -23,17 +25,23 @@ class GradeCalculationServiceTest extends TestCase
     use RefreshDatabase;
 
     private GradeCalculationService $service;
+
     private Student $student;
+
     private Course $course;
+
     private CourseEnrollment $enrollment;
+
     private AcademicYear $academicYear;
+
     private Enrollment $academicEnrollment;
+
     private CourseUnit $courseUnit;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new GradeCalculationService();
+        $this->service = new GradeCalculationService;
 
         $this->student = Student::factory()->create([
             'student_number' => 'STU001',
@@ -58,10 +66,10 @@ class GradeCalculationServiceTest extends TestCase
             'academic_program_id' => $program->id,
             'academic_year_id' => $this->academicYear->id,
             'current_semester' => 1,
-            'status' => 'ACTIVE',
+            'status' => RegistrationStatus::VALIDATED->value,
             'enrollment_date' => now()->subMonths(1)->toDateString(),
             'registration_fee_paid' => 0,
-            'is_scholarship' => false,
+            'is_scholarship_holder' => false,
         ]);
 
         $this->course = Course::factory()->create([

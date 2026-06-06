@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Resources;
@@ -18,7 +19,7 @@ class EnrollmentResource extends JsonResource
             'status' => $this->status,
             'enrollment_date' => $this->enrollment_date,
             'registration_fee_paid' => $this->registration_fee_paid,
-            'is_scholarship' => $this->is_scholarship,
+            'is_scholarship' => $this->is_scholarship_holder,
             'student' => $this->whenLoaded('student', function () {
                 return [
                     'id' => $this->student->id,

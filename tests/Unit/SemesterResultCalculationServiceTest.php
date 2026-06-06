@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Enums\RegistrationStatus;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Course;
@@ -11,14 +12,16 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseUnit;
 use App\Models\Department;
 use App\Models\Enrollment;
+
+use App\Enums\DecisionType;
+
 use App\Models\Faculty;
 use App\Models\Grade;
 use App\Models\Student;
 use App\Models\User;
-use App\Models\Enums\DecisionType;
-use App\Services\SemesterResultCalculationService;
-use App\Services\GradeCalculationService;
 use App\Repositories\SemesterResultRepository;
+use App\Services\GradeCalculationService;
+use App\Services\SemesterResultCalculationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,14 +33,23 @@ class SemesterResultCalculationServiceTest extends TestCase
     use RefreshDatabase;
 
     private SemesterResultCalculationService $service;
+
     private GradeCalculationService $gradeService;
+
     private SemesterResultRepository $repository;
+
     private User $admin;
+
     private Student $student;
+
     private AcademicYear $academicYear;
+
     private Course $course1;
+
     private Course $course2;
+
     private Enrollment $academicEnrollment;
+
     private CourseUnit $courseUnit;
 
     protected function setUp(): void
@@ -49,8 +61,8 @@ class SemesterResultCalculationServiceTest extends TestCase
         Role::create(['name' => 'FACULTY', 'guard_name' => 'api']);
 
         // Initialize services
-        $this->gradeService = new GradeCalculationService();
-        $this->repository = new SemesterResultRepository();
+        $this->gradeService = new GradeCalculationService;
+        $this->repository = new SemesterResultRepository;
         $this->service = new SemesterResultCalculationService($this->gradeService, $this->repository);
 
         // Create test admin user
@@ -86,10 +98,10 @@ class SemesterResultCalculationServiceTest extends TestCase
             'academic_program_id' => $program->id,
             'academic_year_id' => $this->academicYear->id,
             'current_semester' => 1,
-            'status' => 'ACTIVE',
+            'status' => RegistrationStatus::VALIDATED->value,
             'enrollment_date' => now()->subMonths(1)->toDateString(),
             'registration_fee_paid' => 0,
-            'is_scholarship' => false,
+            'is_scholarship_holder' => false,
         ]);
 
         $this->course1 = Course::factory()->create([
@@ -123,6 +135,7 @@ class SemesterResultCalculationServiceTest extends TestCase
             'enrollment_date' => now()->subWeeks(2)->toDateString(),
         ]);
     }
+
     #[Test]
     public function it_calculates_semester_results_successfully()
     {
@@ -177,6 +190,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(5, $semesterResult->total_credits_enrolled); // 2 + 3
         $this->assertEquals(5, $semesterResult->total_credits_earned);    // Both courses passed
     }
+
     #[Test]
     public function it_calculates_student_result_with_compensation()
     {
@@ -221,6 +235,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(5, $result->total_credits_enrolled);
         $this->assertEquals(5, $result->total_credits_earned); // Both courses credited through compensation
     }
+
     #[Test]
     public function it_determines_failed_decision_correctly()
     {
@@ -264,6 +279,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(5, $result->total_credits_enrolled);
         $this->assertEquals(0, $result->total_credits_earned); // No credits earned
     }
+
     #[Test]
     public function it_determines_resit_required_correctly()
     {
@@ -305,6 +321,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertNotNull($result);
         $this->assertEquals(DecisionType::RESIT_REQUIRED, $result->decision);
     }
+
     #[Test]
     public function it_updates_existing_semester_result()
     {
@@ -343,6 +360,7 @@ class SemesterResultCalculationServiceTest extends TestCase
 
         $this->assertEquals($initialId, $updatedResult->id);
     }
+
     #[Test]
     public function it_calculates_semester_statistics_correctly()
     {
@@ -390,6 +408,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(2.65, $statistics['average_gpa']); // (3.3 + 2.0) / 2
         $this->assertEquals(12.25, $statistics['average_semester_average']); // (15.0 + 9.5) / 2
     }
+
     #[Test]
     public function it_handles_no_students_case()
     {
@@ -404,6 +423,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(0, $result['data']['students_processed']);
         $this->assertEquals(0, $result['data']['results_created']);
     }
+
     #[Test]
     public function it_returns_empty_statistics_for_no_results()
     {
@@ -414,6 +434,7 @@ class SemesterResultCalculationServiceTest extends TestCase
         $this->assertEquals(0, $statistics['average_gpa']);
         $this->assertEquals(0, $statistics['average_semester_average']);
     }
+
     #[Test]
     public function it_calculates_credits_earned_correctly_for_compensation()
     {

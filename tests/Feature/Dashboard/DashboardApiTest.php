@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Dashboard;
 
+use App\Enums\RegistrationStatus;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\DeliberationResult;
@@ -56,7 +57,7 @@ class DashboardApiTest extends TestCase
             'academic_program_id' => $licenceProgram->id,
             'academic_year_id' => $academicYear->id,
             'current_semester' => 2,
-            'status' => Enrollment::STATUS_PENDING,
+            'status' => RegistrationStatus::PENDING_VALIDATION->value,
             'enrollment_date' => now()->toDateString(),
             'created_at' => now()->subDay(),
         ]);
@@ -66,7 +67,7 @@ class DashboardApiTest extends TestCase
             'academic_program_id' => $licenceProgram->id,
             'academic_year_id' => $academicYear->id,
             'current_semester' => 4,
-            'status' => Enrollment::STATUS_ACTIVE,
+            'status' => RegistrationStatus::VALIDATED->value,
             'enrollment_date' => now()->toDateString(),
             'created_at' => now()->subHours(8),
         ]);
@@ -76,7 +77,7 @@ class DashboardApiTest extends TestCase
             'academic_program_id' => $masterProgram->id,
             'academic_year_id' => $academicYear->id,
             'current_semester' => 1,
-            'status' => Enrollment::STATUS_COMPLETED,
+            'status' => RegistrationStatus::COMPLETED->value,
             'enrollment_date' => now()->toDateString(),
             'created_at' => now()->subHours(4),
         ]);

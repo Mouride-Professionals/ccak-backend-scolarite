@@ -1,8 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Jobs\CalculateSemesterResultsJob;
+use App\Enums\RegistrationStatus;
 use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Course;
@@ -14,7 +17,6 @@ use App\Models\Faculty;
 use App\Models\Grade;
 use App\Models\Student;
 use App\Models\User;
-use App\Jobs\CalculateSemesterResultsJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -25,15 +27,21 @@ use Tests\TestCase;
 
 class SemesterResultCalculationApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private User $admin;
+
     private User $faculty;
+
     private User $student;
+
     private AcademicYear $academicYear;
+
     private AcademicProgram $academicProgram;
+
     private CourseUnit $courseUnit;
+
     private array $permissions = [
         'semester_results.view',
         'semester_results.calculate',
@@ -100,10 +108,10 @@ class SemesterResultCalculationApiTest extends TestCase
             ],
             [
                 'current_semester' => $semester,
-                'status' => 'ACTIVE',
+                'status' => RegistrationStatus::VALIDATED->value,
                 'enrollment_date' => now()->subMonths(1)->toDateString(),
                 'registration_fee_paid' => 0,
-                'is_scholarship' => false,
+                'is_scholarship_holder' => false,
             ]
         );
     }
@@ -166,8 +174,8 @@ class SemesterResultCalculationApiTest extends TestCase
                     'job_id',
                     'academic_year_id',
                     'semester',
-                    'status'
-                ]
+                    'status',
+                ],
             ])
             ->assertJson([
                 'success' => true,
@@ -175,7 +183,7 @@ class SemesterResultCalculationApiTest extends TestCase
                     'status' => 'queued',
                     'academic_year_id' => $this->academicYear->id,
                     'semester' => 1,
-                ]
+                ],
             ]);
 
         Queue::assertPushed(CalculateSemesterResultsJob::class);
@@ -227,7 +235,7 @@ class SemesterResultCalculationApiTest extends TestCase
                     'students_processed',
                     'results_created',
                     'errors',
-                ]
+                ],
             ])
             ->assertJson([
                 'success' => true,
@@ -235,7 +243,7 @@ class SemesterResultCalculationApiTest extends TestCase
                     'semester' => 1,
                     'students_processed' => 1,
                     'results_created' => 1,
-                ]
+                ],
             ]);
 
         // Verify semester result was created
@@ -260,7 +268,7 @@ class SemesterResultCalculationApiTest extends TestCase
             ->assertJson([
                 'success' => false,
                 'message' => 'Only administrators are authorized to calculate semester results.',
-                'errors' => ['authorization' => ['Admin role required']]
+                'errors' => ['authorization' => ['Admin role required']],
             ]);
     }
 
@@ -334,7 +342,7 @@ class SemesterResultCalculationApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin, 'api')
-            ->getJson('/api/v1/semester-results/statistics?' . http_build_query([
+            ->getJson('/api/v1/semester-results/statistics?'.http_build_query([
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]));
@@ -349,7 +357,7 @@ class SemesterResultCalculationApiTest extends TestCase
                     'success_rate',
                     'average_gpa',
                     'average_semester_average',
-                ]
+                ],
             ])
             ->assertJson([
                 'success' => true,
@@ -362,7 +370,7 @@ class SemesterResultCalculationApiTest extends TestCase
                         'RESIT_REQUIRED' => 0,
                     ],
                     'success_rate' => 100.0,
-                ]
+                ],
             ]);
     }
 
@@ -411,14 +419,14 @@ class SemesterResultCalculationApiTest extends TestCase
                     'decision',
                     'semester_average',
                     'semester_gpa',
-                ]
+                ],
             ])
             ->assertJson([
                 'success' => true,
                 'data' => [
                     'student_id' => $student->id,
                     'decision' => 'VALIDATED',
-                ]
+                ],
             ]);
     }
 
@@ -447,7 +455,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function recalculate_returns_error_for_non_existent_student()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->postJson("/api/v1/semester-results/recalculate/non-existent-id", [
+            ->postJson('/api/v1/semester-results/recalculate/non-existent-id', [
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]);
@@ -469,7 +477,7 @@ class SemesterResultCalculationApiTest extends TestCase
     public function statistics_returns_empty_data_for_no_results()
     {
         $response = $this->actingAs($this->admin, 'api')
-            ->getJson('/api/v1/semester-results/statistics?' . http_build_query([
+            ->getJson('/api/v1/semester-results/statistics?'.http_build_query([
                 'academic_year_id' => $this->academicYear->id,
                 'semester' => 1,
             ]));
@@ -482,7 +490,7 @@ class SemesterResultCalculationApiTest extends TestCase
                     'decisions' => [],
                     'average_gpa' => 0,
                     'average_semester_average' => 0,
-                ]
+                ],
             ]);
     }
 
@@ -500,7 +508,7 @@ class SemesterResultCalculationApiTest extends TestCase
 
         $response->assertStatus(202)
             ->assertJson([
-                'data' => ['status' => 'queued']
+                'data' => ['status' => 'queued'],
             ]);
 
         Queue::assertPushed(CalculateSemesterResultsJob::class);
