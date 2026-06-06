@@ -28,6 +28,7 @@ class UpdateCourseUnitRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'semester_number' => ['sometimes', 'integer', 'min:1'],
             'credits' => ['sometimes', 'integer', 'min:0'],
+            'coefficient' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'type' => ['sometimes', Rule::in(CourseUnit::TYPES)],
             'is_active' => ['sometimes', 'boolean'],
         ];

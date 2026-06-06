@@ -30,6 +30,7 @@ class UpdateCourseRequest extends FormRequest
             'hours_lecture' => ['sometimes', 'integer', 'min:0'],
             'hours_td' => ['sometimes', 'integer', 'min:0'],
             'hours_tp' => ['sometimes', 'integer', 'min:0'],
+            'hours_tpe' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'coefficient' => ['sometimes', 'numeric', 'min:0'],
             'prerequisites' => ['nullable', 'array'],
             'prerequisites.*' => ['uuid', 'exists:courses,id'],

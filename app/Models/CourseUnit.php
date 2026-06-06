@@ -22,12 +22,14 @@ class CourseUnit extends Model
         'name',
         'semester_number',
         'credits',
+        'coefficient',
         'type',
         'is_active',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'coefficient' => 'decimal:2',
+        'is_active'   => 'boolean',
     ];
 
     // Audit configuration

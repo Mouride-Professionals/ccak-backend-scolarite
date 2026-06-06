@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TeachingDeliveryStatus;
 use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,11 +25,23 @@ class TeachingAssignment extends Model
         'role',
         'hours_assigned',
         'hourly_rate',
+        'hours_cm',
+        'hours_td',
+        'planned_start_date',
+        'effective_start_date',
+        'end_date',
+        'status',
     ];
 
     protected $casts = [
-        'hours_assigned' => 'decimal:2',
-        'hourly_rate' => 'decimal:2',
+        'hours_assigned'       => 'decimal:2',
+        'hourly_rate'          => 'decimal:2',
+        'hours_cm'             => 'decimal:2',
+        'hours_td'             => 'decimal:2',
+        'planned_start_date'   => 'date',
+        'effective_start_date' => 'date',
+        'end_date'             => 'date',
+        'status'               => TeachingDeliveryStatus::class,
     ];
 
     public $auditEvents = ['created', 'updated', 'deleted'];

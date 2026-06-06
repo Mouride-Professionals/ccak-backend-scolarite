@@ -20,6 +20,7 @@ class UpdateStudentRequest extends FormRequest
         return [
             'student_number' => [
                 'sometimes',
+                'nullable',
                 'string',
                 'max:255',
                 Rule::unique('students', 'student_number')->ignore($studentId),

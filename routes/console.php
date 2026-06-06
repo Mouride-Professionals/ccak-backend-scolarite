@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -17,3 +18,5 @@ Artisan::command('sms:test {phone} {message?}', function (string $phone, ?string
         return \Symfony\Component\Console\Command\Command::FAILURE;
     }
 })->purpose('Send a test SMS using the configured SMS provider.');
+
+Schedule::command('sync:ccak-students')->dailyAt('00:00');

@@ -3,19 +3,25 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\IDType;
+use App\Enums\Provenance;
+use App\Enums\StudentStatus;
 use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
  * @property string $id
  * @property string $user_id
- * @property string $student_number
+ * @property string|null $student_number
  * @property string $full_name
  * @property string $gender
  * @property \Illuminate\Support\Carbon|null $date_of_birth
@@ -50,20 +56,33 @@ class Student extends Model implements AuditableContract
      * @var array<int, string>
      */
     protected $fillable = [
+        'id',
         'user_id',
         'keycloak_user_id',
         'student_number',
+        'first_name',
+        'last_name',
         'full_name',
         'gender',
         'date_of_birth',
         'place_of_birth',
         'nationality',
+        'type_of_id',
+        'id_details',
+        'ine',
+        'email',
+        'email_university',
         'phone',
+        'phone_2',
         'emergency_contact_name',
         'emergency_contact_phone',
         'address',
         'photo_url',
         'status',
+        'registration_number',
+        'provenance',
+        'synced_from',
+        'last_synced_at',
     ];
 
 
@@ -80,12 +99,34 @@ class Student extends Model implements AuditableContract
         'emergency_contact_phone' => 'string',
         'address' => 'string',
         'photo_url' => 'string',
-        'status' => 'string',
+        'status' => StudentStatus::class,
+        'type_of_id' => IDType::class,
+        'provenance' => Provenance::class,
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function bacInfo(): HasOne
+    {
+        return $this->hasOne(StudentBacInfo::class);
+    }
+
+    public function socialProfile(): MorphOne
+    {
+        return $this->morphOne(SocialProfile::class, 'profilable');
+    }
+
+    public function addresses(): MorphMany
+    {
+        return $this->morphMany(Address::class, 'addressable');
+    }
+
+    public function priorDiplomas(): MorphMany
+    {
+        return $this->morphMany(PriorDiploma::class, 'diplomable');
     }
 
     public function deliberationResults(): HasMany

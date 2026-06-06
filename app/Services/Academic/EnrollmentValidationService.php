@@ -4,7 +4,7 @@ namespace App\Services\Academic;
 
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\Enums\GradeStatus;
+use App\Enums\GradeStatus;
 use App\Models\Grade;
 
 class EnrollmentValidationService

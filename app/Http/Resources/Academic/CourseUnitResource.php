@@ -15,6 +15,7 @@ class CourseUnitResource extends JsonResource
             'name' => $this->name,
             'semester_number' => $this->semester_number,
             'credits' => $this->credits,
+            'coefficient' => $this->coefficient,
             'type' => $this->type,
             'is_active' => $this->is_active,
             'academic_program' => $this->whenLoaded('academicProgram', function () {

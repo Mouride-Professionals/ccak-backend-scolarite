@@ -8,7 +8,7 @@ use App\Models\CourseEnrollment;
 use App\Models\SemesterResult;
 use App\Models\Student;
 use App\Models\User;
-use App\Models\Enums\DecisionType;
+use App\Enums\DecisionType;
 use App\Repositories\SemesterResultRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;

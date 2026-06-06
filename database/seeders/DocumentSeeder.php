@@ -88,45 +88,6 @@ class DocumentSeeder extends Seeder
                 'updated_at' => $reviewedAt ?? $uploadedAt,
             ]);
 
-            $this->attachDocumentMedia($document, $document->type?->value ?? (string) $document->type);
-        }
-    }
-
-    private function attachDocumentMedia(Document $document, string $type): void
-    {
-        $extension = $type === 'PHOTO' ? 'png' : 'pdf';
-        $fileName = "{$type}_{$document->student_id}.{$extension}";
-        $tmpPath = tempnam(sys_get_temp_dir(), 'doc_seed_');
-        if ($tmpPath === false) {
-            return;
-        }
-
-        $tmpFile = $tmpPath . '.' . $extension;
-        rename($tmpPath, $tmpFile);
-
-        if ($extension === 'png') {
-            $png = base64_decode(
-                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
-            );
-            file_put_contents($tmpFile, $png ?: '');
-        } else {
-            $pdf = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF";
-            file_put_contents($tmpFile, $pdf);
-        }
-
-        try {
-            $media = $document->addMedia($tmpFile)
-                ->usingFileName($fileName)
-                ->usingName($type)
-                ->toMediaCollection($type);
-
-            $document->update([
-                'media_id' => $media->id,
-                'file_path' => $media->getPathRelativeToRoot(),
-                'file_name' => $media->file_name,
-            ]);
-        } finally {
-            @unlink($tmpFile);
         }
     }
 }

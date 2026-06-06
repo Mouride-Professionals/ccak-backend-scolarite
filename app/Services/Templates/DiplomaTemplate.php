@@ -385,8 +385,8 @@ class DiplomaTemplate implements DocumentTemplateInterface
     private function generateRegistrationNumber(Student $student, AcademicProgram $academicProgram): string
     {
         $programCode = $academicProgram->department->code;
-        $year = substr($student->student_number, 4, 4);
-        $sequence = substr($student->student_number, -4);
+        $year = substr($student->student_number ?? '00000000', 4, 4);
+        $sequence = substr($student->student_number ?? '000000000', -4);
         
         return "UCAK-{$programCode}-{$year}-{$sequence}";
     }
