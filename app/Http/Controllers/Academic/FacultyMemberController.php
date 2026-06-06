@@ -7,16 +7,16 @@ use App\Http\Requests\Academic\StoreFacultyMemberRequest;
 use App\Http\Requests\Academic\UpdateFacultyMemberRequest;
 use App\Http\Resources\Academic\FacultyMemberResource;
 use App\Http\Resources\Academic\TeachingAssignmentResource;
-use App\Models\FacultyMember;
 use App\Models\CourseEnrollment;
+use App\Models\FacultyMember;
 use App\Models\TeachingAssignment;
 use App\Models\User;
 use App\Services\Notification\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
-use Illuminate\Support\Str;
 
 class FacultyMemberController extends BaseApiController
 {
@@ -52,9 +52,9 @@ class FacultyMemberController extends BaseApiController
     {
         $data = $request->validated();
 
-        $member = DB::transaction(function () use ($data, $request) {
+        $member = DB::transaction(function () use ($data) {
             $userId = $data['user_id'] ?? null;
-            if (!$userId) {
+            if (! $userId) {
                 $user = User::create([
                     'email' => $data['email'],
                     'password' => Str::random(32),
@@ -66,7 +66,7 @@ class FacultyMemberController extends BaseApiController
                 $userId = $user->id;
             } else {
                 $user = User::findOrFail($userId);
-                if (!$user->hasRole('FACULTY')) {
+                if (! $user->hasRole('FACULTY')) {
                     $user->assignRole('FACULTY');
                 }
             }
@@ -102,7 +102,7 @@ class FacultyMemberController extends BaseApiController
     {
         $this->authorize('update', $faculty_member);
 
-        DB::transaction(fn() => $faculty_member->update($request->validated()));
+        DB::transaction(fn () => $faculty_member->update($request->validated()));
 
         return $this->success(
             new FacultyMemberResource(
@@ -114,7 +114,7 @@ class FacultyMemberController extends BaseApiController
 
     public function destroy(FacultyMember $faculty_member): JsonResponse
     {
-        DB::transaction(fn() => $faculty_member->delete());
+        DB::transaction(fn () => $faculty_member->delete());
 
         return $this->success(null, 'Faculty member deleted');
     }
@@ -163,7 +163,7 @@ class FacultyMemberController extends BaseApiController
             return $assignment->course?->courseUnit?->semester_number ?? 0;
         })->map(function ($items) use ($academicYearId) {
             $total = $items->sum('hours_assigned');
-            $byType = $items->groupBy('role')->map(fn($group) => $group->sum('hours_assigned'));
+            $byType = $items->groupBy('role')->map(fn ($group) => $group->sum('hours_assigned'));
             $courseIds = $items->pluck('course_id')->unique();
             $courseCount = $courseIds->count();
             $studentCount = $courseIds->isEmpty()
@@ -219,16 +219,16 @@ class FacultyMemberController extends BaseApiController
     private function generateStaffNumber(): string
     {
         $prefix = 'FM-';
-        $last = FacultyMember::where('staff_number', 'like', $prefix . '%')
+        $last = FacultyMember::where('staff_number', 'like', $prefix.'%')
             ->orderBy('staff_number', 'desc')
             ->lockForUpdate()
             ->first();
 
         $next = 1;
-        if ($last && preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $last->staff_number, $matches)) {
+        if ($last && preg_match('/^'.preg_quote($prefix, '/').'(\d+)$/', $last->staff_number, $matches)) {
             $next = ((int) $matches[1]) + 1;
         }
 
-        return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
     }
 }

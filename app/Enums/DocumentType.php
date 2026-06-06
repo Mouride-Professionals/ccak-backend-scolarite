@@ -19,7 +19,7 @@ enum DocumentType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ATTESTATION => 'Attestation',
             self::CNI => 'Carte Nationale d\'Identité',
             self::BIRTH_CERT => 'Extrait d\'Acte de Naissance',

@@ -10,8 +10,8 @@ use Tests\TestCase;
 
 class DepartmentApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'departments.view',

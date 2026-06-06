@@ -12,15 +12,20 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class FacultyDocument extends Model implements HasMedia
 {
-    use HasFactory, UsesUuidV7, InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, UsesUuidV7;
 
     public const TYPE_CV = 'CV';
+
     public const TYPE_DIPLOMA = 'DIPLOMA';
+
     public const TYPE_CNI = 'CNI';
+
     public const TYPE_OTHER = 'OTHER';
 
     public const STATUS_PENDING = 'PENDING';
+
     public const STATUS_APPROVED = 'APPROVED';
+
     public const STATUS_REJECTED = 'REJECTED';
 
     protected $fillable = [
@@ -41,6 +46,7 @@ class FacultyDocument extends Model implements HasMedia
     ];
 
     public $auditEvents = ['created', 'updated', 'deleted'];
+
     public $auditExclude = ['created_at', 'updated_at'];
 
     public function facultyMember(): BelongsTo
@@ -73,7 +79,7 @@ class FacultyDocument extends Model implements HasMedia
             ->acceptsMimeTypes($pdfOnly);
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         if ($media?->collection_name !== self::TYPE_CNI) {
             return;

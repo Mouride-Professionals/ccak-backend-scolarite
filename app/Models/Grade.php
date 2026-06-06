@@ -1,22 +1,29 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Concerns\UsesUuidV7;
 use App\Enums\GradeStatus;
 use App\Enums\GradeType;
+use App\Models\Concerns\UsesUuidV7;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property-read Course|null $course
+ * @property-read Student|null $student
+ * @property-read CourseEnrollment|null $courseEnrollment
+ * @property-read User|null $enteredBy
+ */
 class Grade extends Model implements AuditableContract
 {
+    use Auditable;
     use HasFactory;
     use UsesUuidV7;
-    use Auditable;
 
     protected $table = 'grades';
 
@@ -37,6 +44,7 @@ class Grade extends Model implements AuditableContract
     ];
 
     public array $auditEvents = ['created', 'updated', 'deleted'];
+
     public array $auditExclude = ['created_at', 'updated_at'];
 
     public function courseEnrollment()

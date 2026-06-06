@@ -37,7 +37,7 @@ class ActivityTypeController extends BaseApiController
 
     public function store(StoreActivityTypeRequest $request): JsonResponse
     {
-        $type = DB::transaction(fn() => ActivityType::create($request->validated()));
+        $type = DB::transaction(fn () => ActivityType::create($request->validated()));
 
         return $this->success(new ActivityTypeResource($type), 'Activity type created', 201);
     }

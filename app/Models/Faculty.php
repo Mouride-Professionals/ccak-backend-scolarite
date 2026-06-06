@@ -27,6 +27,7 @@ class Faculty extends Model
 
     // Audit configuration
     public $auditEvents = ['created', 'updated', 'deleted'];
+
     public $auditExclude = ['created_at', 'updated_at'];
 
     public function departments(): HasMany

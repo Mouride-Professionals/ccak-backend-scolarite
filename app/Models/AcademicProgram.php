@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuidV7;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class AcademicProgram extends Model
 {
@@ -29,6 +29,7 @@ class AcademicProgram extends Model
         'is_active' => 'boolean',
     ];
 
+    /** @return BelongsTo<Department, AcademicProgram> */
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);

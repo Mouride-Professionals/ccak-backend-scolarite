@@ -9,6 +9,7 @@ enum RegistrationStatus: string
     case VALIDATED = 'VALIDATED';
     case SUSPENDED = 'SUSPENDED';
     case CANCELLED = 'CANCELLED';
+    case COMPLETED = 'COMPLETED';
 
     public static function values(): array
     {

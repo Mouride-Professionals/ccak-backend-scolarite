@@ -12,6 +12,7 @@ class SyncCcakStudents extends Command
                             {--entity= : Sync only one entity (degree_cycles|niveaux|ufr|departements|programmes|academic_years|students)}
                             {--dry : Fetch and map records without writing to the database}
                             {--limit= : Process only the first N records}';
+
     protected $description = 'Sync all referential data and students from the CCAK external API';
 
     public function __construct(private readonly SyncService $syncService)
@@ -20,13 +21,13 @@ class SyncCcakStudents extends Command
     }
 
     private array $entityMap = [
-        'degree_cycles'  => 'syncDegreeCycles',
-        'niveaux'        => 'syncNiveaux',
-        'ufr'            => 'syncUfr',
-        'departements'   => 'syncDepartements',
-        'programmes'     => 'syncProgrammes',
+        'degree_cycles' => 'syncDegreeCycles',
+        'niveaux' => 'syncNiveaux',
+        'ufr' => 'syncUfr',
+        'departements' => 'syncDepartements',
+        'programmes' => 'syncProgrammes',
         'academic_years' => 'syncAcademicYears',
-        'students'       => 'syncStudents',
+        'students' => 'syncStudents',
     ];
 
     private function runDry(?string $entity): int
@@ -35,6 +36,7 @@ class SyncCcakStudents extends Command
 
         if ($target !== 'students') {
             $this->warn("--dry is only supported for --entity=students. Received: '{$target}'");
+
             return self::FAILURE;
         }
 
@@ -55,19 +57,22 @@ class SyncCcakStudents extends Command
                     $i + 1,
                     $mapped['id'],
                     $mapped['first_name'] ?? '?',
-                    $mapped['last_name']  ?? '?',
-                    $mapped['status']     ?? '?',
+                    $mapped['last_name'] ?? '?',
+                    $mapped['status'] ?? '?',
                 ));
             }
 
             $this->newLine();
             $this->info('Dry run complete — no data was written.');
+
             return self::SUCCESS;
         } catch (\App\Exceptions\CcakApiException $e) {
             $this->error("CCAK API error: {$e->getMessage()}");
+
             return self::FAILURE;
         } catch (\Throwable $e) {
             $this->error("Unexpected error: {$e->getMessage()}");
+
             return self::FAILURE;
         }
     }
@@ -77,12 +82,13 @@ class SyncCcakStudents extends Command
         $entity = $this->option('entity');
 
         if ($entity !== null && ! array_key_exists($entity, $this->entityMap)) {
-            $this->error("Unknown entity '{$entity}'. Valid values: " . implode(', ', array_keys($this->entityMap)));
+            $this->error("Unknown entity '{$entity}'. Valid values: ".implode(', ', array_keys($this->entityMap)));
+
             return self::FAILURE;
         }
 
         $dry = $this->option('dry');
-        $label = ($entity ? "'{$entity}'" : 'full') . ($dry ? ' [DRY RUN]' : '');
+        $label = ($entity ? "'{$entity}'" : 'full').($dry ? ' [DRY RUN]' : '');
         $this->info("Starting CCAK {$label} sync...");
 
         if ($dry) {
@@ -103,7 +109,7 @@ class SyncCcakStudents extends Command
                 $icon = match ($log->status->value) {
                     'SUCCESS' => '[OK]',
                     'PARTIAL' => '[PARTIAL]',
-                    default   => '[FAILED]',
+                    default => '[FAILED]',
                 };
 
                 $this->line(sprintf(
@@ -124,16 +130,20 @@ class SyncCcakStudents extends Command
 
             if ($anyFailed) {
                 $this->error('Sync completed with failures.');
+
                 return self::FAILURE;
             }
 
             $this->info('Sync completed successfully.');
+
             return self::SUCCESS;
         } catch (CcakApiException $e) {
             $this->error("CCAK API error: {$e->getMessage()}");
+
             return self::FAILURE;
         } catch (\Throwable $e) {
             $this->error("Unexpected error: {$e->getMessage()}");
+
             return self::FAILURE;
         }
     }

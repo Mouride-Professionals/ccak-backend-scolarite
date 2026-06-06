@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Grade;
 use App\Models\Course;
+use App\Models\Grade;
 
 /**
  * Service for handling grade calculations
@@ -12,7 +13,6 @@ use App\Models\Course;
  */
 class GradeCalculationService
 {
-
     /**
      * Minimum passing grade (out of 20)
      */
@@ -31,7 +31,7 @@ class GradeCalculationService
     /**
      * Calculate the average for a single course based on all grades (CC, EXAM, TP, ORAL)
      *
-     * @param string $courseEnrollmentId The course enrollment ID
+     * @param  string  $courseEnrollmentId  The course enrollment ID
      * @return array<string, mixed> Contains 'average', 'total_weight', 'grades_breakdown', 'is_complete'
      */
     public function calculateCourseAverage(string $courseEnrollmentId): array
@@ -87,8 +87,8 @@ class GradeCalculationService
     /**
      * Calculate semester average for a student
      *
-     * @param string $studentId The student ID
-     * @param array<int, string> $courseIds Array of course IDs to include in calculation
+     * @param  string  $studentId  The student ID
+     * @param  array<int, string>  $courseIds  Array of course IDs to include in calculation
      * @return array<string, mixed> Contains 'semester_average', 'courses', 'total_credits', 'weighted_sum'
      */
     public function calculateSemesterAverage(string $studentId, array $courseIds): array
@@ -104,7 +104,7 @@ class GradeCalculationService
                 ->where('course_id', $course->id)
                 ->first();
 
-            if (!$enrollment) {
+            if (! $enrollment) {
                 continue;
             }
 
@@ -146,8 +146,8 @@ class GradeCalculationService
      * - A student can pass a course with grade >= 8 and < 10 if semester average >= 10
      * - Courses with grade < 8 cannot be compensated
      *
-     * @param string $studentId The student ID
-     * @param array<int, string> $courseIds Array of course IDs for the semester
+     * @param  string  $studentId  The student ID
+     * @param  array<int, string>  $courseIds  Array of course IDs for the semester
      * @return array<string, mixed> Contains compensation details and which courses are compensated
      */
     public function applyCompensationRules(string $studentId, array $courseIds): array
@@ -209,9 +209,9 @@ class GradeCalculationService
     /**
      * Determine if a student passes or fails a course or semester
      *
-     * @param string $studentId The student ID
-     * @param string|null $courseEnrollmentId Optional course enrollment ID for single course check
-     * @param array<int, string>|null $courseIds Optional array of course IDs for semester check
+     * @param  string  $studentId  The student ID
+     * @param  string|null  $courseEnrollmentId  Optional course enrollment ID for single course check
+     * @param  array<int, string>|null  $courseIds  Optional array of course IDs for semester check
      * @return array<string, mixed> Contains pass/fail status and details
      */
     public function determinePassFail(
@@ -272,26 +272,41 @@ class GradeCalculationService
     /**
      * Convert a grade on 20-point scale to 4-point GPA scale
      *
-     * @param float $grade Grade on 20-point scale
+     * @param  float  $grade  Grade on 20-point scale
      * @return float GPA on 4-point scale
      */
     public function convertToGpaScale(float $grade): float
     {
-        if ($grade >= 18) return 4.0;  // A+ (18-20)
-        if ($grade >= 16) return 3.7;  // A  (16-17.99)
-        if ($grade >= 14) return 3.3;  // B+ (14-15.99)
-        if ($grade >= 12) return 3.0;  // B  (12-13.99)
-        if ($grade >= 10) return 2.7;  // C+ (10-11.99)
-        if ($grade >= 8) return 2.0;   // C  (8-9.99)
-        if ($grade >= 6) return 1.0;   // D  (6-7.99)
+        if ($grade >= 18) {
+            return 4.0;
+        }  // A+ (18-20)
+        if ($grade >= 16) {
+            return 3.7;
+        }  // A  (16-17.99)
+        if ($grade >= 14) {
+            return 3.3;
+        }  // B+ (14-15.99)
+        if ($grade >= 12) {
+            return 3.0;
+        }  // B  (12-13.99)
+        if ($grade >= 10) {
+            return 2.7;
+        }  // C+ (10-11.99)
+        if ($grade >= 8) {
+            return 2.0;
+        }   // C  (8-9.99)
+        if ($grade >= 6) {
+            return 1.0;
+        }   // D  (6-7.99)
+
         return 0.0;                    // F  (0-5.99)
     }
 
     /**
      * Calculate GPA for a student for a specific semester
      *
-     * @param string $studentId The student ID
-     * @param array<int, string> $courseIds Array of course IDs for the semester
+     * @param  string  $studentId  The student ID
+     * @param  array<int, string>  $courseIds  Array of course IDs for the semester
      * @return array<string, mixed> Contains GPA and detailed calculation
      */
     public function calculateGPA(string $studentId, array $courseIds): array
@@ -348,8 +363,8 @@ class GradeCalculationService
     /**
      * Calculate cumulative GPA across multiple semesters
      *
-     * @param string $studentId The student ID
-     * @param array<int, array<int, string>> $semesterCourses Array of arrays, each containing course IDs for a semester
+     * @param  string  $studentId  The student ID
+     * @param  array<int, array<int, string>>  $semesterCourses  Array of arrays, each containing course IDs for a semester
      * @return array<string, mixed> Contains cumulative GPA and semester breakdown
      */
     public function calculateCumulativeGPA(string $studentId, array $semesterCourses): array
@@ -388,26 +403,41 @@ class GradeCalculationService
     /**
      * Get letter grade for a numerical grade
      *
-     * @param float $grade Grade on 20-point scale
+     * @param  float  $grade  Grade on 20-point scale
      * @return string Letter grade
      */
     public function getLetterGrade(float $grade): string
     {
-        if ($grade >= 18) return 'A+';
-        if ($grade >= 16) return 'A';
-        if ($grade >= 14) return 'B+';
-        if ($grade >= 12) return 'B';
-        if ($grade >= 10) return 'C+';
-        if ($grade >= 8) return 'C';
-        if ($grade >= 6) return 'D';
+        if ($grade >= 18) {
+            return 'A+';
+        }
+        if ($grade >= 16) {
+            return 'A';
+        }
+        if ($grade >= 14) {
+            return 'B+';
+        }
+        if ($grade >= 12) {
+            return 'B';
+        }
+        if ($grade >= 10) {
+            return 'C+';
+        }
+        if ($grade >= 8) {
+            return 'C';
+        }
+        if ($grade >= 6) {
+            return 'D';
+        }
+
         return 'F';
     }
 
     /**
      * Get comprehensive grade report for a student
      *
-     * @param string $studentId The student ID
-     * @param array<int, string> $courseIds Array of course IDs for the semester
+     * @param  string  $studentId  The student ID
+     * @param  array<int, string>  $courseIds  Array of course IDs for the semester
      * @return array<string, mixed> Complete grade report with all calculations
      */
     public function getStudentGradeReport(string $studentId, array $courseIds): array

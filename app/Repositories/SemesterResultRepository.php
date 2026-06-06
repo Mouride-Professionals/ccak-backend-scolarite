@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repositories;
@@ -37,6 +38,7 @@ class SemesterResultRepository
     {
         $item = $this->find($id);
         $item->update($data);
+
         return $item;
     }
 

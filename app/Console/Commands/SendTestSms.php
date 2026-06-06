@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class SendTestSms extends Command
 {
     protected $signature = 'sms:test {phone} {message?}';
+
     protected $description = 'Send a test SMS using the configured SMS provider.';
 
     public function handle(SmsService $smsService): int
@@ -18,11 +19,13 @@ class SendTestSms extends Command
         try {
             $smsService->send($phone, $message);
         } catch (\Throwable $e) {
-            $this->error('SMS failed: ' . $e->getMessage());
+            $this->error('SMS failed: '.$e->getMessage());
+
             return self::FAILURE;
         }
 
         $this->info('SMS sent.');
+
         return self::SUCCESS;
     }
 }

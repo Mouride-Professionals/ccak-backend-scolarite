@@ -2,11 +2,10 @@
 
 namespace App\Services\Authorization;
 
-use App\Models\Student;
 use App\Models\Course;
-use App\Models\Enrollment;
 use App\Models\CourseEnrollment;
-use App\Models\AcademicYear;
+use App\Models\Enrollment;
+use App\Models\Student;
 
 class EnrollmentService
 {
@@ -27,7 +26,7 @@ class EnrollmentService
         // 1. Check academic standing
         $standingCheck = $this->checkAcademicStanding($studentId);
         $validations['details']['academic_standing'] = $standingCheck;
-        if (!$standingCheck['eligible']) {
+        if (! $standingCheck['eligible']) {
             $validations['valid'] = false;
             $validations['errors'][] = $standingCheck['reason'];
         }
@@ -35,7 +34,7 @@ class EnrollmentService
         // 2. Check fee payment
         $feeCheck = $this->checkFeePayment($studentId, $academicYearId);
         $validations['details']['fee_payment'] = $feeCheck;
-        if (!$feeCheck['paid']) {
+        if (! $feeCheck['paid']) {
             $validations['valid'] = false;
             $validations['errors'][] = $feeCheck['reason'];
         }
@@ -43,15 +42,15 @@ class EnrollmentService
         // 3. Check prerequisites
         $prerequisiteCheck = $this->checkPrerequisites($studentId, $courseId);
         $validations['details']['prerequisites'] = $prerequisiteCheck;
-        if (!$prerequisiteCheck['satisfied']) {
+        if (! $prerequisiteCheck['satisfied']) {
             $validations['valid'] = false;
-            $validations['errors'][] = 'Prérequis non satisfaits: ' . implode(', ', $prerequisiteCheck['missing_courses']);
+            $validations['errors'][] = 'Prérequis non satisfaits: '.implode(', ', $prerequisiteCheck['missing_courses']);
         }
 
         // 4. Check capacity
         $capacityCheck = $this->checkCapacity($courseId, $academicYearId, $semester);
         $validations['details']['capacity'] = $capacityCheck;
-        if (!$capacityCheck['available']) {
+        if (! $capacityCheck['available']) {
             $validations['valid'] = false;
             $validations['errors'][] = $capacityCheck['reason'];
         }
@@ -61,7 +60,7 @@ class EnrollmentService
         $validations['details']['time_conflicts'] = $conflictCheck;
         if ($conflictCheck['has_conflicts']) {
             $validations['valid'] = false;
-            $validations['errors'][] = 'Conflit d\'horaire avec: ' . implode(', ', $conflictCheck['conflicting_courses']);
+            $validations['errors'][] = 'Conflit d\'horaire avec: '.implode(', ', $conflictCheck['conflicting_courses']);
         }
 
         return $validations;
@@ -76,7 +75,7 @@ class EnrollmentService
     {
         $student = Student::find($studentId);
 
-        if (!$student) {
+        if (! $student) {
             return [
                 'eligible' => false,
                 'reason' => 'Étudiant non trouvé.',
@@ -95,7 +94,7 @@ class EnrollmentService
             ->whereIn('status', ['ACTIVE', 'REGISTERED'])
             ->exists();
 
-        if (!$hasActiveEnrollment) {
+        if (! $hasActiveEnrollment) {
             return [
                 'eligible' => false,
                 'reason' => 'Aucune inscription active trouvée.',
@@ -112,7 +111,7 @@ class EnrollmentService
      * Check if registration fees are paid
      *
      * @return array<string, mixed>
-    */
+     */
     private function checkFeePayment(string $studentId, string $academicYearId): array
     {
         $enrollment = Enrollment::where('student_id', $studentId)
@@ -120,7 +119,7 @@ class EnrollmentService
             ->whereIn('status', ['ACTIVE', 'REGISTERED'])
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return [
                 'paid' => false,
                 'reason' => 'Aucune inscription pour cette année académique.',
@@ -129,7 +128,7 @@ class EnrollmentService
         }
 
         // If scholarship, no fees required
-        if ($enrollment->is_scholarship) {
+        if ($enrollment->is_scholarship_holder) {
             return [
                 'paid' => true,
                 'reason' => 'Étudiant boursier - pas de frais requis.',
@@ -158,7 +157,7 @@ class EnrollmentService
     {
         $course = Course::find($courseId);
 
-        if (!$course) {
+        if (! $course) {
             return [
                 'satisfied' => false,
                 'reason' => 'Cours non trouvé.',
@@ -178,16 +177,16 @@ class EnrollmentService
         }
 
         // Get completed courses for this student
-        $completedCourses = CourseEnrollment::whereHas('enrollment', function($query) use ($studentId) {
-                $query->where('student_id', $studentId);
-            })
+        $completedCourses = CourseEnrollment::whereHas('enrollment', function ($query) use ($studentId) {
+            $query->where('student_id', $studentId);
+        })
             ->where('status', 'COMPLETED')
             ->pluck('course_id')
             ->toArray();
 
         $missingPrerequisites = array_diff($prerequisites, $completedCourses);
 
-        if (!empty($missingPrerequisites)) {
+        if (! empty($missingPrerequisites)) {
             $missingCourseNames = Course::whereIn('id', $missingPrerequisites)
                 ->pluck('name')
                 ->toArray();
@@ -215,7 +214,7 @@ class EnrollmentService
     {
         $course = Course::find($courseId);
 
-        if (!$course) {
+        if (! $course) {
             return [
                 'available' => false,
                 'reason' => 'Cours non trouvé.',
@@ -251,9 +250,9 @@ class EnrollmentService
     private function checkTimeConflicts(string $studentId, string $courseId, string $academicYearId, int $semester): array
     {
         // Get student's current course enrollments for this semester
-        $enrolledCourses = CourseEnrollment::whereHas('enrollment', function($query) use ($studentId) {
-                $query->where('student_id', $studentId);
-            })
+        $enrolledCourses = CourseEnrollment::whereHas('enrollment', function ($query) use ($studentId) {
+            $query->where('student_id', $studentId);
+        })
             ->where('academic_year_id', $academicYearId)
             ->where('semester', $semester)
             ->where('status', 'ENROLLED')
@@ -291,7 +290,7 @@ class EnrollmentService
     {
         $validation = $this->validateEnrollment($studentId, $courseId, $academicYearId, $semester);
 
-        if (!$validation['valid']) {
+        if (! $validation['valid']) {
             return [
                 'success' => false,
                 'message' => 'Validation échouée.',

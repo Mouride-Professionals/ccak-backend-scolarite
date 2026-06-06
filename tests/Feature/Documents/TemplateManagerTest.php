@@ -12,13 +12,14 @@ use Tests\TestCase;
 class TemplateManagerTest extends TestCase
 {
     private TemplateManager $manager;
+
     private DocumentTemplateInterface $mockTemplate;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->manager = new TemplateManager();
+        $this->manager = new TemplateManager;
         $this->mockTemplate = Mockery::mock(DocumentTemplateInterface::class);
         $this->mockTemplate->shouldReceive('getName')->andReturn('Test Template');
     }

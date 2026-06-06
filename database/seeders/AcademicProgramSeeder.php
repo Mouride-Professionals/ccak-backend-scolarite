@@ -82,7 +82,7 @@ class AcademicProgramSeeder extends Seeder
 
         foreach ($programs as $deptCode => $rows) {
             $department = $departments->firstWhere('code', $deptCode);
-            if (!$department) {
+            if (! $department) {
                 continue;
             }
 

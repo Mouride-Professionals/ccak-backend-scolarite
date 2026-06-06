@@ -76,13 +76,13 @@ class EmailTemplateController extends Controller
         ];
 
         $metadata = array_merge([
-            'reset_url' => (string) config('app.url', 'http://localhost') . '/reset-password/demo',
+            'reset_url' => (string) config('app.url', 'http://localhost').'/reset-password/demo',
             'subject' => 'Mathematiques',
             'score' => '16',
             'course_name' => 'Programmation Web',
             'enrollment_id' => 'demo-enrollment',
             'document_name' => 'Attestation',
-            'download_url' => (string) config('app.url', 'http://localhost') . '/documents/demo/download',
+            'download_url' => (string) config('app.url', 'http://localhost').'/documents/demo/download',
         ], (array) data_get($variables, 'metadata', []));
 
         $html = View::make($template['path'], [

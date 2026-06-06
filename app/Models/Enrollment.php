@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -71,6 +72,7 @@ class Enrollment extends Model
         return $this->belongsTo(AcademicProgram::class, 'academic_program_id');
     }
 
+    /** @return BelongsTo<AcademicYear, Enrollment> */
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class, 'academic_year_id');
@@ -102,10 +104,10 @@ class Enrollment extends Model
             'academic_program_id' => 'required|uuid|exists:academic_programs,id',
             'academic_year_id' => 'required|uuid|exists:academic_years,id',
             'current_semester' => 'required|integer|min:1|max:12',
-            'status' => 'required|in:' . implode(',', self::getStatuses()),
+            'status' => 'required|in:'.implode(',', self::getStatuses()),
             'enrollment_date' => 'required|date',
             'registration_fee_paid' => 'required|numeric|min:0',
-            'is_scholarship' => 'boolean',
+            'is_scholarship_holder' => 'boolean',
         ];
     }
 

@@ -62,7 +62,7 @@ class GradeStatisticsController extends BaseApiController
 
                 return round(((float) $grade->score / (float) $grade->max_score) * 20, 2);
             })
-            ->filter(fn($value) => $value !== null)
+            ->filter(fn ($value) => $value !== null)
             ->values();
 
         $count = $normalizedGrades->count();
@@ -96,7 +96,7 @@ class GradeStatisticsController extends BaseApiController
         }
 
         $sorted = $normalizedGrades->sort()->values();
-        $passCount = $normalizedGrades->filter(fn(float $grade) => $grade >= 10.0)->count();
+        $passCount = $normalizedGrades->filter(fn (float $grade) => $grade >= 10.0)->count();
 
         $statistics = [
             'count' => $count,
@@ -106,11 +106,11 @@ class GradeStatisticsController extends BaseApiController
             'max' => round((float) $normalizedGrades->max(), 2),
             'pass_rate' => round(($passCount / $count) * 100, 2),
             'distribution' => [
-                'excellent' => $normalizedGrades->filter(fn(float $grade) => $grade >= 16.0)->count(),
-                'good' => $normalizedGrades->filter(fn(float $grade) => $grade >= 14.0 && $grade < 16.0)->count(),
-                'average' => $normalizedGrades->filter(fn(float $grade) => $grade >= 12.0 && $grade < 14.0)->count(),
-                'pass' => $normalizedGrades->filter(fn(float $grade) => $grade >= 10.0 && $grade < 12.0)->count(),
-                'fail' => $normalizedGrades->filter(fn(float $grade) => $grade < 10.0)->count(),
+                'excellent' => $normalizedGrades->filter(fn (float $grade) => $grade >= 16.0)->count(),
+                'good' => $normalizedGrades->filter(fn (float $grade) => $grade >= 14.0 && $grade < 16.0)->count(),
+                'average' => $normalizedGrades->filter(fn (float $grade) => $grade >= 12.0 && $grade < 14.0)->count(),
+                'pass' => $normalizedGrades->filter(fn (float $grade) => $grade >= 10.0 && $grade < 12.0)->count(),
+                'fail' => $normalizedGrades->filter(fn (float $grade) => $grade < 10.0)->count(),
             ],
             'filters' => $request->only([
                 'course_id',
@@ -128,7 +128,7 @@ class GradeStatisticsController extends BaseApiController
     }
 
     /**
-     * @param array<int, float|int|string> $values
+     * @param  array<int, float|int|string>  $values
      */
     private function calculateMedian(array $values): float
     {

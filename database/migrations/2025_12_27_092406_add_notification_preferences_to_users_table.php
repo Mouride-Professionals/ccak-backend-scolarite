@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             // 1. Préférences par type de notification (JSON)
             $table->json('notification_preferences')->nullable()->after('email');
-            
+
             // 2. Fréquence des emails (instant, daily, weekly)
             $table->string('email_frequency')->default('instant')->after('notification_preferences');
-            
+
             // 3. Option de résumé (digest) activée ou non
             $table->boolean('enable_digest')->default(false)->after('email_frequency');
         });

@@ -20,7 +20,7 @@ class AttendanceRecordSeeder extends Seeder
 
         foreach ($logs as $log) {
             $schedule = $log->schedule;
-            if (!$schedule) {
+            if (! $schedule) {
                 continue;
             }
 
@@ -64,17 +64,19 @@ class AttendanceRecordSeeder extends Seeder
 
         $grouped = $records->groupBy(function ($record) {
             $courseId = $record->courseLog?->schedule?->course_id;
-            return $record->student_id . '|' . $courseId;
+
+            return $record->student_id.'|'.$courseId;
         });
 
         foreach ($grouped as $group) {
             $courseId = $group->first()->courseLog?->schedule?->course_id;
-            if (!$courseId) {
+            if (! $courseId) {
                 continue;
             }
 
             $absences = $group->filter(function ($record) {
                 $activityCode = $record->courseLog?->schedule?->activityType?->code;
+
                 return $record->status === AttendanceRecord::STATUS_ABSENT
                     && in_array($activityCode, ['TD', 'TP'], true);
             })->count();

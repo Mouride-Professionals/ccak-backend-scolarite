@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\Academic;
 
-use App\Http\Resources\Academic\DeliberationSessionResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class DeliberationResultResource extends JsonResource

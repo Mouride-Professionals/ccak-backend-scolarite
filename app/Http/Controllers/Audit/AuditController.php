@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Audit;
 
 use App\Http\Controllers\BaseApiController;
-use OwenIt\Auditing\Models\Audit;
 use Illuminate\Http\Request;
+use OwenIt\Auditing\Models\Audit;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 

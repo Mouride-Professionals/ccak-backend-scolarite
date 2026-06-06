@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Requests\GeneratedDocument;
@@ -18,13 +19,13 @@ class StoreGeneratedDocumentRequest extends FormRequest
         return [
             'student_id' => 'required|string',
             'document_number' => 'required|string|unique:generated_documents,document_number',
-            'type' => 'required|string|in:' . implode(',', GeneratedDocument::getTypes()),
+            'type' => 'required|string|in:'.implode(',', GeneratedDocument::getTypes()),
             'file_path' => 'required|string',
             'generated_by' => 'required|string',
             'metadata' => 'nullable|array',
             'generated_at' => 'nullable|date',
             'issued_at' => 'nullable|date',
-            'status' => 'nullable|string|in:' . implode(',', GeneratedDocument::getStatuses()),
+            'status' => 'nullable|string|in:'.implode(',', GeneratedDocument::getStatuses()),
         ];
     }
 

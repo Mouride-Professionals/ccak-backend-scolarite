@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -8,7 +9,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CourseEnrollment extends Model
 {
@@ -17,7 +17,7 @@ class CourseEnrollment extends Model
 
     protected $table = 'course_enrollments';
 
-    protected $fillable = ['student_id','enrollment_id', 'course_id', 'academic_year_id', 'semester', 'status', 'enrollment_date', 'drop_date'];
+    protected $fillable = ['student_id', 'enrollment_id', 'course_id', 'academic_year_id', 'semester', 'status', 'enrollment_date', 'drop_date'];
 
     protected $casts = [
         'student_id' => 'string',
@@ -32,7 +32,9 @@ class CourseEnrollment extends Model
 
     // Status enum constants
     const STATUS_ENROLLED = 'ENROLLED';
+
     const STATUS_DROPPED = 'DROPPED';
+
     const STATUS_COMPLETED = 'COMPLETED';
 
     // Get all valid statuses
@@ -74,7 +76,7 @@ class CourseEnrollment extends Model
             'course_id' => 'required|uuid|exists:courses,id',
             'academic_year_id' => 'required|uuid|exists:academic_years,id',
             'semester' => 'required|integer|min:1|max:12',
-            'status' => 'required|in:' . implode(',', self::getStatuses()),
+            'status' => 'required|in:'.implode(',', self::getStatuses()),
             'enrollment_date' => 'required|date',
             'drop_date' => 'nullable|date|after:enrollment_date',
         ];
@@ -105,7 +107,7 @@ class CourseEnrollment extends Model
     {
         $course = Course::find($courseId);
 
-        if (!$course || empty($course->prerequisites)) {
+        if (! $course || empty($course->prerequisites)) {
             return ['satisfied' => true, 'missing' => []];
         }
 
@@ -118,9 +120,9 @@ class CourseEnrollment extends Model
         }
 
         // Get all completed courses for this student
-        $completedCourses = static::whereHas('enrollment', function($query) use ($studentId) {
-                $query->where('student_id', $studentId);
-            })
+        $completedCourses = static::whereHas('enrollment', function ($query) use ($studentId) {
+            $query->where('student_id', $studentId);
+        })
             ->where('status', self::STATUS_COMPLETED)
             ->pluck('course_id')
             ->toArray();

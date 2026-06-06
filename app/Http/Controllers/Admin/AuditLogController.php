@@ -42,7 +42,7 @@ class AuditLogController extends BaseApiController
     {
         $auditableType = str_contains($model, '\\')
             ? $model
-            : 'App\\Models\\' . ltrim($model, '\\');
+            : 'App\\Models\\'.ltrim($model, '\\');
 
         $audits = QueryBuilder::for(Audit::query()->where('auditable_type', $auditableType)->where('auditable_id', $id))
             ->allowedFilters([

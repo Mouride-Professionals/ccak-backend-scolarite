@@ -16,7 +16,7 @@ class StudentNumberServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new StudentNumberService();
+        $this->service = new StudentNumberService;
     }
 
     public function test_generate_creates_unique_student_number(): void
@@ -73,7 +73,7 @@ class StudentNumberServiceTest extends TestCase
         $year = date('Y');
 
         // Create student from previous year
-        Student::factory()->create(['student_number' => "UCAK" . ($year - 1) . "001"]);
+        Student::factory()->create(['student_number' => 'UCAK'.($year - 1).'001']);
 
         $number = Student::generateStudentNumber();
         $this->assertEquals("UCAK{$year}001", $number);

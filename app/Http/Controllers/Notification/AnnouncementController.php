@@ -7,8 +7,8 @@ use App\Http\Requests\Notification\StoreAnnouncementRequest;
 use App\Http\Requests\Notification\UpdateAnnouncementRequest;
 use App\Http\Resources\AnnouncementResource;
 use App\Models\Announcement;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -92,7 +92,7 @@ class AnnouncementController extends BaseApiController
     {
         $announcement = Announcement::findOrFail($id);
 
-        DB::transaction(fn() => $announcement->update($request->validated()));
+        DB::transaction(fn () => $announcement->update($request->validated()));
 
         return $this->success(
             new AnnouncementResource($announcement->fresh('creator')),
@@ -106,7 +106,7 @@ class AnnouncementController extends BaseApiController
     public function destroy(string $id): JsonResponse
     {
         $announcement = Announcement::findOrFail($id);
-        DB::transaction(fn() => $announcement->delete());
+        DB::transaction(fn () => $announcement->delete());
 
         return $this->success(null, 'Annonce supprimée');
     }
@@ -117,7 +117,7 @@ class AnnouncementController extends BaseApiController
     public function dismiss(string $id, Request $request): JsonResponse
     {
         $announcement = Announcement::findOrFail($id);
-        DB::transaction(fn() => $announcement->dismissFor($request->user()->id));
+        DB::transaction(fn () => $announcement->dismissFor($request->user()->id));
 
         return $this->success(null, 'Annonce masquée');
     }
@@ -128,7 +128,7 @@ class AnnouncementController extends BaseApiController
     public function publish(string $id): JsonResponse
     {
         $announcement = Announcement::findOrFail($id);
-        DB::transaction(fn() => $announcement->publish());
+        DB::transaction(fn () => $announcement->publish());
 
         return $this->success(
             new AnnouncementResource($announcement->fresh()),

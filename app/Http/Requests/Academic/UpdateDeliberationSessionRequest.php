@@ -20,7 +20,7 @@ class UpdateDeliberationSessionRequest extends FormRequest
             'semester' => ['sometimes', 'integer', 'min:1', 'max:12'],
             'session_name' => ['sometimes', 'string', 'max:255'],
             'session_date' => ['sometimes', 'date'],
-            'status' => ['sometimes', 'in:' . implode(',', DeliberationSession::getStatuses())],
+            'status' => ['sometimes', 'in:'.implode(',', DeliberationSession::getStatuses())],
             'presided_by' => ['sometimes', 'uuid', 'exists:users,id'],
             'jury_members' => ['nullable', 'array'],
             'jury_members.*' => ['uuid', 'exists:users,id'],

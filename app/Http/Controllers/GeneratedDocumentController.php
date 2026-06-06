@@ -1,19 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Jobs\BulkDocumentGenerationJob;
-use App\Models\GeneratedDocument;
 use App\Http\Requests\GeneratedDocument\StoreGeneratedDocumentRequest;
 use App\Http\Requests\GeneratedDocument\UpdateGeneratedDocumentRequest;
 use App\Http\Resources\GeneratedDocumentResource;
+use App\Jobs\BulkDocumentGenerationJob;
+use App\Models\GeneratedDocument;
 use App\Services\Documents\DocumentGenerationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -21,8 +22,7 @@ class GeneratedDocumentController extends BaseApiController
 {
     public function __construct(
         private readonly DocumentGenerationService $generationService
-    )
-    {
+    ) {
         $this->middleware('permission:generated_documents.view|documents.view')->only(['index', 'show', 'download']);
         $this->middleware('permission:generated_documents.create|documents.create')->only(['store', 'generate', 'bulkGenerate']);
         $this->middleware('permission:generated_documents.update|documents.update')->only(['update', 'issue', 'revoke']);
@@ -52,8 +52,9 @@ class GeneratedDocumentController extends BaseApiController
 
     public function store(StoreGeneratedDocumentRequest $request): JsonResponse
     {
-        $generatedDocument = DB::transaction(fn() => GeneratedDocument::create($request->validated()));
+        $generatedDocument = DB::transaction(fn () => GeneratedDocument::create($request->validated()));
         Log::info('GeneratedDocument created', $generatedDocument->toArray());
+
         return $this->success(new GeneratedDocumentResource($generatedDocument->load(['student', 'generator'])), 'Generated document', Response::HTTP_CREATED);
     }
 
@@ -68,7 +69,8 @@ class GeneratedDocumentController extends BaseApiController
     {
         $this->authorize('update', $generatedDocument);
 
-        DB::transaction(fn() => $generatedDocument->update($request->validated()));
+        DB::transaction(fn () => $generatedDocument->update($request->validated()));
+
         return $this->success(new GeneratedDocumentResource($generatedDocument->refresh()->load(['student', 'generator'])));
     }
 
@@ -76,7 +78,8 @@ class GeneratedDocumentController extends BaseApiController
     {
         $this->authorize('delete', $generatedDocument);
 
-        DB::transaction(fn() => $generatedDocument->delete());
+        DB::transaction(fn () => $generatedDocument->delete());
+
         return $this->success();
     }
 
@@ -84,9 +87,9 @@ class GeneratedDocumentController extends BaseApiController
     {
         $validated = $request->validate([
             'student_id' => ['required', 'uuid', 'exists:students,id'],
-            'type' => ['required', 'string', 'in:' . implode(',', GeneratedDocument::getTypes())],
+            'type' => ['required', 'string', 'in:'.implode(',', GeneratedDocument::getTypes())],
             'metadata' => ['nullable', 'array'],
-            'status' => ['nullable', 'string', 'in:' . implode(',', GeneratedDocument::getStatuses())],
+            'status' => ['nullable', 'string', 'in:'.implode(',', GeneratedDocument::getStatuses())],
             'document_number' => ['nullable', 'string', 'max:255', 'unique:generated_documents,document_number'],
         ]);
 
@@ -106,7 +109,7 @@ class GeneratedDocumentController extends BaseApiController
         } catch (\Throwable $e) {
             Log::error('Generated document failed', ['error' => $e->getMessage()]);
 
-            return $this->error('La génération du document a échoué: ' . $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->error('La génération du document a échoué: '.$e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -124,7 +127,7 @@ class GeneratedDocumentController extends BaseApiController
                 'Document issued successfully'
             );
         } catch (\Throwable $e) {
-            return $this->error('Impossible d\'émettre le document: ' . $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->error('Impossible d\'émettre le document: '.$e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -150,7 +153,7 @@ class GeneratedDocumentController extends BaseApiController
                 'Document revoked successfully'
             );
         } catch (\Throwable $e) {
-            return $this->error('Impossible de révoquer le document: ' . $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->error('Impossible de révoquer le document: '.$e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -181,11 +184,11 @@ class GeneratedDocumentController extends BaseApiController
     public function bulkGenerate(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'type' => ['required', 'string', 'in:' . implode(',', GeneratedDocument::getTypes())],
+            'type' => ['required', 'string', 'in:'.implode(',', GeneratedDocument::getTypes())],
             'student_ids' => ['required', 'array', 'min:1'],
             'student_ids.*' => ['uuid', 'exists:students,id'],
             'metadata' => ['nullable', 'array'],
-            'status' => ['nullable', 'string', 'in:' . implode(',', GeneratedDocument::getStatuses())],
+            'status' => ['nullable', 'string', 'in:'.implode(',', GeneratedDocument::getStatuses())],
         ]);
 
         BulkDocumentGenerationJob::dispatch(

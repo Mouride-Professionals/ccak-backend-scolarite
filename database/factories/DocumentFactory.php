@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Document;
-use App\Models\Student;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
+use App\Models\Document;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -34,12 +35,12 @@ class DocumentFactory extends Factory
         ];
         $baseName = $baseNames[$type] ?? 'document';
         $number = str_pad((string) $sequence++, 4, '0', STR_PAD_LEFT);
-        $fileName = $baseName . '_' . $number . '.pdf';
+        $fileName = $baseName.'_'.$number.'.pdf';
 
         return [
             'student_id' => Student::factory(),
             'type' => $type,
-            'file_path' => 'documents/' . strtolower($type) . '/' . $fileName,
+            'file_path' => 'documents/'.strtolower($type).'/'.$fileName,
             'file_name' => $fileName,
             'status' => DocumentStatus::PENDING->value,
             'uploaded_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
@@ -51,7 +52,7 @@ class DocumentFactory extends Factory
      */
     public function pending(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'status' => 'PENDING',
         ]);
     }
@@ -61,7 +62,7 @@ class DocumentFactory extends Factory
      */
     public function approved(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'status' => 'APPROVED',
             'reviewed_at' => $this->faker->dateTimeBetween('-1 week', 'now'),
         ]);
@@ -72,7 +73,7 @@ class DocumentFactory extends Factory
      */
     public function rejected(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'status' => 'REJECTED',
             'reviewed_at' => $this->faker->dateTimeBetween('-1 week', 'now'),
         ]);

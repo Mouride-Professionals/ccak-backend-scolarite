@@ -9,8 +9,8 @@ use Tests\TestCase;
 
 class FacultyApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'faculties.view',

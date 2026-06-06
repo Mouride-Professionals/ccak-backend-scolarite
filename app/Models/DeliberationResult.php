@@ -15,16 +15,23 @@ class DeliberationResult extends Model
     public const DECISIONS = ['ADMITTED', 'ADMITTED_COMPENSATION', 'RESIT', 'FAILED', 'EXCLUDED'];
 
     public const DECISION_ADMITTED = 'ADMITTED';
+
     public const DECISION_ADMITTED_COMPENSATION = 'ADMITTED_COMPENSATION';
+
     public const DECISION_RESIT = 'RESIT';
+
     public const DECISION_FAILED = 'FAILED';
+
     public const DECISION_EXCLUDED = 'EXCLUDED';
 
     public const HONOR_LEVELS = ['PASSABLE', 'ASSEZ_BIEN', 'BIEN', 'TRES_BIEN'];
 
     public const HONOR_LEVEL_PASSABLE = 'PASSABLE';
+
     public const HONOR_LEVEL_ASSEZ_BIEN = 'ASSEZ_BIEN';
+
     public const HONOR_LEVEL_BIEN = 'BIEN';
+
     public const HONOR_LEVEL_TRES_BIEN = 'TRES_BIEN';
 
     protected $fillable = [

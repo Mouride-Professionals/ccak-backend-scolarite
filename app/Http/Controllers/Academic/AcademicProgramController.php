@@ -23,7 +23,6 @@ class AcademicProgramController extends BaseApiController
         $this->middleware('permission:academic_programs.delete')->only('destroy');
     }
 
-
     public function index(Request $request)
     {
         $programs = QueryBuilder::for(AcademicProgram::query())
@@ -45,7 +44,7 @@ class AcademicProgramController extends BaseApiController
 
     public function store(StoreAcademicProgramRequest $request)
     {
-        $program = DB::transaction(fn() => AcademicProgram::create($request->validated()));
+        $program = DB::transaction(fn () => AcademicProgram::create($request->validated()));
 
         return $this->success(
             new AcademicProgramResource($program->load(['department', 'courseUnits'])),
@@ -61,7 +60,7 @@ class AcademicProgramController extends BaseApiController
 
     public function update(UpdateAcademicProgramRequest $request, AcademicProgram $academicProgram)
     {
-        DB::transaction(fn() => $academicProgram->update($request->validated()));
+        DB::transaction(fn () => $academicProgram->update($request->validated()));
 
         return $this->success(
             new AcademicProgramResource($academicProgram->refresh()->load(['department', 'courseUnits'])),
@@ -71,7 +70,7 @@ class AcademicProgramController extends BaseApiController
 
     public function destroy(AcademicProgram $academicProgram)
     {
-        DB::transaction(fn() => $academicProgram->delete());
+        DB::transaction(fn () => $academicProgram->delete());
 
         return $this->success(null, 'Academic program deleted');
     }

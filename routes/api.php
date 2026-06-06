@@ -1,50 +1,47 @@
 <?php
 
-use App\Http\Controllers\Academic\ExamSessionController;
-use App\Http\Controllers\Academic\ExamScheduleController;
-use App\Http\Controllers\Academic\AcademicProgramController;
-use App\Http\Controllers\Academic\CourseController;
-use App\Http\Controllers\Academic\CourseUnitController;
-use App\Http\Controllers\Academic\GradeStatisticsController;
-use App\Http\Controllers\Academic\DepartmentController;
-use App\Http\Controllers\Academic\FacultyController;
-use App\Http\Controllers\Academic\FacultyContractController;
-use App\Http\Controllers\Academic\FacultyDocumentController;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\DocumentController;
-use App\Http\Controllers\GeneratedDocumentController;
-use App\Http\Controllers\Academic\AcademicYearController;
-use App\Http\Controllers\Academic\CourseEnrollmentController;
-use App\Http\Controllers\Academic\EnrollmentController;
 use App\Http\Controllers\Academic\AcademicCalendarController;
-use App\Http\Controllers\Academic\HolidayController;
-use App\Http\Controllers\Academic\RoomController;
+use App\Http\Controllers\Academic\AcademicProgramController;
+use App\Http\Controllers\Academic\AcademicYearController;
 use App\Http\Controllers\Academic\ActivityTypeController;
-use App\Http\Controllers\Academic\ScheduleController;
-use App\Http\Controllers\Academic\CourseLogController;
 use App\Http\Controllers\Academic\AttendanceController;
+use App\Http\Controllers\Academic\CourseController;
+use App\Http\Controllers\Academic\CourseEnrollmentController;
+use App\Http\Controllers\Academic\CourseLogController;
+use App\Http\Controllers\Academic\CourseUnitController;
+use App\Http\Controllers\Academic\DeliberationSessionController;
+use App\Http\Controllers\Academic\DepartmentController;
+use App\Http\Controllers\Academic\EnrollmentController;
 use App\Http\Controllers\Academic\EvaluationController;
 use App\Http\Controllers\Academic\EvaluationResponseController;
+use App\Http\Controllers\Academic\ExamScheduleController;
+use App\Http\Controllers\Academic\ExamSessionController;
+use App\Http\Controllers\Academic\FacultyContractController;
+use App\Http\Controllers\Academic\FacultyController;
+use App\Http\Controllers\Academic\FacultyDocumentController;
+use App\Http\Controllers\Academic\GradeStatisticsController;
+use App\Http\Controllers\Academic\HolidayController;
 use App\Http\Controllers\Academic\MaquetteController;
+use App\Http\Controllers\Academic\RoomController;
+use App\Http\Controllers\Academic\ScheduleController;
 use App\Http\Controllers\Academic\TeachingAssignmentController;
-use App\Http\Controllers\Dashboard\DashboardController;
-use App\Http\Controllers\Dashboard\EnrollmentDashboardController;
-use App\Http\Controllers\Templates\EmailTemplateController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SyncController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserRoleController;
-use \App\Http\Controllers\Academic\DeliberationSessionController;
-
-use App\Http\Controllers\Student\StudentController;
-use App\Http\Controllers\Student\GuardianController;
-
-use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\EnrollmentDashboardController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\GeneratedDocumentController;
 use App\Http\Controllers\Notification\AnnouncementController;
-
+use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Student\GuardianController;
+use App\Http\Controllers\Student\StudentController;
+use App\Http\Controllers\Templates\EmailTemplateController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:api')->group(function () {
     // Basic protected endpoints
@@ -57,9 +54,6 @@ Route::middleware('auth:api')->group(function () {
         ]);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
-
-
-
 
     // Exam sessions & schedules
     Route::apiResource('exam-sessions', ExamSessionController::class);
@@ -108,7 +102,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('teaching-assignments/planning', [TeachingAssignmentController::class, 'planning']);
     Route::patch('teaching-assignments/{teachingAssignment}/delivery', [TeachingAssignmentController::class, 'updateDelivery']);
     Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->only(['index', 'store', 'destroy']);
-
 
     Route::apiResource('faculties', FacultyController::class);
     Route::apiResource('departments', DepartmentController::class);

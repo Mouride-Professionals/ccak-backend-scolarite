@@ -21,8 +21,10 @@ use Illuminate\Database\Seeder;
 class HecMaquetteSeeder extends Seeder
 {
     private const TRONC_COMMUN = '019904f7-b48d-72c7-9712-830c5e11657b';
-    private const COMPTA       = '1a9eca92-fe8f-462d-93ac-232c85c0967a';
-    private const ENTREP       = '1737ad97-7522-49bc-bde3-485f42ce4a5c';
+
+    private const COMPTA = '1a9eca92-fe8f-462d-93ac-232c85c0967a';
+
+    private const ENTREP = '1737ad97-7522-49bc-bde3-485f42ce4a5c';
 
     public function run(): void
     {
@@ -51,12 +53,12 @@ class HecMaquetteSeeder extends Seeder
                     ['code' => $u['code']],
                     [
                         'academic_program_id' => $programId,
-                        'name'                => $u['name'],
-                        'semester_number'     => $semester,
-                        'credits'             => $u['credits'],
-                        'coefficient'         => $u['coefficient'],
-                        'type'                => 'OBLIGATOIRE',
-                        'is_active'           => true,
+                        'name' => $u['name'],
+                        'semester_number' => $semester,
+                        'credits' => $u['credits'],
+                        'coefficient' => $u['coefficient'],
+                        'type' => 'OBLIGATOIRE',
+                        'is_active' => true,
                     ]
                 );
 
@@ -65,17 +67,17 @@ class HecMaquetteSeeder extends Seeder
                         ['code' => $c['code']],
                         [
                             'course_unit_id' => $unit->id,
-                            'name'           => $c['name'],
-                            'description'    => null,
-                            'credits'        => $c['credits'],
-                            'hours_lecture'  => $c['cm'],
-                            'hours_td'       => $c['td'],
-                            'hours_tp'       => 0,
-                            'hours_tpe'      => $c['tpe'],
-                            'vht'            => $c['vht'],
-                            'coefficient'    => $c['coefficient'],
-                            'prerequisites'  => [],
-                            'is_active'      => true,
+                            'name' => $c['name'],
+                            'description' => null,
+                            'credits' => $c['credits'],
+                            'hours_lecture' => $c['cm'],
+                            'hours_td' => $c['td'],
+                            'hours_tp' => 0,
+                            'hours_tpe' => $c['tpe'],
+                            'vht' => $c['vht'],
+                            'coefficient' => $c['coefficient'],
+                            'prerequisites' => [],
+                            'is_active' => true,
                         ]
                     );
                 }

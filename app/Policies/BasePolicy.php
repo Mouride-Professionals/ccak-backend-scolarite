@@ -10,9 +10,7 @@ abstract class BasePolicy
 {
     protected string $resource = '';
 
-    public function __construct(protected PermissionService $permissions)
-    {
-    }
+    public function __construct(protected PermissionService $permissions) {}
 
     protected function allow(User $user, string $permission): bool
     {

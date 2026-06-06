@@ -26,7 +26,7 @@ class DeliberationResultFactory extends Factory
         // Logique: si ADMITTED, peut avoir mention; sinon pas de mention
         $isWithHonors = in_array($decision, [
             DeliberationResult::DECISION_ADMITTED,
-            DeliberationResult::DECISION_ADMITTED_COMPENSATION
+            DeliberationResult::DECISION_ADMITTED_COMPENSATION,
         ]) && $this->faker->boolean(40); // 40% de chance
 
         return [

@@ -46,7 +46,7 @@ class CourseController extends BaseApiController
 
     public function store(StoreCourseRequest $request)
     {
-        $course = DB::transaction(fn() => Course::create($request->validated()));
+        $course = DB::transaction(fn () => Course::create($request->validated()));
 
         return $this->success(
             new CourseResource($course->load(['courseUnit.academicProgram'])),
@@ -62,7 +62,7 @@ class CourseController extends BaseApiController
 
     public function update(UpdateCourseRequest $request, Course $course)
     {
-        DB::transaction(fn() => $course->update($request->validated()));
+        DB::transaction(fn () => $course->update($request->validated()));
 
         return $this->success(
             new CourseResource($course->refresh()->load(['courseUnit.academicProgram'])),
@@ -72,7 +72,7 @@ class CourseController extends BaseApiController
 
     public function destroy(Course $course)
     {
-        DB::transaction(fn() => $course->delete());
+        DB::transaction(fn () => $course->delete());
 
         return $this->success(null, 'Course deleted');
     }
@@ -86,7 +86,7 @@ class CourseController extends BaseApiController
     {
         // Validate faculty authorization
         $user = $request->user();
-        if (!$user || !$user->hasAnyRole(['FACULTY', 'ADMIN'])) {
+        if (! $user || ! $user->hasAnyRole(['FACULTY', 'ADMIN'])) {
             return $this->error('Only faculty members and administrators are authorized to view course grades.', Response::HTTP_FORBIDDEN);
         }
 
@@ -114,8 +114,8 @@ class CourseController extends BaseApiController
 
         if ($sortBy === 'student_name') {
             $query->join('students', 'grades.student_id', '=', 'students.id')
-                  ->orderBy('students.full_name', $sortDirection)
-                  ->select('grades.*');
+                ->orderBy('students.full_name', $sortDirection)
+                ->select('grades.*');
         } else {
             $query->orderBy($sortBy, $sortDirection);
         }

@@ -20,8 +20,8 @@ class AuditLogger
     ];
 
     /**
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     public function log(string $action, Model $model, ?array $oldValues = null, ?array $newValues = null): void
     {
@@ -38,7 +38,7 @@ class AuditLogger
     }
 
     /**
-     * @param array<string, mixed>|null $values
+     * @param  array<string, mixed>|null  $values
      * @return array<string, mixed>|null
      */
     private function filterSensitive(?array $values): ?array

@@ -1,14 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\DecisionType;
 use App\Models\AcademicYear;
 use App\Models\CourseEnrollment;
 use App\Models\SemesterResult;
 use App\Models\Student;
 use App\Models\User;
-use App\Enums\DecisionType;
 use App\Repositories\SemesterResultRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -23,21 +24,16 @@ class SemesterResultCalculationService
 
     /**
      * Calculate semester results for all students in a specific semester and academic year
-     *
-     * @param string $academicYearId
-     * @param int $semester
-     * @param User $calculatedBy
-     * @return array
      */
     /** @return array<string, mixed> */
     public function calculateSemesterResults(string $academicYearId, int $semester, User $calculatedBy): array
     {
         $academicYear = AcademicYear::findOrFail($academicYearId);
 
-        Log::info("Starting semester results calculation", [
+        Log::info('Starting semester results calculation', [
             'academic_year' => $academicYear->name,
             'semester' => $semester,
-            'calculated_by' => $calculatedBy->id
+            'calculated_by' => $calculatedBy->id,
         ]);
 
         // Get all students enrolled in courses for this semester
@@ -52,7 +48,7 @@ class SemesterResultCalculationService
                     'semester' => $semester,
                     'students_processed' => 0,
                     'results_created' => 0,
-                ]
+                ],
             ];
         }
 
@@ -78,21 +74,21 @@ class SemesterResultCalculationService
                     $errors[] = [
                         'student_id' => $student->id,
                         'student_number' => $student->student_number,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ];
-                    Log::error("Error calculating semester result for student", [
+                    Log::error('Error calculating semester result for student', [
                         'student_id' => $student->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
 
             DB::commit();
 
-            Log::info("Semester results calculation completed", [
+            Log::info('Semester results calculation completed', [
                 'students_processed' => $students->count(),
                 'results_created' => $resultsCreated,
-                'errors' => count($errors)
+                'errors' => count($errors),
             ]);
 
             return [
@@ -104,39 +100,33 @@ class SemesterResultCalculationService
                     'students_processed' => $students->count(),
                     'results_created' => $resultsCreated,
                     'errors' => $errors,
-                ]
+                ],
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Failed to calculate semester results", [
+            Log::error('Failed to calculate semester results', [
                 'academic_year_id' => $academicYearId,
                 'semester' => $semester,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to calculate semester results: ' . $e->getMessage(),
+                'message' => 'Failed to calculate semester results: '.$e->getMessage(),
                 'data' => [
                     'academic_year' => $academicYear->name,
                     'semester' => $semester,
                     'students_processed' => 0,
                     'results_created' => 0,
                     'errors' => $errors,
-                ]
+                ],
             ];
         }
     }
 
     /**
      * Calculate semester result for a specific student
-     *
-     * @param Student $student
-     * @param string $academicYearId
-     * @param int $semester
-     * @param User $calculatedBy
-     * @return SemesterResult|null
      */
     public function calculateStudentSemesterResult(
         Student $student,
@@ -149,11 +139,12 @@ class SemesterResultCalculationService
         $courseIds = $this->getStudentCoursesForSemester($studentId, $academicYearId, $semester);
 
         if (empty($courseIds)) {
-            Log::warning("No courses found for student", [
+            Log::warning('No courses found for student', [
                 'student_id' => $student->id,
                 'academic_year_id' => $academicYearId,
-                'semester' => $semester
+                'semester' => $semester,
             ]);
+
             return null;
         }
 
@@ -201,8 +192,6 @@ class SemesterResultCalculationService
     /**
      * Get all students enrolled in courses for a specific semester
      *
-     * @param string $academicYearId
-     * @param int $semester
      * @return Collection<int, Student>
      */
     private function getStudentsForSemester(string $academicYearId, int $semester): Collection
@@ -214,11 +203,6 @@ class SemesterResultCalculationService
 
     /**
      * Get course IDs for a student in a specific semester
-     *
-     * @param string $studentId
-     * @param string $academicYearId
-     * @param int $semester
-     * @return array
      */
     /** @return array<int, string> */
     private function getStudentCoursesForSemester(string $studentId, string $academicYearId, int $semester): array
@@ -232,9 +216,6 @@ class SemesterResultCalculationService
 
     /**
      * Determine the decision based on grade report and compensation rules
-     *
-     * @param array $gradeReport
-     * @return DecisionType
      */
     /** @param array<string, mixed> $gradeReport */
     private function determineDecision(array $gradeReport): DecisionType
@@ -249,7 +230,7 @@ class SemesterResultCalculationService
         }
 
         // If student passed with compensation
-        if ($overallStatus === 'PASSED' && !empty($compensationData['compensated_courses'])) {
+        if ($overallStatus === 'PASSED' && ! empty($compensationData['compensated_courses'])) {
             return DecisionType::COMPENSATION;
         }
 
@@ -264,10 +245,6 @@ class SemesterResultCalculationService
 
     /**
      * Calculate credits earned based on results and decision
-     *
-     * @param array $gradeReport
-     * @param DecisionType $decision
-     * @return float
      */
     /** @param array<string, mixed> $gradeReport */
     private function calculateCreditsEarned(array $gradeReport, DecisionType $decision): float
@@ -301,10 +278,6 @@ class SemesterResultCalculationService
 
     /**
      * Get semester results statistics
-     *
-     * @param string $academicYearId
-     * @param int $semester
-     * @return array
      */
     /** @return array<string, mixed> */
     public function getSemesterStatistics(string $academicYearId, int $semester): array

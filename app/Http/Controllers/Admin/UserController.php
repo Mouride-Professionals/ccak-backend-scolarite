@@ -79,7 +79,7 @@ class UserController extends BaseApiController
             ]);
 
             return $this->error(
-                'Erreur lors de la création de l\'utilisateur: ' . $e->getMessage(),
+                'Erreur lors de la création de l\'utilisateur: '.$e->getMessage(),
                 500
             );
         }
@@ -152,7 +152,7 @@ class UserController extends BaseApiController
         // Use email prefix with random suffix to ensure uniqueness
         $emailPrefix = explode('@', $request->email)[0];
 
-        return $emailPrefix . '_' . substr(Str::uuid()->toString(), 0, 8);
+        return $emailPrefix.'_'.substr(Str::uuid()->toString(), 0, 8);
     }
 
     /**

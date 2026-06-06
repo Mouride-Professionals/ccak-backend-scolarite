@@ -37,10 +37,10 @@ class SyncService
             DegreeCycle::updateOrCreate(
                 ['id' => $raw['id']],
                 [
-                    'name'           => $raw['name'],
-                    'code'           => $raw['code'],
-                    'type'           => $raw['type'],
-                    'synced_from'    => 'CCAK',
+                    'name' => $raw['name'],
+                    'code' => $raw['code'],
+                    'type' => $raw['type'],
+                    'synced_from' => 'CCAK',
                     'last_synced_at' => now(),
                 ]
             );
@@ -53,12 +53,12 @@ class SyncService
             Level::updateOrCreate(
                 ['id' => $raw['id']],
                 [
-                    'name'            => $raw['name'],
-                    'code'            => $raw['code'],
+                    'name' => $raw['name'],
+                    'code' => $raw['code'],
                     'degree_cycle_id' => $raw['gradeId'] ?? $raw['grade_id'] ?? $raw['degreeCycleId'] ?? $raw['degree_cycle_id'] ?? null,
-                    'numero'          => $raw['numero'] ?? null,
-                    'synced_from'     => 'CCAK',
-                    'last_synced_at'  => now(),
+                    'numero' => $raw['numero'] ?? null,
+                    'synced_from' => 'CCAK',
+                    'last_synced_at' => now(),
                 ]
             );
         });
@@ -70,9 +70,9 @@ class SyncService
             Faculty::updateOrCreate(
                 ['id' => $raw['id']],
                 [
-                    'name'           => $raw['name'],
-                    'code'           => $raw['code'],
-                    'synced_from'    => 'CCAK',
+                    'name' => $raw['name'],
+                    'code' => $raw['code'],
+                    'synced_from' => 'CCAK',
                     'last_synced_at' => now(),
                 ]
             );
@@ -87,10 +87,10 @@ class SyncService
             Department::withTrashed()->updateOrCreate(
                 ['id' => $raw['id']],
                 [
-                    'faculty_id'     => $facultyId,
-                    'name'           => $raw['name'],
-                    'code'           => $raw['code'],
-                    'synced_from'    => 'CCAK',
+                    'faculty_id' => $facultyId,
+                    'name' => $raw['name'],
+                    'code' => $raw['code'],
+                    'synced_from' => 'CCAK',
                     'last_synced_at' => now(),
                 ]
             );
@@ -113,13 +113,13 @@ class SyncService
             AcademicProgram::updateOrCreate(
                 ['id' => $raw['id']],
                 [
-                    'department_id'          => $departmentId,
-                    'name'                   => $raw['name'],
-                    'level'                  => $level,
-                    'duration_semesters'     => $raw['durationSemesters'] ?? $raw['duration_semesters'] ?? 0,
+                    'department_id' => $departmentId,
+                    'name' => $raw['name'],
+                    'level' => $level,
+                    'duration_semesters' => $raw['durationSemesters'] ?? $raw['duration_semesters'] ?? 0,
                     'total_credits_required' => $raw['totalCreditsRequired'] ?? $raw['total_credits_required'] ?? 0,
-                    'synced_from'            => 'CCAK',
-                    'last_synced_at'         => now(),
+                    'synced_from' => 'CCAK',
+                    'last_synced_at' => now(),
                 ]
             );
         });
@@ -137,11 +137,11 @@ class SyncService
             AcademicYear::updateOrCreate(
                 ['id' => $raw['id']],
                 [
-                    'name'           => $raw['name'],
-                    'code'           => $raw['code'] ?? null,
-                    'status'         => $raw['status'] ?? null,
-                    'is_current'     => $isCurrent,
-                    'synced_from'    => 'CCAK',
+                    'name' => $raw['name'],
+                    'code' => $raw['code'] ?? null,
+                    'status' => $raw['status'] ?? null,
+                    'is_current' => $isCurrent,
+                    'synced_from' => 'CCAK',
                     'last_synced_at' => now(),
                 ]
             );
@@ -152,6 +152,7 @@ class SyncService
     {
         return $this->runSync('students', function () use ($limit) {
             $items = $this->fetchStudentsFromCcak();
+
             return $limit !== null ? array_slice($items, 0, $limit) : $items;
         }, function (array $raw) {
             $studentId = $raw['id'];
@@ -171,13 +172,13 @@ class SyncService
     public function syncAll(): array
     {
         return [
-            'degree_cycles'  => $this->syncDegreeCycles(),
-            'niveaux'        => $this->syncNiveaux(),
-            'ufr'            => $this->syncUfr(),
-            'departements'   => $this->syncDepartements(),
-            'programmes'     => $this->syncProgrammes(),
+            'degree_cycles' => $this->syncDegreeCycles(),
+            'niveaux' => $this->syncNiveaux(),
+            'ufr' => $this->syncUfr(),
+            'departements' => $this->syncDepartements(),
+            'programmes' => $this->syncProgrammes(),
             'academic_years' => $this->syncAcademicYears(),
-            'students'       => $this->syncStudents(),
+            'students' => $this->syncStudents(),
         ];
     }
 
@@ -193,35 +194,35 @@ class SyncService
     public function mapCcakStudentToMp(array $s): array
     {
         $firstName = $s['firstName'] ?? $s['first_name'] ?? null;
-        $lastName  = $s['lastName']  ?? $s['last_name']  ?? null;
-        $fullName  = $s['fullName']  ?? $s['full_name']  ?? trim("{$firstName} {$lastName}") ?: null;
+        $lastName = $s['lastName'] ?? $s['last_name'] ?? null;
+        $fullName = $s['fullName'] ?? $s['full_name'] ?? trim("{$firstName} {$lastName}") ?: null;
 
         return [
-            'id'                      => $s['id'],
-            'student_number'          => $s['studentId'] ?? $s['student_id'] ?? $s['studentNumber'] ?? $s['student_number'] ?? null,
-            'first_name'              => $firstName,
-            'last_name'               => $lastName,
-            'full_name'               => $fullName,
-            'ine'                     => $s['ine'] ?? null,
-            'registration_number'     => $s['registrationNumber'] ?? $s['registration_number'] ?? null,
-            'status'                  => $this->mapStudentStatus($s['status'] ?? ''),
-            'gender'                  => $s['gender'] ?? null,
-            'date_of_birth'           => $s['dateOfBirth'] ?? $s['date_of_birth'] ?? null,
-            'place_of_birth'          => $s['placeOfBirth'] ?? $s['place_of_birth'] ?? null,
-            'nationality'             => $s['nationality'] ?? null,
-            'phone'                   => $s['phone'] ?? null,
-            'phone_2'                 => $s['phone2'] ?? $s['phone_2'] ?? null,
-            'address'                 => $s['address'] ?? null,
-            'email'                   => $s['email'] ?? null,
-            'email_university'        => ($s['emailUniversity'] ?? $s['email_university'] ?? null) ?: null,
-            'type_of_id'              => $this->mapIdType($s['typeOfId'] ?? $s['type_of_id'] ?? null),
-            'id_details'              => $s['idDetails'] ?? $s['id_details'] ?? null,
-            'photo_url'               => $s['photo'] ?? $s['photo_url'] ?? null,
-            'emergency_contact_name'  => trim(($s['emergencyContactFirstName'] ?? '') . ' ' . ($s['emergencyContactLastName'] ?? '')) ?: null,
+            'id' => $s['id'],
+            'student_number' => $s['studentId'] ?? $s['student_id'] ?? $s['studentNumber'] ?? $s['student_number'] ?? null,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'full_name' => $fullName,
+            'ine' => $s['ine'] ?? null,
+            'registration_number' => $s['registrationNumber'] ?? $s['registration_number'] ?? null,
+            'status' => $this->mapStudentStatus($s['status'] ?? ''),
+            'gender' => $s['gender'] ?? null,
+            'date_of_birth' => $s['dateOfBirth'] ?? $s['date_of_birth'] ?? null,
+            'place_of_birth' => $s['placeOfBirth'] ?? $s['place_of_birth'] ?? null,
+            'nationality' => $s['nationality'] ?? null,
+            'phone' => $s['phone'] ?? null,
+            'phone_2' => $s['phone2'] ?? $s['phone_2'] ?? null,
+            'address' => $s['address'] ?? null,
+            'email' => $s['email'] ?? null,
+            'email_university' => ($s['emailUniversity'] ?? $s['email_university'] ?? null) ?: null,
+            'type_of_id' => $this->mapIdType($s['typeOfId'] ?? $s['type_of_id'] ?? null),
+            'id_details' => $s['idDetails'] ?? $s['id_details'] ?? null,
+            'photo_url' => $s['photo'] ?? $s['photo_url'] ?? null,
+            'emergency_contact_name' => trim(($s['emergencyContactFirstName'] ?? '').' '.($s['emergencyContactLastName'] ?? '')) ?: null,
             'emergency_contact_phone' => $s['emergencyContactPhone1'] ?? $s['emergency_contact_phone'] ?? null,
-            'provenance'              => $this->mapProvenance($s['provenance'] ?? null),
-            'synced_from'             => 'CCAK',
-            'last_synced_at'          => now(),
+            'provenance' => $this->mapProvenance($s['provenance'] ?? null),
+            'synced_from' => 'CCAK',
+            'last_synced_at' => now(),
         ];
     }
 
@@ -236,9 +237,9 @@ class SyncService
         }
 
         return match (strtoupper((string) $value)) {
-            'ETAT'       => Provenance::ETAT->value,
+            'ETAT' => Provenance::ETAT->value,
             'PLATEFORME' => Provenance::PLATEFORME->value,
-            default      => null,
+            default => null,
         };
     }
 
@@ -254,12 +255,12 @@ class SyncService
 
         // CCAK may also send PascalCase string names
         return match ($ccakStatus) {
-            'Pending'   => StudentStatus::PENDING->value,
-            'Active'    => StudentStatus::ACTIVE->value,
+            'Pending' => StudentStatus::PENDING->value,
+            'Active' => StudentStatus::ACTIVE->value,
             'Suspended' => StudentStatus::SUSPENDED->value,
             'Graduated' => StudentStatus::GRADUATED->value,
-            'Inactive'  => StudentStatus::INACTIVE->value,
-            default     => StudentStatus::PENDING->value,
+            'Inactive' => StudentStatus::INACTIVE->value,
+            default => StudentStatus::PENDING->value,
         };
     }
 
@@ -273,29 +274,29 @@ class SyncService
 
         if ($existing) {
             $update = [
-                'student_number'          => $mpStudent['student_number'],
-                'first_name'              => $mpStudent['first_name'],
-                'last_name'               => $mpStudent['last_name'],
-                'full_name'               => $mpStudent['full_name'],
-                'ine'                     => $mpStudent['ine'],
-                'registration_number'     => $mpStudent['registration_number'],
-                'status'                  => $mpStudent['status'],
-                'gender'                  => $mpStudent['gender'],
-                'date_of_birth'           => $mpStudent['date_of_birth'],
-                'place_of_birth'          => $mpStudent['place_of_birth'],
-                'nationality'             => $mpStudent['nationality'],
-                'phone'                   => $mpStudent['phone'],
-                'phone_2'                 => $mpStudent['phone_2'],
-                'address'                 => $mpStudent['address'],
-                'email'                   => $mpStudent['email'],
-                'type_of_id'              => $mpStudent['type_of_id'],
-                'id_details'              => $mpStudent['id_details'],
-                'photo_url'               => $mpStudent['photo_url'],
-                'emergency_contact_name'  => $mpStudent['emergency_contact_name'],
+                'student_number' => $mpStudent['student_number'],
+                'first_name' => $mpStudent['first_name'],
+                'last_name' => $mpStudent['last_name'],
+                'full_name' => $mpStudent['full_name'],
+                'ine' => $mpStudent['ine'],
+                'registration_number' => $mpStudent['registration_number'],
+                'status' => $mpStudent['status'],
+                'gender' => $mpStudent['gender'],
+                'date_of_birth' => $mpStudent['date_of_birth'],
+                'place_of_birth' => $mpStudent['place_of_birth'],
+                'nationality' => $mpStudent['nationality'],
+                'phone' => $mpStudent['phone'],
+                'phone_2' => $mpStudent['phone_2'],
+                'address' => $mpStudent['address'],
+                'email' => $mpStudent['email'],
+                'type_of_id' => $mpStudent['type_of_id'],
+                'id_details' => $mpStudent['id_details'],
+                'photo_url' => $mpStudent['photo_url'],
+                'emergency_contact_name' => $mpStudent['emergency_contact_name'],
                 'emergency_contact_phone' => $mpStudent['emergency_contact_phone'],
-                'provenance'              => $mpStudent['provenance'],
-                'last_synced_at'          => $mpStudent['last_synced_at'],
-                'synced_from'             => $mpStudent['synced_from'],
+                'provenance' => $mpStudent['provenance'],
+                'last_synced_at' => $mpStudent['last_synced_at'],
+                'synced_from' => $mpStudent['synced_from'],
             ];
 
             if ($mpStudent['email_university'] !== null) {
@@ -331,7 +332,7 @@ class SyncService
 
     private function upsertStudentBacInfo(string $studentId, array $s): void
     {
-        $serie     = $s['serie'] ?? null;
+        $serie = $s['serie'] ?? null;
         $yearOfBac = $s['yearOfBac'] ?? $s['year_of_bac'] ?? null;
 
         if (! $serie || ! $yearOfBac) {
@@ -341,23 +342,23 @@ class SyncService
         StudentBacInfo::updateOrCreate(
             ['student_id' => $studentId],
             [
-                'serie'                => $serie,
-                'year_of_bac'          => $yearOfBac,
-                'bac_result_id'        => $s['bacResultId'] ?? $s['bac_result_id'] ?? null,
-                'first_round_average'  => $s['firstRoundAverage'] ?? $s['first_round_average'] ?? null,
+                'serie' => $serie,
+                'year_of_bac' => $yearOfBac,
+                'bac_result_id' => $s['bacResultId'] ?? $s['bac_result_id'] ?? null,
+                'first_round_average' => $s['firstRoundAverage'] ?? $s['first_round_average'] ?? null,
                 'second_round_average' => $s['secondRoundAverage'] ?? $s['second_round_average'] ?? null,
-                'bac_mention'          => $s['bacMention'] ?? $s['bac_mention'] ?? null,
-                'bac_institution'      => $s['bacInstitution'] ?? $s['bac_institution'] ?? null,
+                'bac_mention' => $s['bacMention'] ?? $s['bac_mention'] ?? null,
+                'bac_institution' => $s['bacInstitution'] ?? $s['bac_institution'] ?? null,
             ]
         );
     }
 
     private function upsertSocialProfile(string $studentId, array $s): void
     {
-        $familyStatus  = $s['familyStatus'] ?? $s['family_status'] ?? null;
+        $familyStatus = $s['familyStatus'] ?? $s['family_status'] ?? null;
         $studentRegime = $s['studentRegime'] ?? $s['student_regime'] ?? null;
-        $isEmployed    = $s['isEmployed'] ?? $s['is_employed'] ?? null;
-        $nbChildren    = $s['numberOfChildren'] ?? $s['number_of_children'] ?? null;
+        $isEmployed = $s['isEmployed'] ?? $s['is_employed'] ?? null;
+        $nbChildren = $s['numberOfChildren'] ?? $s['number_of_children'] ?? null;
         $socioCategory = $s['socioProfessionalCategory'] ?? $s['socio_professional_category'] ?? null;
 
         if ($familyStatus === null && $studentRegime === null && $isEmployed === null && $nbChildren === null && $socioCategory === null) {
@@ -367,34 +368,34 @@ class SyncService
         SocialProfile::updateOrCreate(
             [
                 'profilable_type' => Student::class,
-                'profilable_id'   => $studentId,
+                'profilable_id' => $studentId,
             ],
             [
-                'family_status'               => $familyStatus,
-                'number_of_children'          => $nbChildren,
-                'is_employed'                 => $isEmployed,
+                'family_status' => $familyStatus,
+                'number_of_children' => $nbChildren,
+                'is_employed' => $isEmployed,
                 'socio_professional_category' => $socioCategory,
-                'student_regime'              => $studentRegime,
+                'student_regime' => $studentRegime,
             ]
         );
     }
 
     private function upsertStudentAddresses(string $studentId, array $s): void
     {
-        $city       = $s['residenceCity'] ?? $s['residence_city'] ?? null;
-        $region     = $s['residenceRegion'] ?? $s['residence_region'] ?? null;
+        $city = $s['residenceCity'] ?? $s['residence_city'] ?? null;
+        $region = $s['residenceRegion'] ?? $s['residence_region'] ?? null;
         $department = $s['residenceDepartment'] ?? $s['residence_department'] ?? null;
 
         if ($city || $region || $department) {
             Address::updateOrCreate(
                 [
                     'addressable_type' => Student::class,
-                    'addressable_id'   => $studentId,
-                    'type'             => AddressType::HOME->value,
+                    'addressable_id' => $studentId,
+                    'type' => AddressType::HOME->value,
                 ],
                 [
-                    'city'       => $city,
-                    'region'     => $region,
+                    'city' => $city,
+                    'region' => $region,
                     'department' => $department,
                     'is_primary' => true,
                 ]
@@ -407,12 +408,12 @@ class SyncService
             Address::updateOrCreate(
                 [
                     'addressable_type' => Student::class,
-                    'addressable_id'   => $studentId,
-                    'type'             => AddressType::UNIVERSITY_CITY->value,
+                    'addressable_id' => $studentId,
+                    'type' => AddressType::UNIVERSITY_CITY->value,
                 ],
                 [
-                    'street'     => $addressTouba,
-                    'city'       => 'Touba',
+                    'street' => $addressTouba,
+                    'city' => 'Touba',
                     'is_primary' => false,
                 ]
             );
@@ -422,8 +423,8 @@ class SyncService
     private function upsertGuardian(string $studentId, array $s): void
     {
         $firstName = $s['emergencyContactFirstName'] ?? null;
-        $lastName  = $s['emergencyContactLastName'] ?? null;
-        $phone     = $s['emergencyContactPhone1'] ?? null;
+        $lastName = $s['emergencyContactLastName'] ?? null;
+        $phone = $s['emergencyContactPhone1'] ?? null;
 
         if (! $firstName && ! $lastName && ! $phone) {
             return;
@@ -432,12 +433,12 @@ class SyncService
         Guardian::updateOrCreate(
             ['student_id' => $studentId],
             [
-                'first_name'   => $firstName,
-                'last_name'    => $lastName,
-                'full_name'    => trim("{$firstName} {$lastName}") ?: null,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'full_name' => trim("{$firstName} {$lastName}") ?: null,
                 'relationship' => $s['emergencyContactRelation'] ?? null,
-                'phone'        => $phone,
-                'phone_2'      => $s['emergencyContactPhone2'] ?? null,
+                'phone' => $phone,
+                'phone_2' => $s['emergencyContactPhone2'] ?? null,
             ]
         );
     }
@@ -449,23 +450,23 @@ class SyncService
     /**
      * Generic sync runner: creates a SyncLog, iterates records, updates log on completion.
      *
-     * @param callable(): array $fetchFn    Returns the raw array from CCAK
-     * @param callable(array): void $processFn  Processes a single record (throw to count as error)
+     * @param  callable(): array  $fetchFn  Returns the raw array from CCAK
+     * @param  callable(array): void  $processFn  Processes a single record (throw to count as error)
      */
     private function runSync(string $entityType, callable $fetchFn, callable $processFn): SyncLog
     {
         $log = SyncLog::create([
-            'batch_date'  => today(),
-            'source'      => 'CCAK',
+            'batch_date' => today(),
+            'source' => 'CCAK',
             'entity_type' => $entityType,
-            'started_at'  => now(),
-            'status'      => SyncStatus::PARTIAL->value,
+            'started_at' => now(),
+            'status' => SyncStatus::PARTIAL->value,
         ]);
 
         $created = 0;
         $updated = 0;
-        $errors  = 0;
-        $total   = 0;
+        $errors = 0;
+        $total = 0;
         $errorDetails = [];
 
         try {
@@ -481,12 +482,12 @@ class SyncService
                 } catch (\Throwable $e) {
                     $errors++;
                     $errorDetails[] = [
-                        'id'    => $raw['id'] ?? null,
+                        'id' => $raw['id'] ?? null,
                         'error' => $e->getMessage(),
                     ];
                     Log::warning("SyncService[{$entityType}]: record failed", [
                         'error' => $e->getMessage(),
-                        'id'    => $raw['id'] ?? null,
+                        'id' => $raw['id'] ?? null,
                     ]);
                 }
             }
@@ -500,12 +501,12 @@ class SyncService
 
         $log->update([
             'total_received' => $total,
-            'total_created'  => $created,
-            'total_updated'  => $updated,
-            'total_errors'   => $errors,
-            'error_details'  => $errorDetails ?: null,
-            'completed_at'   => now(),
-            'status'         => $status->value,
+            'total_created' => $created,
+            'total_updated' => $updated,
+            'total_errors' => $errors,
+            'error_details' => $errorDetails ?: null,
+            'completed_at' => now(),
+            'status' => $status->value,
         ]);
 
         return $log->fresh();

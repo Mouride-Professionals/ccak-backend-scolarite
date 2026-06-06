@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Seeder;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 class UserSeeder extends Seeder
@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
                 $verifiedAt = $createdAt->copy()->addDays(rand(0, 7));
 
                 return [
-                    'email' => fake()->unique()->userName() . '@ucak.sn',
+                    'email' => fake()->unique()->userName().'@ucak.sn',
                     'email_verified_at' => $verifiedAt,
                     'created_at' => $createdAt,
                     'updated_at' => $verifiedAt->copy()->addDays(rand(0, 30)),

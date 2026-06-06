@@ -11,8 +11,8 @@ use Tests\TestCase;
 
 class GuardianApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'guardians.view',

@@ -57,9 +57,12 @@ class GuardianTest extends TestCase
     {
         $fillable = [
             'student_id',
+            'first_name',
+            'last_name',
             'full_name',
             'relationship',
             'phone',
+            'phone_2',
             'email',
             'address',
             'occupation',

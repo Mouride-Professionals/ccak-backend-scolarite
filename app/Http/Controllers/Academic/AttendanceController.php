@@ -39,7 +39,7 @@ class AttendanceController extends BaseApiController
             ->all();
 
         $invalid = $studentIds->diff($enrolledIds)->values()->all();
-        if (!empty($invalid)) {
+        if (! empty($invalid)) {
             return $this->error('Some students are not enrolled in this course.', 422, ['student_ids' => $invalid]);
         }
 

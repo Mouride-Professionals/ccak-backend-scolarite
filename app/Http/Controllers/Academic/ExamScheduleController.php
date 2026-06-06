@@ -40,6 +40,7 @@ class ExamScheduleController extends BaseApiController
         $schedule = DB::transaction(function () use ($examSession, $data, $invigilatorIds) {
             $schedule = $examSession->schedules()->create($data);
             $schedule->invigilators()->sync($invigilatorIds);
+
             return $schedule;
         });
 
@@ -86,12 +87,12 @@ class ExamScheduleController extends BaseApiController
     public function checkConflicts(Request $request): JsonResponse
     {
         $request->validate([
-            'room_id'            => ['required', 'uuid'],
-            'date'               => ['required', 'date'],
-            'start_time'         => ['required', 'date_format:H:i'],
-            'end_time'           => ['required', 'date_format:H:i'],
-            'invigilator_ids'    => ['nullable', 'array'],
-            'invigilator_ids.*'  => ['uuid'],
+            'room_id' => ['required', 'uuid'],
+            'date' => ['required', 'date'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i'],
+            'invigilator_ids' => ['nullable', 'array'],
+            'invigilator_ids.*' => ['uuid'],
             'exclude_schedule_id' => ['nullable', 'uuid'], // for edit mode
         ]);
 
@@ -101,9 +102,9 @@ class ExamScheduleController extends BaseApiController
         $roomConflict = ExamSchedule::where('room_id', $request->room_id)
             ->where('date', $request->date)
             ->where(function ($q) use ($request) {
-                $q->where(fn($q2) => $q2->where('start_time', '<', $request->end_time)->where('end_time', '>', $request->start_time));
+                $q->where(fn ($q2) => $q2->where('start_time', '<', $request->end_time)->where('end_time', '>', $request->start_time));
             })
-            ->when($request->exclude_schedule_id, fn($q) => $q->where('id', '!=', $request->exclude_schedule_id))
+            ->when($request->exclude_schedule_id, fn ($q) => $q->where('id', '!=', $request->exclude_schedule_id))
             ->with('course')
             ->first();
 
@@ -115,13 +116,12 @@ class ExamScheduleController extends BaseApiController
         }
 
         // Check invigilator conflicts
-        if (!empty($request->invigilator_ids)) {
-            $invigilatorConflicts = ExamSchedule::whereHas('invigilators', fn($q) =>
-                $q->whereIn('faculty_members.id', $request->invigilator_ids)
+        if (! empty($request->invigilator_ids)) {
+            $invigilatorConflicts = ExamSchedule::whereHas('invigilators', fn ($q) => $q->whereIn('faculty_members.id', $request->invigilator_ids)
             )
                 ->where('date', $request->date)
-                ->where(fn($q) => $q->where('start_time', '<', $request->end_time)->where('end_time', '>', $request->start_time))
-                ->when($request->exclude_schedule_id, fn($q) => $q->where('id', '!=', $request->exclude_schedule_id))
+                ->where(fn ($q) => $q->where('start_time', '<', $request->end_time)->where('end_time', '>', $request->start_time))
+                ->when($request->exclude_schedule_id, fn ($q) => $q->where('id', '!=', $request->exclude_schedule_id))
                 ->with(['invigilators', 'course'])
                 ->get();
 

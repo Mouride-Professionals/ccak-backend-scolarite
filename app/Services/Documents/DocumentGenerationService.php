@@ -12,15 +12,16 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class DocumentGenerationService
 {
     private DocumentNumberGenerator $numberGenerator;
+
     private TemplateRenderer $templateRenderer;
+
     private DocumentStorageService $fileStorage;
 
     public function __construct(
         DocumentNumberGenerator $numberGenerator,
-        TemplateRenderer        $templateRenderer,
-        DocumentStorageService  $fileStorage
-    )
-    {
+        TemplateRenderer $templateRenderer,
+        DocumentStorageService $fileStorage
+    ) {
         $this->numberGenerator = $numberGenerator;
         $this->templateRenderer = $templateRenderer;
         $this->fileStorage = $fileStorage;
@@ -40,7 +41,7 @@ class DocumentGenerationService
         // Valider que le template existe
         $templatePath = $this->templateRenderer->getTemplatePath($documentType);
 
-        if (!$this->templateRenderer->validateTemplate($templatePath)) {
+        if (! $this->templateRenderer->validateTemplate($templatePath)) {
             throw new \RuntimeException(
                 "Template non disponible pour le type de document: {$documentType}"
             );
@@ -133,7 +134,7 @@ class DocumentGenerationService
             'student_id' => $studentId,
             'document_type' => $documentType,
             'timestamp' => now()->timestamp,
-            'hash' => hash('sha256', $documentNumber . $studentId . now()->timestamp . config('app.key')),
+            'hash' => hash('sha256', $documentNumber.$studentId.now()->timestamp.config('app.key')),
         ];
     }
 
@@ -144,12 +145,11 @@ class DocumentGenerationService
 
     private function prepareTemplateData(
         string $documentType,
-        array  $metadata,
+        array $metadata,
         string $studentId,
         string $documentNumber,
         string $userId
-    ): array
-    {
+    ): array {
         $studentData = $this->getStudentData($studentId);
 
         return array_merge($studentData, $metadata, [
@@ -166,13 +166,14 @@ class DocumentGenerationService
     private function getStudentData(string $studentId): array
     {
         $year = now()->year;
-        //TODO: À adapter
+
+        // TODO: À adapter
         return [
             'student_name' => 'Nom Étudiant',
-            'student_number' => 'ETU' . substr($studentId, 0, 8),
+            'student_number' => 'ETU'.substr($studentId, 0, 8),
             'program' => 'Programme académique',
-            'academic_year' => $year . '-' . ($year + 1),
-            'semester' => 'S' . (now()->month <= 6 ? 1 : 2),
+            'academic_year' => $year.'-'.($year + 1),
+            'semester' => 'S'.(now()->month <= 6 ? 1 : 2),
         ];
     }
 
@@ -229,6 +230,7 @@ class DocumentGenerationService
             if ($media instanceof Media) {
                 try {
                     $url = $media->getTemporaryUrl(now()->addMinutes(30));
+
                     return redirect()->away($url);
                 } catch (\Throwable) {
                     // fall through to stream download
@@ -244,7 +246,7 @@ class DocumentGenerationService
                     [
                         'Content-Type' => $media->mime_type,
                         'Content-Length' => (string) strlen($content),
-                        'Content-Disposition' => 'attachment; filename="' . $media->file_name . '"',
+                        'Content-Disposition' => 'attachment; filename="'.$media->file_name.'"',
                     ]
                 );
             }
@@ -260,13 +262,13 @@ class DocumentGenerationService
             throw new \RuntimeException('Impossible de créer un fichier temporaire');
         }
 
-        $tmpFile = $tmpPath . '.pdf';
+        $tmpFile = $tmpPath.'.pdf';
         rename($tmpPath, $tmpFile);
         file_put_contents($tmpFile, $pdfContent);
 
         try {
             return $document->addMedia($tmpFile)
-                ->usingFileName($documentNumber . '.pdf')
+                ->usingFileName($documentNumber.'.pdf')
                 ->usingName($documentNumber)
                 ->toMediaCollection('official_documents');
         } finally {

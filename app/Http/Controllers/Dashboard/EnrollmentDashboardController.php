@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Enums\RegistrationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\EnrollmentsDashboardRequest;
 use App\Models\Enrollment;
@@ -53,16 +54,16 @@ class EnrollmentDashboardController extends Controller
         $kpis = [
             'total_enrollments' => (clone $query)->count(),
             'active_enrollments' => (clone $query)
-                ->whereIn('status', [Enrollment::STATUS_ACTIVE, Enrollment::STATUS_REGISTERED])
+                ->where('status', RegistrationStatus::VALIDATED->value)
                 ->count(),
             'pending_enrollments' => (clone $query)
-                ->where('status', Enrollment::STATUS_PENDING)
+                ->where('status', RegistrationStatus::PENDING_VALIDATION->value)
                 ->count(),
             'completed_enrollments' => (clone $query)
-                ->where('status', Enrollment::STATUS_COMPLETED)
+                ->where('status', RegistrationStatus::COMPLETED->value)
                 ->count(),
             'withdrawn_enrollments' => (clone $query)
-                ->where('status', Enrollment::STATUS_WITHDRAWN)
+                ->where('status', RegistrationStatus::CANCELLED->value)
                 ->count(),
         ];
 
@@ -123,7 +124,7 @@ class EnrollmentDashboardController extends Controller
                 'id' => (string) $row->id,
                 'student_name' => (string) $row->student_name,
                 'programme_name' => (string) $row->programme_name,
-                'status' => (string) $row->status,
+                'status' => $row->status instanceof RegistrationStatus ? $row->status->value : (string) $row->status,
                 'enrollment_date' => CarbonImmutable::parse((string) $row->enrollment_date)->toDateString(),
                 'created_at' => CarbonImmutable::parse((string) $row->created_at)->utc()->format('Y-m-d\\TH:i:s\\Z'),
             ])

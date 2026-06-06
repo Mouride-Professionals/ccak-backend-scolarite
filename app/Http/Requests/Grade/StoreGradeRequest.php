@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Requests\Grade;
@@ -55,7 +56,7 @@ class StoreGradeRequest extends FormRequest
                     ->where('course_id', $data['course_id'])
                     ->first();
 
-                if (!$enrollment) {
+                if (! $enrollment) {
                     $validator->errors()->add(
                         'course_enrollment_id',
                         'L\'inscription au cours ne correspond pas à l\'étudiant et au cours fournis.'
@@ -88,7 +89,7 @@ class StoreGradeRequest extends FormRequest
             'type.in' => 'Le type de note doit être l\'un des suivants : CC (Contrôle Continu), EXAM, TP (Travaux Pratiques), ou ORAL.',
             'score.min' => 'La note doit être au minimum 0.',
             'max_score.gt' => 'Le score maximum doit être supérieur à 0.',
-            'weight.min' => 'Le poids doit être au minimum 0.'
+            'weight.min' => 'Le poids doit être au minimum 0.',
         ];
     }
 

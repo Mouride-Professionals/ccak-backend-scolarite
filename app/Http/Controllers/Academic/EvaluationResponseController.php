@@ -24,7 +24,7 @@ class EvaluationResponseController extends BaseApiController
         $data = $request->validated();
         $evaluation = Evaluation::findOrFail($data['evaluation_id']);
 
-        if (!$evaluation->is_published) {
+        if (! $evaluation->is_published) {
             return $this->error('Evaluation is not published.', 422);
         }
 
@@ -33,7 +33,7 @@ class EvaluationResponseController extends BaseApiController
         }
 
         $student = Student::where('user_id', $request->user()->id)->first();
-        if (!$student) {
+        if (! $student) {
             return $this->error('Student profile not found.', 404);
         }
 
@@ -46,7 +46,7 @@ class EvaluationResponseController extends BaseApiController
             ->where('status', CourseEnrollment::STATUS_ENROLLED)
             ->exists();
 
-        if (!$enrolled) {
+        if (! $enrolled) {
             return $this->error('Student is not enrolled in this course.', 403);
         }
 

@@ -12,13 +12,13 @@ class PriorDiplomaResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id'          => $this->id,
-            'name'        => $this->name,
-            'year'        => $this->year,
-            'mention'     => $this->mention,
+            'id' => $this->id,
+            'name' => $this->name,
+            'year' => $this->year,
+            'mention' => $this->mention,
             'institution' => $this->institution,
-            'created_at'  => $this->created_at,
-            'updated_at'  => $this->updated_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

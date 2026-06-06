@@ -16,8 +16,8 @@ use Tests\TestCase;
 
 class EvaluationApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'evaluations.view',

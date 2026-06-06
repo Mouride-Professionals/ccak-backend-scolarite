@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Log;
 class DocumentNotificationService
 {
     private bool $enabled;
+
     /** @var array<int, string> */
     private array $channels;
 
     public function __construct(
         private readonly NotificationService $notificationService
-    )
-    {
+    ) {
         $this->enabled = config('documents.notifications.enabled', true);
         $this->channels = config('documents.notifications.channels', ['database']);
     }
@@ -26,7 +26,7 @@ class DocumentNotificationService
      */
     public function notifyUpload(Document $document): void
     {
-        if (!$this->enabled || !config('documents.notifications.on_upload', true)) {
+        if (! $this->enabled || ! config('documents.notifications.on_upload', true)) {
             return;
         }
 
@@ -39,7 +39,7 @@ class DocumentNotificationService
      */
     public function notifyApproval(Document $document): void
     {
-        if (!$this->enabled || !config('documents.notifications.on_approval', true)) {
+        if (! $this->enabled || ! config('documents.notifications.on_approval', true)) {
             return;
         }
 
@@ -52,7 +52,7 @@ class DocumentNotificationService
      */
     public function notifyRejection(Document $document, string $reason): void
     {
-        if (!$this->enabled || !config('documents.notifications.on_rejection', true)) {
+        if (! $this->enabled || ! config('documents.notifications.on_rejection', true)) {
             return;
         }
 
@@ -110,12 +110,13 @@ class DocumentNotificationService
     private function sendToDatabase(string $event, Document $document, array $data): void
     {
         $recipient = $document->student?->user;
-        if (!$recipient) {
+        if (! $recipient) {
             Log::warning('Document notification skipped: missing student user', [
                 'document_id' => $document->id,
                 'student_id' => $document->student_id,
                 'event' => $event,
             ]);
+
             return;
         }
 
@@ -152,12 +153,12 @@ class DocumentNotificationService
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array{title: string, message: string, type: string, metadata: array<string, mixed>}
      */
     private function buildPayload(string $event, Document $document, array $data): array
     {
-        $documentType = $document->type?->value ?? (string) $document->type;
+        $documentType = $document->type->value;
         $title = 'Document';
         $message = 'Mise à jour du document.';
 

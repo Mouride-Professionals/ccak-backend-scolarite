@@ -1,13 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\CourseEnrollment;
 use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\Enrollment;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 class CourseEnrollmentSeeder extends Seeder
@@ -31,6 +32,7 @@ class CourseEnrollmentSeeder extends Seeder
 
         if ($enrollments->isEmpty() || $courses->isEmpty()) {
             $this->command->warn('No enrollments or courses found. Skipping course enrollments.');
+
             return;
         }
 

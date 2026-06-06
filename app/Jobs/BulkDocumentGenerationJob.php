@@ -19,8 +19,8 @@ class BulkDocumentGenerationJob implements ShouldQueue
     use SerializesModels;
 
     /**
-     * @param array<int, string> $studentIds
-     * @param array<string, mixed> $metadata
+     * @param  array<int, string>  $studentIds
+     * @param  array<string, mixed>  $metadata
      */
     public function __construct(
         private readonly string $type,
@@ -28,8 +28,7 @@ class BulkDocumentGenerationJob implements ShouldQueue
         private readonly array $metadata,
         private readonly string $generatedBy,
         private readonly string $status = GeneratedDocument::STATUS_DRAFT
-    ) {
-    }
+    ) {}
 
     public function handle(DocumentGenerationService $generationService): void
     {

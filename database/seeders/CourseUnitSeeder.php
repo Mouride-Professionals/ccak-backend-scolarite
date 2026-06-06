@@ -40,7 +40,7 @@ class CourseUnitSeeder extends Seeder
     private function unitsForProgram(string $programName, string $level, string $deptCode): array
     {
         $key = strtolower($programName);
-        $prefix = $deptCode . '-' . ($level === 'MASTER' ? 'M' : ($level === 'DOCTORAT' ? 'D' : 'L'));
+        $prefix = $deptCode.'-'.($level === 'MASTER' ? 'M' : ($level === 'DOCTORAT' ? 'D' : 'L'));
 
         $catalog = [
             'licence informatique' => [
@@ -239,7 +239,7 @@ class CourseUnitSeeder extends Seeder
 
         return array_map(function (array $row) use ($prefix) {
             return [
-                'code' => $prefix . '-' . $row[0],
+                'code' => $prefix.'-'.$row[0],
                 'name' => $row[1],
                 'semester' => $row[2],
                 'credits' => $row[3],

@@ -48,7 +48,7 @@ return [
 
     'ccak' => [
         'base_url' => env('CCAK_API_URL'),
-        'api_key'  => env('CCAK_API_KEY'),
+        'api_key' => env('CCAK_API_KEY'),
     ],
 
 ];

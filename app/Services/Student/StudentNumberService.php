@@ -10,8 +10,6 @@ class StudentNumberService
     /**
      * Génère un numéro d'étudiant unique selon le format UCAK{ANNEE}{NUMERO_SEQUENTIEL}.
      * Exemple: UCAK2024001
-     *
-     * @return string
      */
     public function generate(): string
     {

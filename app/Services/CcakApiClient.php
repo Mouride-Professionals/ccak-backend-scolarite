@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 class CcakApiClient
 {
     private string $baseUrl;
+
     private string $apiKey;
 
     public function __construct()

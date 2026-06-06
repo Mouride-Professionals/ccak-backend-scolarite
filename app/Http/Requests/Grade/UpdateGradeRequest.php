@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Requests\Grade;
@@ -55,7 +56,7 @@ class UpdateGradeRequest extends FormRequest
             $gradeId = $this->route('grade');
             $grade = \App\Models\Grade::find($gradeId);
 
-            if ($grade && isset($data['score']) && !isset($data['max_score'])) {
+            if ($grade && isset($data['score']) && ! isset($data['max_score'])) {
                 if ($data['score'] > $grade->max_score) {
                     $validator->errors()->add(
                         'score',
@@ -65,7 +66,7 @@ class UpdateGradeRequest extends FormRequest
             }
 
             // If only max_score is provided, check against existing score
-            if ($grade && isset($data['max_score']) && !isset($data['score'])) {
+            if ($grade && isset($data['max_score']) && ! isset($data['score'])) {
                 if ($grade->score > $data['max_score']) {
                     $validator->errors()->add(
                         'max_score',
@@ -85,7 +86,7 @@ class UpdateGradeRequest extends FormRequest
                     ->where('course_id', $courseId)
                     ->first();
 
-                if (!$enrollment) {
+                if (! $enrollment) {
                     $validator->errors()->add(
                         'course_enrollment_id',
                         'L\'inscription au cours ne correspond pas à l\'étudiant et au cours fournis.'
@@ -119,7 +120,7 @@ class UpdateGradeRequest extends FormRequest
             'type.in' => 'Le type de note doit être l\'un des suivants : CC (Contrôle Continu), EXAM, TP (Travaux Pratiques), ou ORAL.',
             'score.min' => 'La note doit être au minimum 0.',
             'max_score.gt' => 'Le score maximum doit être supérieur à 0.',
-            'weight.min' => 'Le poids doit être au minimum 0.'
+            'weight.min' => 'Le poids doit être au minimum 0.',
         ];
     }
 

@@ -16,22 +16,21 @@ class CourseEnrollmentService
 {
     public function __construct(
         private readonly EnrollmentValidationService $validationService
-    ) {
-    }
+    ) {}
 
     public function enrollCourse(Enrollment $enrollment, array $payload): array
     {
-        if (!$enrollment->isActive()) {
+        if (! $enrollment->isActive()) {
             return [
                 'error' => [
-                    'message' => 'L\'inscription n\'est pas active. Statut actuel: ' . $enrollment->status,
+                    'message' => 'L\'inscription n\'est pas active. Statut actuel: '.$enrollment->status->value,
                     'status' => 422,
                 ],
             ];
         }
 
         $course = Course::find($payload['course_id']);
-        if (!$course || !$course->is_active) {
+        if (! $course || ! $course->is_active) {
             return [
                 'error' => [
                     'message' => 'Cours non trouvé ou inactif.',
@@ -50,7 +49,7 @@ class CourseEnrollmentService
         }
 
         $prerequisiteCheck = $this->validationService->validatePrerequisites($enrollment->student_id, $course);
-        if (!$prerequisiteCheck['satisfied']) {
+        if (! $prerequisiteCheck['satisfied']) {
             return [
                 'error' => [
                     'message' => 'Prérequis non satisfaits.',
@@ -69,7 +68,7 @@ class CourseEnrollmentService
             $payload['semester']
         );
 
-        if (!$availabilityCheck['available']) {
+        if (! $availabilityCheck['available']) {
             return [
                 'error' => [
                     'message' => 'Plus de places disponibles pour ce cours.',
@@ -123,14 +122,14 @@ class CourseEnrollmentService
         if ($courseEnrollment->status !== CourseEnrollment::STATUS_ENROLLED) {
             return [
                 'error' => [
-                    'message' => 'Le cours ne peut être abandonné. Statut actuel: ' . $courseEnrollment->status,
+                    'message' => 'Le cours ne peut être abandonné. Statut actuel: '.$courseEnrollment->status,
                     'status' => 422,
                 ],
             ];
         }
 
         $isAdmin = $user?->hasRole('ADMIN') ?? false;
-        if (!$isAdmin) {
+        if (! $isAdmin) {
             $dropDeadline = $this->calculateDropDeadline($courseEnrollment);
 
             if (Carbon::now()->isAfter($dropDeadline)) {
@@ -153,7 +152,8 @@ class CourseEnrollmentService
             ]);
         });
 
-        $courseEnrollment->refresh(['course']);
+        $courseEnrollment->refresh();
+        $courseEnrollment->load('course');
         $this->createAuditLog($courseEnrollment, $user, $isAdmin);
 
         return [
@@ -179,11 +179,11 @@ class CourseEnrollmentService
     public function getAvailableCoursesByProgram(AcademicProgram $program, array $payload): array
     {
         $academicYearId = $payload['academic_year_id'] ?? null;
-        if (!$academicYearId) {
+        if (! $academicYearId) {
             $academicYearId = AcademicYear::where('is_current', true)->value('id');
         }
 
-        if (!$academicYearId) {
+        if (! $academicYearId) {
             return [
                 'error' => [
                     'message' => 'Aucune année académique trouvée.',
@@ -206,8 +206,8 @@ class CourseEnrollmentService
         $completedCourseIds = [];
         if ($studentId) {
             $completedCourseIds = CourseEnrollment::whereHas('enrollment', function ($query) use ($studentId) {
-                    $query->where('student_id', $studentId);
-                })
+                $query->where('student_id', $studentId);
+            })
                 ->where('status', CourseEnrollment::STATUS_COMPLETED)
                 ->pluck('course_id')
                 ->toArray();
@@ -237,8 +237,8 @@ class CourseEnrollmentService
             $isEnrolled = false;
             if ($studentId) {
                 $isEnrolled = CourseEnrollment::whereHas('enrollment', function ($query) use ($studentId) {
-                        $query->where('student_id', $studentId);
-                    })
+                    $query->where('student_id', $studentId);
+                })
                     ->where('course_id', $course->id)
                     ->where('academic_year_id', $academicYearId)
                     ->where('semester', $semester)
@@ -271,7 +271,7 @@ class CourseEnrollmentService
                 'enrollment_status' => [
                     'is_enrolled' => $isEnrolled,
                     'is_completed' => $isCompleted,
-                    'can_enroll' => !$isEnrolled && !$isCompleted && $seatsAvailable > 0 && $prerequisiteStatus['satisfied'],
+                    'can_enroll' => ! $isEnrolled && ! $isCompleted && $seatsAvailable > 0 && $prerequisiteStatus['satisfied'],
                 ],
             ];
         })->filter()->values()->all();
@@ -285,7 +285,7 @@ class CourseEnrollmentService
             'academic_year_id' => $academicYearId,
             'semester' => $semester,
             'courses' => $availableCourses,
-            'total_available' => $availableCourses->count(),
+            'total_available' => count($availableCourses),
             'filters_applied' => [
                 'search' => $search,
                 'student_id' => $studentId,
@@ -318,7 +318,7 @@ class CourseEnrollmentService
         $missingPrerequisites = array_diff($prerequisites, $completedCourseIds);
 
         $missingDetails = [];
-        if (!empty($missingPrerequisites)) {
+        if (! empty($missingPrerequisites)) {
             $missingCourses = Course::whereIn('id', $missingPrerequisites)->get();
             $missingDetails = $missingCourses->map(function ($course) {
                 return [

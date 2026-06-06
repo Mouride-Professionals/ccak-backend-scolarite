@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\Document;
 use App\Models\DeliberationSession;
+use App\Models\Document;
 use App\Models\FacultyContract;
 use App\Models\FacultyDocument;
 use App\Models\FacultyMember;
@@ -12,8 +12,8 @@ use App\Models\Guardian;
 use App\Models\Notification;
 use App\Models\Student;
 use App\Models\User;
-use App\Policies\DocumentPolicy;
 use App\Policies\DeliberationSessionPolicy;
+use App\Policies\DocumentPolicy;
 use App\Policies\FacultyContractPolicy;
 use App\Policies\FacultyDocumentPolicy;
 use App\Policies\FacultyMemberPolicy;

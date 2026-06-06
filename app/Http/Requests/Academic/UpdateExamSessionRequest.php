@@ -18,12 +18,12 @@ class UpdateExamSessionRequest extends FormRequest
     {
         return [
             'academic_year_id' => ['sometimes', 'uuid', 'exists:academic_years,id'],
-            'semester_number'  => ['sometimes', 'integer', 'min:1', 'max:12'],
-            'name'             => ['sometimes', 'string', 'max:255'],
-            'type'             => ['sometimes', new Enum(ExamSessionType::class)],
-            'start_date'       => ['sometimes', 'date'],
-            'end_date'         => ['sometimes', 'date', 'after_or_equal:start_date'],
-            'status'           => ['sometimes', new Enum(ExamSessionStatus::class)],
+            'semester_number' => ['sometimes', 'integer', 'min:1', 'max:12'],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'type' => ['sometimes', new Enum(ExamSessionType::class)],
+            'start_date' => ['sometimes', 'date'],
+            'end_date' => ['sometimes', 'date', 'after_or_equal:start_date'],
+            'status' => ['sometimes', new Enum(ExamSessionStatus::class)],
         ];
     }
 }

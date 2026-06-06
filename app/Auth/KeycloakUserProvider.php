@@ -80,11 +80,11 @@ class KeycloakUserProvider extends EloquentUserProvider
 
         $currentRoles = method_exists($user, 'getRoleNames')
             ? $user->getRoleNames()
-            ->map(fn($role) => strtoupper($role))
-            ->filter(fn($role) => isset($allowedRolesSet[$role]))
-            ->unique()
-            ->values()
-            ->all()
+                ->map(fn ($role) => strtoupper($role))
+                ->filter(fn ($role) => isset($allowedRolesSet[$role]))
+                ->unique()
+                ->values()
+                ->all()
             : [];
 
         if ($existingRoles !== $currentRoles) {
@@ -106,14 +106,14 @@ class KeycloakUserProvider extends EloquentUserProvider
         $roles = Arr::wrap(data_get($claims, 'realm_access.roles', []));
 
         $resourceRoles = collect(data_get($claims, 'resource_access', []))
-            ->map(fn($access) => Arr::wrap(data_get($access, 'roles', [])))
+            ->map(fn ($access) => Arr::wrap(data_get($access, 'roles', [])))
             ->flatten()
             ->all();
 
         return collect(array_merge($roles, $resourceRoles))
-            ->filter(fn($role) => is_string($role) && $role !== '')
-            ->map(fn($role) => strtoupper($role))
-            ->filter(fn($role) => isset($allowedRolesSet[$role]))
+            ->filter(fn ($role) => is_string($role) && $role !== '')
+            ->map(fn ($role) => strtoupper($role))
+            ->filter(fn ($role) => isset($allowedRolesSet[$role]))
             ->unique()
             ->values()
             ->all();
@@ -124,8 +124,8 @@ class KeycloakUserProvider extends EloquentUserProvider
         $roles = config('keycloak.role_allowlist', self::DEFAULT_ROLE_ALLOWLIST);
 
         return collect(Arr::wrap($roles))
-            ->filter(fn($role) => is_string($role) && $role !== '')
-            ->map(fn($role) => strtoupper(trim($role)))
+            ->filter(fn ($role) => is_string($role) && $role !== '')
+            ->map(fn ($role) => strtoupper(trim($role)))
             ->unique()
             ->values()
             ->all();

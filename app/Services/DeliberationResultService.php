@@ -45,6 +45,7 @@ class DeliberationResultService
     public function update(DeliberationResult $result, array $data): DeliberationResult
     {
         $result->update($data);
+
         return $result->refresh();
     }
 

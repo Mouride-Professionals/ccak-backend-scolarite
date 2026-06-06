@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Academic;
 
-use App\Services\DeliberationResultService;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Academic\StoreDeliberationResultRequest;
 use App\Http\Requests\Academic\UpdateDeliberationResultRequest;
 use App\Http\Resources\Academic\DeliberationResultResource;
+use App\Models\DeliberationResult;
+use App\Services\DeliberationResultService;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
-use App\Models\DeliberationResult;
 
 class DeliberationResultController extends BaseApiController
 {
@@ -48,7 +48,7 @@ class DeliberationResultController extends BaseApiController
 
     public function store(StoreDeliberationResultRequest $request)
     {
-        $result = DB::transaction(fn() => $this->service->create($request->validated()));
+        $result = DB::transaction(fn () => $this->service->create($request->validated()));
 
         return $this->success(
             new DeliberationResultResource($result),
@@ -60,6 +60,7 @@ class DeliberationResultController extends BaseApiController
     public function show($id)
     {
         $result = $this->service->getById($id);
+
         return $result
             ? $this->success(new DeliberationResultResource($result))
             : $this->error('Not found', 404);
@@ -67,7 +68,7 @@ class DeliberationResultController extends BaseApiController
 
     public function update(UpdateDeliberationResultRequest $request, $id)
     {
-        $result = DB::transaction(fn() => $this->service->update($id, $request->validated()));
+        $result = DB::transaction(fn () => $this->service->update($id, $request->validated()));
 
         return $result
             ? $this->success(new DeliberationResultResource($result))

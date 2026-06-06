@@ -1,13 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\GeneratedDocument;
 use App\Models\Student;
 use App\Models\User;
-use Illuminate\Database\Seeder;
-use App\Models\GeneratedDocument;
 use Database\Seeders\Concerns\UsesSenegalAcademicCalendar;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -31,6 +32,7 @@ class GeneratedDocumentSeeder extends Seeder
 
         if ($students->isEmpty() || $users->isEmpty()) {
             $this->command->warn('Missing students or users. Skipping generated documents.');
+
             return;
         }
 
@@ -75,13 +77,13 @@ class GeneratedDocumentSeeder extends Seeder
 
     private function attachGeneratedMedia(GeneratedDocument $document): void
     {
-        $fileName = $document->document_number . '.pdf';
+        $fileName = $document->document_number.'.pdf';
         $tmpPath = tempnam(sys_get_temp_dir(), 'gen_doc_');
         if ($tmpPath === false) {
             return;
         }
 
-        $tmpFile = $tmpPath . '.pdf';
+        $tmpFile = $tmpPath.'.pdf';
         rename($tmpPath, $tmpFile);
         $pdf = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF";
         file_put_contents($tmpFile, $pdf);

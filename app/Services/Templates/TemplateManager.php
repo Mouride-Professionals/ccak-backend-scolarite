@@ -18,7 +18,7 @@ class TemplateManager
 
     public function get(DocumentType $type): DocumentTemplateInterface
     {
-        if (!isset($this->templates[$type->value])) {
+        if (! isset($this->templates[$type->value])) {
             throw new InvalidArgumentException("No template registered for type: $type->value");
         }
 

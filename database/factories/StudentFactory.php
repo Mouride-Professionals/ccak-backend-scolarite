@@ -30,21 +30,21 @@ class StudentFactory extends Factory
         $firstName = $gender === 'F'
             ? $this->faker->randomElement($femaleFirstNames)
             : $this->faker->randomElement($maleFirstNames);
-        $fullName = $firstName . ' ' . $this->faker->randomElement($lastNames);
+        $fullName = $firstName.' '.$this->faker->randomElement($lastNames);
         $phonePrefix = $this->faker->randomElement(['70', '75', '76', '77', '78']);
 
         return [
             'user_id' => User::factory(),
-            'student_number' => "UCAK{$year}" . str_pad((string)$sequence++, 3, '0', STR_PAD_LEFT),
+            'student_number' => "UCAK{$year}".str_pad((string) $sequence++, 3, '0', STR_PAD_LEFT),
             'full_name' => $fullName,
             'gender' => $gender,
             'date_of_birth' => $this->faker->dateTimeBetween('-25 years', '-18 years'),
             'place_of_birth' => $this->faker->randomElement($cities),
             'nationality' => 'Senegalaise',
-            'phone' => $phonePrefix . sprintf('%07d', rand(0, 9999999)),
-            'emergency_contact_name' => $this->faker->randomElement($maleFirstNames) . ' ' . $this->faker->randomElement($lastNames),
-            'emergency_contact_phone' => $phonePrefix . sprintf('%07d', rand(0, 9999999)),
-            'address' => $this->faker->randomElement($cities) . ', Senegal',
+            'phone' => $phonePrefix.sprintf('%07d', rand(0, 9999999)),
+            'emergency_contact_name' => $this->faker->randomElement($maleFirstNames).' '.$this->faker->randomElement($lastNames),
+            'emergency_contact_phone' => $phonePrefix.sprintf('%07d', rand(0, 9999999)),
+            'address' => $this->faker->randomElement($cities).', Senegal',
             'photo_url' => null,
             'status' => $this->faker->randomElement(Student::getStatuses()),
         ];
@@ -52,14 +52,14 @@ class StudentFactory extends Factory
 
     public function active(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => Student::STATUS_ACTIVE,
         ]);
     }
 
     public function graduated(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => Student::STATUS_GRADUATED,
         ]);
     }

@@ -37,6 +37,7 @@ class Course extends Model
 
     // Audit configuration
     public $auditEvents = ['created', 'updated', 'deleted'];
+
     public $auditExclude = ['created_at', 'updated_at'];
 
     public function courseUnit(): BelongsTo
@@ -106,6 +107,7 @@ class Course extends Model
     {
         return $this->belongsToMany(\App\Models\Student::class, 'course_enrollments', 'course_id', 'student_id');
     }
+
     /**
      * Handle prerequisites for audit
      */

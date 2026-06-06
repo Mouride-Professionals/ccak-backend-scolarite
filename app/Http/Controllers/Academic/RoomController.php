@@ -42,21 +42,21 @@ class RoomController extends BaseApiController
 
     public function store(StoreRoomRequest $request): JsonResponse
     {
-        $room = DB::transaction(fn() => Room::create($request->validated()));
+        $room = DB::transaction(fn () => Room::create($request->validated()));
 
         return $this->success(new RoomResource($room), 'Room created', 201);
     }
 
     public function update(UpdateRoomRequest $request, Room $room): JsonResponse
     {
-        DB::transaction(fn() => $room->update($request->validated()));
+        DB::transaction(fn () => $room->update($request->validated()));
 
         return $this->success(new RoomResource($room->refresh()), 'Room updated');
     }
 
     public function destroy(Room $room): JsonResponse
     {
-        DB::transaction(fn() => $room->delete());
+        DB::transaction(fn () => $room->delete());
 
         return $this->success(null, 'Room deleted');
     }

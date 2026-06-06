@@ -16,9 +16,11 @@ class FacultyMember extends Model
     use UsesUuidV7;
 
     public const RANKS = ['PROFESSEUR', 'MAITRE_CONF', 'MAITRE_ASS', 'ASSISTANT', 'VACATAIRE'];
+
     public const CONTRACT_TYPES = ['PERMANENT', 'TEMPORARY', 'HOURLY'];
 
     protected $table = 'faculty_members';
+
     protected $fillable = [
         'id',
         'user_id',
@@ -39,6 +41,7 @@ class FacultyMember extends Model
     ];
 
     public $auditEvents = ['created', 'updated', 'deleted'];
+
     public $auditExclude = ['created_at', 'updated_at'];
 
     public function user(): BelongsTo

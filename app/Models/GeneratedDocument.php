@@ -28,7 +28,6 @@ class GeneratedDocument extends Model implements HasMedia
 {
     use HasFactory, HasUuids, InteractsWithMedia;
 
-
     protected $table = 'generated_documents';
 
     protected $fillable = [
@@ -56,13 +55,19 @@ class GeneratedDocument extends Model implements HasMedia
     ];
 
     public const TYPE_TRANSCRIPT = 'TRANSCRIPT';
+
     public const TYPE_CERTIFICATE = 'CERTIFICATE';
+
     public const TYPE_ATTESTATION = 'ATTESTATION';
+
     public const TYPE_ID_CARD = 'ID_CARD';
+
     public const TYPE_DIPLOMA = 'DIPLOMA';
 
     public const STATUS_DRAFT = 'DRAFT';
+
     public const STATUS_ISSUED = 'ISSUED';
+
     public const STATUS_REVOKED = 'REVOKED';
 
     public static function getTypes(): array
@@ -157,7 +162,6 @@ class GeneratedDocument extends Model implements HasMedia
     {
         return $query->where('status', self::STATUS_REVOKED);
     }
-
 
     public function student(): BelongsTo
     {

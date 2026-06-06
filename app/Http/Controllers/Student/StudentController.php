@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\GradeStatus;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Student\StoreStudentRequest;
 use App\Http\Requests\Student\UpdateStudentRequest;
@@ -14,11 +15,10 @@ use App\Services\Documents\DocumentService;
 use App\Services\Student\StudentNumberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use App\Enums\GradeStatus;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -52,7 +52,7 @@ class StudentController extends BaseApiController
             })
             ->when($request->filled('name'), function ($query) use ($request) {
                 $likeOperator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-                $query->where('full_name', $likeOperator, '%' . trim((string) $request->string('name')) . '%');
+                $query->where('full_name', $likeOperator, '%'.trim((string) $request->string('name')).'%');
             })
             ->allowedIncludes(['user'])
             ->allowedFilters([
@@ -78,7 +78,7 @@ class StudentController extends BaseApiController
         try {
             $validated = $request->validated();
 
-            if (!empty($validated['documents']) && !($request->user()?->can('documents.create') ?? false)) {
+            if (! empty($validated['documents']) && ! ($request->user()?->can('documents.create') ?? false)) {
                 return $this->error(
                     'Permission documents.create requise pour ajouter des documents.',
                     403
@@ -139,6 +139,7 @@ class StudentController extends BaseApiController
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return $this->error('Erreur lors de la création du profil étudiant.', 500);
         }
     }
@@ -169,6 +170,7 @@ class StudentController extends BaseApiController
 
             $student = DB::transaction(function () use ($request, $student) {
                 $student->update($request->validated());
+
                 return $student;
             });
 
@@ -231,10 +233,10 @@ class StudentController extends BaseApiController
                 AllowedFilter::exact('type'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::callback('semester', function ($query, $value) {
-                    $query->whereHas('courseEnrollment', fn($sub) => $sub->where('semester', $value));
+                    $query->whereHas('courseEnrollment', fn ($sub) => $sub->where('semester', $value));
                 }),
                 AllowedFilter::callback('academic_year_id', function ($query, $value) {
-                    $query->whereHas('courseEnrollment', fn($sub) => $sub->where('academic_year_id', $value));
+                    $query->whereHas('courseEnrollment', fn ($sub) => $sub->where('academic_year_id', $value));
                 }),
             ])
             ->allowedSorts(['score', 'type', 'status', 'created_at'])
@@ -345,6 +347,7 @@ class StudentController extends BaseApiController
 
         if ($user->keycloak_id) {
             $student->update(['keycloak_user_id' => $user->keycloak_id]);
+
             return;
         }
 

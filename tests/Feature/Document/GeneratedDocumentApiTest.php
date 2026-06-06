@@ -14,8 +14,8 @@ use Tests\TestCase;
 
 class GeneratedDocumentApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'generated_documents.view',
@@ -41,7 +41,7 @@ class GeneratedDocumentApiTest extends TestCase
         $payload = [
             'type' => GeneratedDocument::TYPE_TRANSCRIPT, // ex: 'TRANSCRIPT'
             'student_id' => $student->id,
-            'document_number' => 'DOC-' . strtoupper(Str::random(8)),
+            'document_number' => 'DOC-'.strtoupper(Str::random(8)),
             'metadata' => [
                 'student_name' => 'John Doe',
                 'student_number' => '2024-0001',
@@ -51,7 +51,7 @@ class GeneratedDocumentApiTest extends TestCase
             'issued_at' => null, // ou Carbon::now()->format('Y-m-d H:i:s') si émis
             'status' => GeneratedDocument::STATUS_REVOKED,
             'generated_by' => $user->id,
-            'file_path' => '/documents/generated/doc-' . strtolower(Str::random(8)) . '.pdf',
+            'file_path' => '/documents/generated/doc-'.strtolower(Str::random(8)).'.pdf',
         ];
 
         $createResponse = $this->postJson('/api/v1/generated-documents', $payload);
@@ -76,7 +76,7 @@ class GeneratedDocumentApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.id', $documentId);
 
-        //dd($createResponse->json());
+        // dd($createResponse->json());
         $updateResponse = $this->putJson("/api/v1/generated-documents/{$documentId}", [
             'status' => GeneratedDocument::STATUS_ISSUED,
             'issued_at' => Carbon::now()->format('Y-m-d H:i:s'),

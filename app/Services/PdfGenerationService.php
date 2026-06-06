@@ -9,7 +9,6 @@ use App\Models\GeneratedDocument;
 use App\Models\User;
 use App\Services\Templates\TemplateManager;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -18,7 +17,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class PdfGenerationService implements DocumentGenerationServiceInterface
 {
     private const DOCUMENT_PREFIX = 'UCAK';
+
     private const QR_CODE_SIZE = 150;
+
     private const WATERMARK_OPACITY = 0.1;
 
     public function __construct(
@@ -39,7 +40,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         $template = $this->templateManager->get($type);
 
         // Validate template data
-        if (!$template->validateData($templateData)) {
+        if (! $template->validateData($templateData)) {
             throw new \InvalidArgumentException('Invalid template data provided');
         }
 
@@ -90,7 +91,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     private function generatePdf(
         DocumentTemplateInterface $template,
@@ -132,11 +133,11 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
             'student_id' => $student->id,
         ]);
 
-        return 'data:image/svg+xml;base64,' . base64_encode(
-                QrCode::size(self::QR_CODE_SIZE)
-                    ->format('svg')
-                    ->generate($verificationUrl)
-            );
+        return 'data:image/svg+xml;base64,'.base64_encode(
+            QrCode::size(self::QR_CODE_SIZE)
+                ->format('svg')
+                ->generate($verificationUrl)
+        );
     }
 
     private function storeGeneratedPdf(
@@ -149,13 +150,13 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
             throw new \RuntimeException('Impossible de créer un fichier temporaire');
         }
 
-        $tmpFile = $tmpPath . '.pdf';
+        $tmpFile = $tmpPath.'.pdf';
         rename($tmpPath, $tmpFile);
         file_put_contents($tmpFile, $pdfContent);
 
         try {
             return $document->addMedia($tmpFile)
-                ->usingFileName($documentNumber . '.pdf')
+                ->usingFileName($documentNumber.'.pdf')
                 ->usingName($documentNumber)
                 ->toMediaCollection('official_documents');
         } finally {
@@ -177,7 +178,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
         $random = Str::random(6);
         $typeCode = strtoupper(substr($type->value, 0, 3));
 
-        return self::DOCUMENT_PREFIX . "-{$typeCode}-{$timestamp}-{$random}";
+        return self::DOCUMENT_PREFIX."-{$typeCode}-{$timestamp}-{$random}";
     }
 
     private function getBrandingData(): array
@@ -198,7 +199,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function prepareMetadata(
@@ -234,7 +235,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
     {
         $document = $this->find($documentNumber);
 
-        if (!$document) {
+        if (! $document) {
             return false;
         }
 
@@ -260,7 +261,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
     {
         $document = $this->find($documentNumber);
 
-        if (!$document) {
+        if (! $document) {
             throw new \InvalidArgumentException('Document not found');
         }
 
@@ -304,6 +305,7 @@ class PdfGenerationService implements DocumentGenerationServiceInterface
             $media = $document->media()->whereKey($document->media_id)->first();
             if ($media instanceof Media) {
                 $content = Storage::disk($media->disk)->get($media->getPathRelativeToRoot());
+
                 return base64_encode($content);
             }
         }

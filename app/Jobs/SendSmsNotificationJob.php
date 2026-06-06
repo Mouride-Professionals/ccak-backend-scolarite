@@ -16,6 +16,7 @@ class SendSmsNotificationJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 120;
 
     public function __construct(
@@ -35,8 +36,9 @@ class SendSmsNotificationJob implements ShouldQueue
 
         // Check if user has a phone number
         $phone = $user->phone ?? $user->student?->phone;
-        if (!$phone) {
+        if (! $phone) {
             $this->notification->update(['sms_status' => 'skipped']);
+
             return;
         }
 

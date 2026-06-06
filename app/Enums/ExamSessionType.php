@@ -9,7 +9,7 @@ enum ExamSessionType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::NORMAL => 'Session Normale',
             self::RATTRAPAGE => 'Session de Rattrapage',
         };

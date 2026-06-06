@@ -54,7 +54,7 @@ class EvaluationController extends BaseApiController
     {
         $data = $request->validated();
 
-        $evaluation = DB::transaction(fn() => Evaluation::create($data));
+        $evaluation = DB::transaction(fn () => Evaluation::create($data));
 
         return $this->success(new EvaluationResource($evaluation), 'Evaluation created', 201);
     }
@@ -77,7 +77,7 @@ class EvaluationController extends BaseApiController
     public function results(Evaluation $evaluation, Request $request): JsonResponse
     {
         $user = $request->user();
-        if (!$this->canViewResults($user, $evaluation)) {
+        if (! $this->canViewResults($user, $evaluation)) {
             return $this->error('Forbidden', 403);
         }
 
@@ -149,6 +149,7 @@ class EvaluationController extends BaseApiController
         }
 
         $faculty = FacultyMember::where('user_id', $user->id)->first();
+
         return $faculty && $faculty->id === $evaluation->faculty_member_id;
     }
 }

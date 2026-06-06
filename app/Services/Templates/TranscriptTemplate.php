@@ -6,9 +6,8 @@ use App\Contracts\Templates\DocumentTemplateInterface;
 
 class TranscriptTemplate implements DocumentTemplateInterface
 {
-
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getName(): string
     {
@@ -16,7 +15,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getView(): string
     {
@@ -24,7 +23,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     /** @return array<string, mixed> */
     public function getRequiredData(): array
@@ -42,7 +41,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     /** @param array<string, mixed> $data */
     public function validateData(array $data): bool
@@ -51,18 +50,18 @@ class TranscriptTemplate implements DocumentTemplateInterface
 
         foreach ($requiredFields as $key => $field) {
             if (is_array($field)) {
-                if (!isset($data[$key]) || !is_array($data[$key])) {
+                if (! isset($data[$key]) || ! is_array($data[$key])) {
                     return false;
                 }
                 foreach ($data[$key] as $item) {
                     foreach ($field as $subField) {
-                        if (!isset($item[$subField])) {
+                        if (! isset($item[$subField])) {
                             return false;
                         }
                     }
                 }
             } else {
-                if (!isset($data[$field])) {
+                if (! isset($data[$field])) {
                     return false;
                 }
             }
@@ -72,14 +71,14 @@ class TranscriptTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Calcule :
      * - la moyenne pondérée (clé `average`)
      * - le total de crédits (clé `total_credits`)
      */
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     public function processData(array $data): array
@@ -96,7 +95,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getStyles(): string
     {
@@ -117,6 +116,7 @@ class TranscriptTemplate implements DocumentTemplateInterface
         }
 
         $average = $weightedSum / $totalCredits;
+
         return $totalCredits > 0 ? round($average, 2, PHP_ROUND_HALF_UP) : 0.0;
     }
 

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\DocumentStatus;
+use App\Http\Requests\Document\ReviewDocumentRequest;
+use App\Http\Requests\Document\ReviewStudentDocumentRequest;
 use App\Http\Requests\Document\StoreDocumentRequest;
 use App\Http\Requests\Document\StoreStudentDocumentRequest;
 use App\Http\Requests\Document\UpdateDocumentRequest;
-use App\Http\Requests\Document\ReviewDocumentRequest;
-use App\Http\Requests\Document\ReviewStudentDocumentRequest;
 use App\Http\Resources\DocumentResource;
 use App\Models\Document;
 use App\Models\Student;
 use App\Services\Documents\DocumentService;
-use App\Enums\DocumentStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -77,13 +77,13 @@ class DocumentController extends BaseApiController
     public function store(StoreDocumentRequest $request): JsonResponse
     {
         // Valider qu'un fichier est présent
-        if (!$request->hasFile('document_file')) {
+        if (! $request->hasFile('document_file')) {
             return $this->error('Un fichier est requis pour l\'upload', 422);
         }
 
         $file = $request->file('document_file');
 
-        if (!$file instanceof UploadedFile || !$file->isValid()) {
+        if (! $file instanceof UploadedFile || ! $file->isValid()) {
             return $this->error('Le fichier n\'est pas valide', 422);
         }
 
@@ -252,7 +252,7 @@ class DocumentController extends BaseApiController
                 [
                     'Content-Type' => $fileInfo['mime_type'],
                     'Content-Length' => strlen($fileInfo['content']),
-                    'Content-Disposition' => 'attachment; filename="' . $fileInfo['original_name'] . '"',
+                    'Content-Disposition' => 'attachment; filename="'.$fileInfo['original_name'].'"',
                 ]
             );
         } catch (\Exception $e) {
@@ -291,7 +291,7 @@ class DocumentController extends BaseApiController
     {
         $studentId = $student?->id ?: $request->input('student_id');
 
-        if (!$studentId) {
+        if (! $studentId) {
             return $this->error('L\'identifiant de l\'étudiant est requis', 422);
         }
 
@@ -431,7 +431,7 @@ class DocumentController extends BaseApiController
     {
         $file = $request->file('document');
 
-        if (!$file instanceof UploadedFile || !$file->isValid()) {
+        if (! $file instanceof UploadedFile || ! $file->isValid()) {
             return $this->error('Le fichier n\'est pas valide', 422);
         }
 
@@ -472,7 +472,7 @@ class DocumentController extends BaseApiController
     {
         $admin = $request->user()?->admin;
 
-        if (!$admin) {
+        if (! $admin) {
             return $this->error('Vous n\'êtes pas autorisé à revoir ce document.', 403);
         }
 
@@ -515,12 +515,12 @@ class DocumentController extends BaseApiController
         $filters = (array) $request->query('filter', []);
 
         foreach ($keys as $key) {
-            if ($request->filled($key) && !array_key_exists($key, $filters)) {
+            if ($request->filled($key) && ! array_key_exists($key, $filters)) {
                 $filters[$key] = $request->query($key);
             }
         }
 
-        if (!empty($filters)) {
+        if (! empty($filters)) {
             $request->merge(['filter' => $filters]);
         }
     }

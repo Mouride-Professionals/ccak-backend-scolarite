@@ -10,8 +10,8 @@ use Tests\TestCase;
 
 class RoleApiTest extends TestCase
 {
-    use RefreshDatabase;
     use InteractsWithPermissions;
+    use RefreshDatabase;
 
     private array $permissions = [
         'roles.view',

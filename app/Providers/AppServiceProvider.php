@@ -4,13 +4,13 @@ namespace App\Providers;
 
 use App\Auth\KeycloakUserProvider;
 use App\Models\User;
+use App\Observers\UserObserver;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-use App\Observers\UserObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,6 +51,6 @@ class AppServiceProvider extends ServiceProvider
                 || $user->can('permissions.view')
                 || $user->can('roles.view');
         });
-         User::observe(UserObserver::class);
+        User::observe(UserObserver::class);
     }
 }

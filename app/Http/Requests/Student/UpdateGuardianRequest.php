@@ -21,7 +21,7 @@ class UpdateGuardianRequest extends FormRequest
             'email' => [
                 'sometimes',
                 'email',
-                Rule::unique('guardians', 'email')->ignore($this->route('guardian'))
+                Rule::unique('guardians', 'email')->ignore($this->route('guardian')),
             ],
             'address' => ['sometimes', 'string'],
             'occupation' => ['sometimes', 'string', 'max:255'],

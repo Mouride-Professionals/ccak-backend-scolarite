@@ -2,8 +2,6 @@
 
 namespace Tests\Feature\Notification;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class AnnouncementTest extends TestCase

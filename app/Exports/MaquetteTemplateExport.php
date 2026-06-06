@@ -3,13 +3,13 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 /**
  * Generates a blank importable maquette template following the CAMES/LMD standard.
@@ -18,9 +18,10 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
  *   A  Code UE | B  Nom UE | C  Type UE | D  Crédits UE | E  Coef UE |
  *   F  Code ECUE | G  Intitulé ECUE | H  CM | I  TD | J  TP | K  TPE | L  VHT | M  Crédits ECUE | N  Coef ECUE
  */
-class MaquetteTemplateExport implements FromArray, WithTitle, WithColumnWidths, WithEvents
+class MaquetteTemplateExport implements FromArray, WithColumnWidths, WithEvents, WithTitle
 {
-    private array $rows    = [];
+    private array $rows = [];
+
     private array $rowMeta = [];
 
     private const HEADERS = [
@@ -93,17 +94,17 @@ class MaquetteTemplateExport implements FromArray, WithTitle, WithColumnWidths, 
                 $total = count($this->rowMeta);
 
                 for ($i = 0; $i < $total; $i++) {
-                    $row   = $i + 1;
+                    $row = $i + 1;
                     $range = "A{$row}:N{$row}";
 
                     match ($this->rowMeta[$i]) {
-                        'title'           => $this->styleTitle($sheet, $range, $row),
-                        'instructions'    => $this->styleInstructions($sheet, $range, $row),
+                        'title' => $this->styleTitle($sheet, $range, $row),
+                        'instructions' => $this->styleInstructions($sheet, $range, $row),
                         'semester_header' => $this->styleSemesterHeader($sheet, $row),
-                        'col_headers'     => $this->styleColHeaders($sheet, $range, $row),
-                        'ue_example'      => $this->styleExample($sheet, $range, true),
-                        'ecue_example'    => $this->styleExample($sheet, $range, false),
-                        default           => null,
+                        'col_headers' => $this->styleColHeaders($sheet, $range, $row),
+                        'ue_example' => $this->styleExample($sheet, $range, true),
+                        'ecue_example' => $this->styleExample($sheet, $range, false),
+                        default => null,
                     };
                 }
 
@@ -121,7 +122,7 @@ class MaquetteTemplateExport implements FromArray, WithTitle, WithColumnWidths, 
 
     private function addRow(array $row, string $meta): void
     {
-        $this->rows[]    = $row;
+        $this->rows[] = $row;
         $this->rowMeta[] = $meta;
     }
 

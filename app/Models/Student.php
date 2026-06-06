@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -13,8 +14,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
@@ -36,19 +37,15 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  */
 class Student extends Model implements AuditableContract
 {
-
+    use Auditable;
     use HasFactory;
     use UsesUuidV7;
-    use Auditable;
 
     protected $table = 'students';
 
-
     public array $auditEvents = ['created', 'updated', 'deleted'];
+
     public array $auditExclude = ['created_at', 'updated_at'];
-
-
-
 
     /**
      * The attributes that are mass assignable.
@@ -84,7 +81,6 @@ class Student extends Model implements AuditableContract
         'synced_from',
         'last_synced_at',
     ];
-
 
     protected $casts = [
         'user_id' => 'string',
@@ -148,6 +144,7 @@ class Student extends Model implements AuditableContract
     {
         return $this->hasMany(AttendanceRecord::class, 'student_id');
     }
+
     public function grades(): HasMany
     {
         return $this->hasMany(\App\Models\Grade::class, 'student_id');
@@ -158,11 +155,11 @@ class Student extends Model implements AuditableContract
         return $this->hasMany(\App\Models\CourseEnrollment::class, 'student_id');
     }
 
+    /** @return HasMany<SemesterResult, Student> */
     public function semesterResults(): HasMany
     {
         return $this->hasMany(\App\Models\SemesterResult::class, 'student_id');
     }
-
 
     /**
      * Scope a query to only include active students.
@@ -226,11 +223,14 @@ class Student extends Model implements AuditableContract
         return "UCAK{$year}{$newNumber}";
     }
 
-
     public const STATUS_ACTIVE = 'ACTIVE';
+
     public const STATUS_SUSPENDED = 'SUSPENDED';
+
     public const STATUS_GRADUATED = 'GRADUATED';
+
     public const STATUS_WITHDRAWN = 'WITHDRAWN';
+
     public const STATUS_EXPELLED = 'EXPELLED';
 
     public static function getStatuses(): array

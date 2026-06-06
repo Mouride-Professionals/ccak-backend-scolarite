@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Enums\RegistrationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\DashboardFiltersRequest;
 use App\Http\Requests\Dashboard\EnrollmentsTrendRequest;
 use App\Http\Requests\Dashboard\RecentActivitiesRequest;
-use App\Enums\RegistrationStatus;
 use App\Models\DeliberationResult;
 use App\Models\DeliberationSession;
 use App\Models\Enrollment;
@@ -124,7 +124,7 @@ class DashboardController extends Controller
 
         foreach ($rows as $row) {
             $bucket = $this->resolveLevelBucket((string) $row->level, (int) $row->semester);
-            if ($bucket === null || !isset($levels[$bucket])) {
+            if ($bucket === null || ! isset($levels[$bucket])) {
                 continue;
             }
 
@@ -270,7 +270,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return Collection<int, array<string, mixed>>
      */
     private function fetchEnrollmentActivities(array $filters, int $limit): Collection
@@ -298,10 +298,10 @@ class DashboardController extends Controller
                 $level = $semester > 0 ? (string) ceil($semester / 2) : '';
 
                 return [
-                    'id' => 'enrollment_' . $row->id,
+                    'id' => 'enrollment_'.$row->id,
                     'name' => (string) $row->student_name,
                     'action' => 'Inscription',
-                    'context' => trim((string) $row->programme_name . ($level !== '' ? ' L' . $level : '')),
+                    'context' => trim((string) $row->programme_name.($level !== '' ? ' L'.$level : '')),
                     'occurred_at' => $this->iso8601((string) $row->occurred_at),
                     'status' => $this->mapEnrollmentActivityStatus($row->status instanceof \BackedEnum ? $row->status->value : (string) $row->status),
                 ];
@@ -309,7 +309,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return Collection<int, array<string, mixed>>
      */
     private function fetchDeliberationActivities(array $filters, int $limit): Collection
@@ -335,7 +335,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($row): array {
                 return [
-                    'id' => 'deliberation_' . $row->id,
+                    'id' => 'deliberation_'.$row->id,
                     'name' => (string) ($row->president_name ?: $row->session_name),
                     'action' => 'Deliberation',
                     'context' => sprintf('%s S%d', (string) $row->programme_name, (int) $row->semester),
@@ -349,12 +349,14 @@ class DashboardController extends Controller
     {
         if ($programLevel === 'LICENCE') {
             $year = max(1, min(3, (int) ceil(max($semester, 1) / 2)));
-            return 'L' . $year;
+
+            return 'L'.$year;
         }
 
         if ($programLevel === 'MASTER') {
             $year = max(1, min(2, (int) ceil(max($semester, 1) / 2)));
-            return 'M' . $year;
+
+            return 'M'.$year;
         }
 
         return null;

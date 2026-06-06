@@ -11,7 +11,7 @@ use RuntimeException;
 class SmsService
 {
     /**
-     * @param string|array<int, string> $recipients
+     * @param  string|array<int, string>  $recipients
      */
     /** @return array<int, array<string, mixed>> */
     public function send(string|array $recipients, string $message): array
@@ -28,7 +28,7 @@ class SmsService
         }
 
         $token = $this->getAccessToken();
-        $encodedSender = rawurlencode('tel:+' . ltrim($senderPhone, '+'));
+        $encodedSender = rawurlencode('tel:+'.ltrim($senderPhone, '+'));
         $url = "{$baseUrl}/smsmessaging/v1/outbound/{$encodedSender}/requests";
 
         $results = [];
@@ -37,8 +37,8 @@ class SmsService
             $normalized = $this->normalizePhone($recipient);
             $payload = [
                 'outboundSMSMessageRequest' => [
-                    'address' => 'tel:+' . ltrim($normalized, '+'),
-                    'senderAddress' => 'tel:+' . ltrim($senderPhone, '+'),
+                    'address' => 'tel:+'.ltrim($normalized, '+'),
+                    'senderAddress' => 'tel:+'.ltrim($senderPhone, '+'),
                     'senderName' => $senderName,
                     'outboundSMSTextMessage' => [
                         'message' => $message,
@@ -50,7 +50,7 @@ class SmsService
                 ->acceptJson()
                 ->post($url, $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::error('Orange SMS send failed', [
                     'recipient' => $recipient,
                     'status' => $response->status(),
@@ -106,13 +106,13 @@ class SmsService
                 'CLIENT_SECRET' => $clientSecret,
             ]);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             Log::error('Orange SMS token request failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
             throw new RuntimeException(
-                'Failed to authenticate with Orange SMS. Status: ' . $response->status() . ' Body: ' . $response->body()
+                'Failed to authenticate with Orange SMS. Status: '.$response->status().' Body: '.$response->body()
             );
         }
 
@@ -120,7 +120,7 @@ class SmsService
         $token = is_array($data) ? ($data['access_token'] ?? null) : null;
         $expiresIn = is_array($data) ? (int) ($data['expires_in'] ?? 0) : 0;
 
-        if (!is_string($token) || $token === '') {
+        if (! is_string($token) || $token === '') {
             throw new RuntimeException('Orange SMS access token missing');
         }
 
@@ -138,6 +138,7 @@ class SmsService
         }
 
         $countryCode = (string) config('services.orange_sms.default_country_code', '+221');
-        return $countryCode . ltrim($normalized, '0');
+
+        return $countryCode.ltrim($normalized, '0');
     }
 }

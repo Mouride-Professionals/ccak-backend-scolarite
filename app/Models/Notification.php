@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class Notification extends Model
 {
@@ -34,14 +34,21 @@ class Notification extends Model
 
     // Enums
     public const TYPE_GRADE_PUBLISHED = 'grade_published';
+
     public const TYPE_ENROLLMENT_CONFIRMED = 'enrollment_confirmed';
+
     public const TYPE_DOCUMENT_READY = 'document_ready';
+
     public const TYPE_PASSWORD_RESET = 'password_reset';
+
     public const TYPE_WELCOME = 'welcome';
+
     public const TYPE_SYSTEM = 'system';
 
     public const CHANNEL_IN_APP = 'in_app';
+
     public const CHANNEL_EMAIL = 'email';
+
     public const CHANNEL_SMS = 'sms';
 
     public static function getTypes(): array

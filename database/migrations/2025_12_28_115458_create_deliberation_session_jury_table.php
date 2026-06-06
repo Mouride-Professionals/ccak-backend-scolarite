@@ -17,11 +17,11 @@ return new class extends Migration
             $table->primary(['deliberation_session_id', 'faculty_member_id']);
 
             $table->foreign('deliberation_session_id')
-                  ->references('id')->on('deliberation_sessions')
-                  ->cascadeOnDelete();
+                ->references('id')->on('deliberation_sessions')
+                ->cascadeOnDelete();
             $table->foreign('faculty_member_id')
-                  ->references('id')->on('faculty_members')
-                  ->cascadeOnDelete();
+                ->references('id')->on('faculty_members')
+                ->cascadeOnDelete();
         });
     }
 
