@@ -30,3 +30,4 @@ docs/docker-compose.tmp.yml
 docs/docker-nginx-default.tmp.conf
 docker/nginx/local.conf
 docs/Maquette HEC-revue (5) - MAQUETTE.csv
+dump_maquette.php
