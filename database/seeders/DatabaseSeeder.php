@@ -48,10 +48,6 @@ class DatabaseSeeder extends Seeder
             // NotificationSeeder::class,   // fake
         ]);
 
-        $admin = User::factory()->create([
-            'email' => 'test@example.com',
-        ]);
-
-        $admin->assignRole('ADMIN');
+       
     }
 }
