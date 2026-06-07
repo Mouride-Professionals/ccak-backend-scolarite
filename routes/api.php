@@ -246,6 +246,7 @@ Route::middleware('auth:api')->group(function () {
         // CCAK sync
         Route::middleware('role:ADMIN')->group(function () {
             Route::get('sync-logs', [SyncController::class, 'index']);
+            Route::get('sync-stats', [SyncController::class, 'stats']);
             Route::post('sync', [SyncController::class, 'trigger']);
         });
     });
