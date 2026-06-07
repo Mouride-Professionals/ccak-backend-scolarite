@@ -20,7 +20,17 @@ class CcakApiClient
 
     public function getStudentsBulk(): array
     {
-        return $this->get('/api/admin-service/student', timeout: 120);
+        $all = [];
+        $page = 1;
+
+        do {
+            $response = $this->get('/api/admin-service/student', timeout: 120, query: ['page' => $page, 'pageSize' => 100]);
+            $all = array_merge($all, $response['data'] ?? []);
+            $hasNext = $response['hasNextPage'] ?? false;
+            $page++;
+        } while ($hasNext);
+
+        return $all;
     }
 
     public function getGrades(): array
@@ -53,12 +63,12 @@ class CcakApiClient
         return $this->get('/api/v1/academic-years');
     }
 
-    private function get(string $path, int $timeout = 30): array
+    private function get(string $path, int $timeout = 30, array $query = []): array
     {
         try {
             $response = Http::timeout($timeout)
                 ->withHeader('X-API-Key', $this->apiKey)
-                ->get("{$this->baseUrl}{$path}");
+                ->get("{$this->baseUrl}{$path}", $query);
 
             if ($response->failed()) {
                 throw new CcakApiException(
