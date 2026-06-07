@@ -172,12 +172,14 @@ class SyncService
     public function syncAll(): array
     {
         return [
-            'degree_cycles' => $this->syncDegreeCycles(),
-            'niveaux' => $this->syncNiveaux(),
-            'ufr' => $this->syncUfr(),
-            'departements' => $this->syncDepartements(),
-            'programmes' => $this->syncProgrammes(),
-            'academic_years' => $this->syncAcademicYears(),
+            // Referential data is seeded statically (CcakReferentialSeeder).
+            // Uncomment when CCAK exposes these endpoints:
+            // 'degree_cycles' => $this->syncDegreeCycles(),
+            // 'niveaux'       => $this->syncNiveaux(),
+            // 'ufr'           => $this->syncUfr(),
+            // 'departements'  => $this->syncDepartements(),
+            // 'programmes'    => $this->syncProgrammes(),
+            // 'academic_years' => $this->syncAcademicYears(),
             'students' => $this->syncStudents(),
         ];
     }
