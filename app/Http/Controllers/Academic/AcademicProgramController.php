@@ -26,8 +26,8 @@ class AcademicProgramController extends BaseApiController
     public function index(Request $request)
     {
         $programs = QueryBuilder::for(AcademicProgram::query())
-            ->with(['department', 'courseUnits'])
-            ->allowedIncludes(['department', 'courseUnits'])
+            ->with(['department.faculty', 'courseUnits'])
+            ->allowedIncludes(['department.faculty', 'courseUnits'])
             ->allowedFilters([
                 AllowedFilter::exact('department_id'),
                 AllowedFilter::exact('level'),
@@ -47,7 +47,7 @@ class AcademicProgramController extends BaseApiController
         $program = DB::transaction(fn () => AcademicProgram::create($request->validated()));
 
         return $this->success(
-            new AcademicProgramResource($program->load(['department', 'courseUnits'])),
+            new AcademicProgramResource($program->load(['department.faculty', 'courseUnits'])),
             'Academic program created',
             Response::HTTP_CREATED
         );
@@ -55,7 +55,7 @@ class AcademicProgramController extends BaseApiController
 
     public function show(AcademicProgram $academicProgram)
     {
-        return $this->success(new AcademicProgramResource($academicProgram->load(['department', 'courseUnits'])));
+        return $this->success(new AcademicProgramResource($academicProgram->load(['department.faculty', 'courseUnits'])));
     }
 
     public function update(UpdateAcademicProgramRequest $request, AcademicProgram $academicProgram)
@@ -63,7 +63,7 @@ class AcademicProgramController extends BaseApiController
         DB::transaction(fn () => $academicProgram->update($request->validated()));
 
         return $this->success(
-            new AcademicProgramResource($academicProgram->refresh()->load(['department', 'courseUnits'])),
+            new AcademicProgramResource($academicProgram->refresh()->load(['department.faculty', 'courseUnits'])),
             'Academic program updated'
         );
     }

@@ -44,6 +44,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:api')->group(function () {
+    // Global search
+    Route::get('search', \App\Http\Controllers\Search\SearchController::class)->middleware('throttle:30,1');
+
     // Basic protected endpoints
     Route::get('/me', function (Request $request) {
         return response()->json([

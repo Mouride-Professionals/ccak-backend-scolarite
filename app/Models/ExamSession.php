@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ExamSessionStatus;
 use App\Enums\ExamSessionType;
 use App\Models\Concerns\UsesUuidV7;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,5 +44,17 @@ class ExamSession extends Model
     public function schedules(): HasMany
     {
         return $this->hasMany(ExamSchedule::class, 'exam_session_id')->orderBy('date')->orderBy('start_time');
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        $likeOp = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where('name', $likeOp, "%{$term}%");
     }
 }
