@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Academic\AcademicCalendarController;
+use App\Http\Controllers\Academic\AssessmentController;
 use App\Http\Controllers\Academic\AcademicProgramController;
 use App\Http\Controllers\Academic\AcademicYearController;
 use App\Http\Controllers\Academic\ActivityTypeController;
@@ -59,6 +60,11 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Exam sessions & schedules
+    Route::apiResource('assessments', AssessmentController::class);
+    Route::post('assessments/{assessment}/publish-grades', [AssessmentController::class, 'publishGrades']);
+    Route::get('assessments/{assessment}/grade-sheet', [AssessmentController::class, 'gradeSheet']);
+    Route::get('courses/{course}/assessments', [AssessmentController::class, 'byCourse']);
+
     Route::apiResource('exam-sessions', ExamSessionController::class);
     Route::post('exam-sessions/{examSession}/publish', [ExamSessionController::class, 'publish']);
     Route::post('exam-sessions/{examSession}/close', [ExamSessionController::class, 'close']);

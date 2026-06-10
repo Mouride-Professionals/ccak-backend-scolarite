@@ -11,9 +11,17 @@ class GradeResource extends JsonResource
     public function toArray($request): array
     {
         return [
+            'id' => $this->id,
             'course_enrollment_id' => $this->course_enrollment_id,
             'student_id' => $this->student_id,
             'course_id' => $this->course_id,
+            'assessment_id' => $this->assessment_id,
+            'assessment' => $this->when($this->relationLoaded('assessment') && $this->assessment, fn () => [
+                'id'    => $this->assessment->id,
+                'title' => $this->assessment->title,
+                'type'  => $this->assessment->type?->value,
+                'date'  => $this->assessment->date?->toDateString(),
+            ]),
             'type' => $this->type,
             'score' => $this->score,
             'max_score' => $this->max_score,

@@ -228,7 +228,7 @@ class StudentController extends BaseApiController
         $this->authorize('viewGrades', $student);
 
         $query = QueryBuilder::for($student->grades()->getQuery())
-            ->with(['course', 'courseEnrollment'])
+            ->with(['course', 'courseEnrollment', 'assessment'])
             ->allowedFilters([
                 AllowedFilter::exact('type'),
                 AllowedFilter::exact('status'),
