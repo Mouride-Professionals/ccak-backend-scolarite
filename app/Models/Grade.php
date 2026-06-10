@@ -28,13 +28,14 @@ class Grade extends Model implements AuditableContract
 
     protected $table = 'grades';
 
-    protected $fillable = ['course_enrollment_id', 'student_id', 'course_id', 'assessment_id', 'type', 'score', 'max_score', 'weight', 'entered_by', 'status', 'entered_at', 'validated_at'];
+    protected $fillable = ['course_enrollment_id', 'student_id', 'course_id', 'assessment_id', 'exam_schedule_id', 'type', 'score', 'max_score', 'weight', 'entered_by', 'status', 'entered_at', 'validated_at'];
 
     protected $casts = [
         'course_enrollment_id' => 'string',
         'student_id' => 'string',
         'course_id' => 'string',
         'assessment_id' => 'string',
+        'exam_schedule_id' => 'string',
         'type' => GradeType::class,
         'score' => 'float',
         'max_score' => 'float',
@@ -72,6 +73,11 @@ class Grade extends Model implements AuditableContract
     public function assessment()
     {
         return $this->belongsTo(\App\Models\Assessment::class, 'assessment_id');
+    }
+
+    public function examSchedule()
+    {
+        return $this->belongsTo(\App\Models\ExamSchedule::class, 'exam_schedule_id');
     }
 
     public function scopeEnteredBetween(Builder $query, mixed $value): Builder

@@ -24,6 +24,7 @@ class ExamSession extends Model
         'start_date',
         'end_date',
         'status',
+        'use_exam_number',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class ExamSession extends Model
         'end_date' => 'date',
         'type' => ExamSessionType::class,
         'status' => ExamSessionStatus::class,
+        'use_exam_number' => 'boolean',
     ];
 
     public function academicYear(): BelongsTo

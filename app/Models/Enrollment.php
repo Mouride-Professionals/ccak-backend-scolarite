@@ -38,6 +38,7 @@ class Enrollment extends Model
         'is_registered_elsewhere',
         'is_willing_to_cancel_other_registration',
         'certification_file_url',
+        'exam_number',
     ];
 
     protected $casts = [
@@ -55,7 +56,13 @@ class Enrollment extends Model
         'is_scholarship_holder' => 'boolean',
         'is_registered_elsewhere' => 'boolean',
         'is_willing_to_cancel_other_registration' => 'boolean',
+        'exam_number' => 'string',
     ];
+
+    public static function generateExamNumber(string $yearCode, int $sequence): string
+    {
+        return sprintf('AK-%s-%04d', $yearCode, $sequence);
+    }
 
     public static function getStatuses(): array
     {

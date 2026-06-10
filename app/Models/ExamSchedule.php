@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExamSchedule extends Model
 {
@@ -44,6 +45,11 @@ class ExamSchedule extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class, 'room_id');
+    }
+
+    public function grades(): HasMany
+    {
+        return $this->hasMany(Grade::class, 'exam_schedule_id');
     }
 
     public function invigilators(): BelongsToMany

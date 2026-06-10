@@ -15,6 +15,8 @@ use App\Http\Controllers\Academic\DepartmentController;
 use App\Http\Controllers\Academic\EnrollmentController;
 use App\Http\Controllers\Academic\EvaluationController;
 use App\Http\Controllers\Academic\EvaluationResponseController;
+use App\Http\Controllers\Academic\ExamGradeSheetController;
+use App\Http\Controllers\Academic\GradeSheetController;
 use App\Http\Controllers\Academic\ExamScheduleController;
 use App\Http\Controllers\Academic\ExamSessionController;
 use App\Http\Controllers\Academic\FacultyContractController;
@@ -74,6 +76,13 @@ Route::middleware('auth:api')->group(function () {
     Route::put('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'update']);
     Route::delete('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'destroy']);
     Route::post('exam-schedules/check-conflicts', [ExamScheduleController::class, 'checkConflicts']);
+    Route::get('exam-schedules/{examSchedule}/grade-sheet', [ExamGradeSheetController::class, 'gradeSheet']);
+    Route::post('exam-schedules/{examSchedule}/grade-sheet', [ExamGradeSheetController::class, 'storeGrade']);
+
+    // Grade sheet exports / imports (PDF + Excel)
+    Route::get('grade-sheets/{type}/{id}/pdf', [GradeSheetController::class, 'exportPdf']);
+    Route::get('grade-sheets/{type}/{id}/excel', [GradeSheetController::class, 'exportExcel']);
+    Route::post('grade-sheets/{type}/{id}/import', [GradeSheetController::class, 'importGrades']);
 
     // Deliberation Sessions
     Route::patch('deliberation-sessions/{id}/status', [DeliberationSessionController::class, 'changeStatus']);
@@ -120,6 +129,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('courses/{course}/grades', [\App\Http\Controllers\Academic\CourseController::class, 'grades']);
     Route::apiResource('course-enrollments', \App\Http\Controllers\Academic\CourseEnrollmentController::class);
     Route::get('enrollments/dashboard', [EnrollmentDashboardController::class, 'index']);
+    Route::post('enrollments/generate-exam-numbers', [EnrollmentController::class, 'generateExamNumbers']);
+    Route::get('enrollments/{enrollment}/exam-number', [EnrollmentController::class, 'showExamNumber']);
     Route::apiResource('enrollments', EnrollmentController::class)
         ->whereUuid('enrollment');
 
