@@ -11,6 +11,7 @@ use App\Http\Controllers\Academic\CourseEnrollmentController;
 use App\Http\Controllers\Academic\CourseLogController;
 use App\Http\Controllers\Academic\CourseUnitController;
 use App\Http\Controllers\Academic\DeliberationSessionController;
+use App\Http\Controllers\Academic\DegreeCycleController;
 use App\Http\Controllers\Academic\DepartmentController;
 use App\Http\Controllers\Academic\EnrollmentController;
 use App\Http\Controllers\Academic\EvaluationController;
@@ -120,6 +121,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('teaching-assignments/planning', [TeachingAssignmentController::class, 'planning']);
     Route::patch('teaching-assignments/{teachingAssignment}/delivery', [TeachingAssignmentController::class, 'updateDelivery']);
     Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->only(['index', 'store', 'destroy']);
+
+    Route::get('degree-cycles', [DegreeCycleController::class, 'index']);
 
     Route::apiResource('faculties', FacultyController::class);
     Route::apiResource('departments', DepartmentController::class);
