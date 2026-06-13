@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Academic;
 
 use App\Enums\RegistrationStatus;
+use App\Enums\StudentStatus;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Enrollment\StoreEnrollmentRequest;
 use App\Http\Requests\Enrollment\UpdateEnrollmentRequest;
@@ -11,6 +12,7 @@ use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
 use App\Models\Student;
+use App\Services\Academic\CourseAutoEnrollmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +22,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class EnrollmentController extends BaseApiController
 {
-    public function __construct()
+    public function __construct(private CourseAutoEnrollmentService $autoEnroll)
     {
         $this->middleware('permission:enrollments.view')->only(['index', 'show', 'getByStudent']);
         $this->middleware('permission:enrollments.create')->only('store');
@@ -60,7 +62,7 @@ class EnrollmentController extends BaseApiController
 
         // Check if student exists and is active
         $student = Student::find($request->student_id);
-        if (! $student || ! $student->is_active) {
+        if (! $student || $student->status !== StudentStatus::ACTIVE) {
             return $this->error('Étudiant non trouvé ou inactif.', 404);
         }
 
@@ -91,9 +93,14 @@ class EnrollmentController extends BaseApiController
                 return Enrollment::create($enrollmentData);
             });
 
+            $autoResult = $this->autoEnroll->enrollAllCourses($enrollment);
+
+            $resource = new EnrollmentResource($enrollment->load(['student', 'academicProgram', 'academicYear']));
+            $resource->additional(['meta' => ['auto_enrolled_courses' => $autoResult['enrolled']]]);
+
             return $this->success(
-                new EnrollmentResource($enrollment->load(['student', 'academicProgram', 'academicYear'])),
-                'Inscription créée avec succès.',
+                $resource,
+                "Inscription créée avec succès. {$autoResult['enrolled']} cours inscrits automatiquement.",
                 201
             );
         } catch (\Exception $e) {
