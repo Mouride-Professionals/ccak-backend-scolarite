@@ -21,6 +21,10 @@ class AcademicProgramResource extends JsonResource
                     'id' => $this->department->id,
                     'code' => $this->department->code,
                     'name' => $this->department->name,
+                    'faculty' => $this->department->faculty ? [
+                        'id' => $this->department->faculty->id,
+                        'name' => $this->department->faculty->name,
+                    ] : null,
                 ];
             }),
             'course_units' => CourseUnitResource::collection($this->whenLoaded('courseUnits')),

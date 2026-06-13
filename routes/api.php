@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Academic\AcademicCalendarController;
+use App\Http\Controllers\Academic\AssessmentController;
 use App\Http\Controllers\Academic\AcademicProgramController;
 use App\Http\Controllers\Academic\AcademicYearController;
 use App\Http\Controllers\Academic\ActivityTypeController;
@@ -10,10 +11,13 @@ use App\Http\Controllers\Academic\CourseEnrollmentController;
 use App\Http\Controllers\Academic\CourseLogController;
 use App\Http\Controllers\Academic\CourseUnitController;
 use App\Http\Controllers\Academic\DeliberationSessionController;
+use App\Http\Controllers\Academic\DegreeCycleController;
 use App\Http\Controllers\Academic\DepartmentController;
 use App\Http\Controllers\Academic\EnrollmentController;
 use App\Http\Controllers\Academic\EvaluationController;
 use App\Http\Controllers\Academic\EvaluationResponseController;
+use App\Http\Controllers\Academic\ExamGradeSheetController;
+use App\Http\Controllers\Academic\GradeSheetController;
 use App\Http\Controllers\Academic\ExamScheduleController;
 use App\Http\Controllers\Academic\ExamSessionController;
 use App\Http\Controllers\Academic\FacultyContractController;
@@ -44,6 +48,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:api')->group(function () {
+    // Global search
+    Route::get('search', \App\Http\Controllers\Search\SearchController::class)->middleware('throttle:30,1');
+
     // Basic protected endpoints
     Route::get('/me', function (Request $request) {
         return response()->json([
@@ -56,6 +63,11 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Exam sessions & schedules
+    Route::apiResource('assessments', AssessmentController::class);
+    Route::post('assessments/{assessment}/publish-grades', [AssessmentController::class, 'publishGrades']);
+    Route::get('assessments/{assessment}/grade-sheet', [AssessmentController::class, 'gradeSheet']);
+    Route::get('courses/{course}/assessments', [AssessmentController::class, 'byCourse']);
+
     Route::apiResource('exam-sessions', ExamSessionController::class);
     Route::post('exam-sessions/{examSession}/publish', [ExamSessionController::class, 'publish']);
     Route::post('exam-sessions/{examSession}/close', [ExamSessionController::class, 'close']);
@@ -65,6 +77,13 @@ Route::middleware('auth:api')->group(function () {
     Route::put('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'update']);
     Route::delete('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'destroy']);
     Route::post('exam-schedules/check-conflicts', [ExamScheduleController::class, 'checkConflicts']);
+    Route::get('exam-schedules/{examSchedule}/grade-sheet', [ExamGradeSheetController::class, 'gradeSheet']);
+    Route::post('exam-schedules/{examSchedule}/grade-sheet', [ExamGradeSheetController::class, 'storeGrade']);
+
+    // Grade sheet exports / imports (PDF + Excel)
+    Route::get('grade-sheets/{type}/{id}/pdf', [GradeSheetController::class, 'exportPdf']);
+    Route::get('grade-sheets/{type}/{id}/excel', [GradeSheetController::class, 'exportExcel']);
+    Route::post('grade-sheets/{type}/{id}/import', [GradeSheetController::class, 'importGrades']);
 
     // Deliberation Sessions
     Route::patch('deliberation-sessions/{id}/status', [DeliberationSessionController::class, 'changeStatus']);
@@ -103,6 +122,8 @@ Route::middleware('auth:api')->group(function () {
     Route::patch('teaching-assignments/{teachingAssignment}/delivery', [TeachingAssignmentController::class, 'updateDelivery']);
     Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->only(['index', 'store', 'destroy']);
 
+    Route::get('degree-cycles', [DegreeCycleController::class, 'index']);
+
     Route::apiResource('faculties', FacultyController::class);
     Route::apiResource('departments', DepartmentController::class);
     Route::apiResource('academic-programs', AcademicProgramController::class);
@@ -111,6 +132,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('courses/{course}/grades', [\App\Http\Controllers\Academic\CourseController::class, 'grades']);
     Route::apiResource('course-enrollments', \App\Http\Controllers\Academic\CourseEnrollmentController::class);
     Route::get('enrollments/dashboard', [EnrollmentDashboardController::class, 'index']);
+    Route::post('enrollments/generate-exam-numbers', [EnrollmentController::class, 'generateExamNumbers']);
+    Route::get('enrollments/{enrollment}/exam-number', [EnrollmentController::class, 'showExamNumber']);
     Route::apiResource('enrollments', EnrollmentController::class)
         ->whereUuid('enrollment');
 

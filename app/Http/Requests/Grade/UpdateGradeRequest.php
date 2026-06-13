@@ -29,6 +29,7 @@ class UpdateGradeRequest extends FormRequest
             'course_enrollment_id' => 'sometimes|string|exists:course_enrollments,id',
             'student_id' => 'sometimes|string|exists:students,id',
             'course_id' => 'sometimes|string|exists:courses,id',
+            'assessment_id' => 'sometimes|nullable|string|exists:assessments,id',
             'type' => 'sometimes|string|in:CC,EXAM,TP,ORAL',
             'score' => 'sometimes|numeric|min:0',
             'max_score' => 'sometimes|numeric|min:0|gt:0',

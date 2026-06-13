@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Academic;
 
 use App\Enums\RegistrationStatus;
+use App\Enums\StudentStatus;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\Enrollment\StoreEnrollmentRequest;
 use App\Http\Requests\Enrollment\UpdateEnrollmentRequest;
@@ -11,6 +12,7 @@ use App\Models\AcademicProgram;
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
 use App\Models\Student;
+use App\Services\Academic\CourseAutoEnrollmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,12 +22,14 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class EnrollmentController extends BaseApiController
 {
-    public function __construct()
+    public function __construct(private CourseAutoEnrollmentService $autoEnroll)
     {
         $this->middleware('permission:enrollments.view')->only(['index', 'show', 'getByStudent']);
         $this->middleware('permission:enrollments.create')->only('store');
         $this->middleware('permission:enrollments.update')->only('update');
         $this->middleware('permission:enrollments.delete')->only('destroy');
+        $this->middleware('permission:enrollments.generate_exam_numbers')->only('generateExamNumbers');
+        $this->middleware('permission:enrollments.view_exam_number')->only('showExamNumber');
     }
 
     public function index(Request $request): JsonResponse
@@ -58,7 +62,7 @@ class EnrollmentController extends BaseApiController
 
         // Check if student exists and is active
         $student = Student::find($request->student_id);
-        if (! $student || ! $student->is_active) {
+        if (! $student || $student->status !== StudentStatus::ACTIVE) {
             return $this->error('Étudiant non trouvé ou inactif.', 404);
         }
 
@@ -89,9 +93,14 @@ class EnrollmentController extends BaseApiController
                 return Enrollment::create($enrollmentData);
             });
 
+            $autoResult = $this->autoEnroll->enrollAllCourses($enrollment);
+
+            $resource = new EnrollmentResource($enrollment->load(['student', 'academicProgram', 'academicYear']));
+            $resource->additional(['meta' => ['auto_enrolled_courses' => $autoResult['enrolled']]]);
+
             return $this->success(
-                new EnrollmentResource($enrollment->load(['student', 'academicProgram', 'academicYear'])),
-                'Inscription créée avec succès.',
+                $resource,
+                "Inscription créée avec succès. {$autoResult['enrolled']} cours inscrits automatiquement.",
                 201
             );
         } catch (\Exception $e) {
@@ -158,6 +167,62 @@ class EnrollmentController extends BaseApiController
         DB::transaction(fn () => $enrollment->delete());
 
         return $this->success(null, 'Inscription supprimée avec succès.');
+    }
+
+    /**
+     * Bulk-generate exam numbers for all enrollments in an academic year
+     * that do not yet have one. Uses lockForUpdate to prevent race conditions.
+     */
+    public function generateExamNumbers(Request $request): JsonResponse
+    {
+        $request->validate([
+            'academic_year_id' => 'required|uuid|exists:academic_years,id',
+        ]);
+
+        $yearId = $request->input('academic_year_id');
+
+        $year = \App\Models\AcademicYear::findOrFail($yearId);
+
+        // Derive 4-char year code from name, e.g. "2024-2025" → "2425"
+        preg_match_all('/\d{4}/', $year->name, $matches);
+        $yearCode = ! empty($matches[0])
+            ? implode('', array_map(fn ($y) => substr($y, 2), $matches[0]))
+            : substr(preg_replace('/\D/', '', $year->name), 0, 4);
+
+        $generated = 0;
+
+        DB::transaction(function () use ($yearId, $yearCode, &$generated) {
+            $enrollments = Enrollment::where('academic_year_id', $yearId)
+                ->whereNull('exam_number')
+                ->lockForUpdate()
+                ->orderBy('created_at')
+                ->get();
+
+            // Find the current max sequence for this year
+            $maxSeq = Enrollment::where('academic_year_id', $yearId)
+                ->whereNotNull('exam_number')
+                ->count();
+
+            foreach ($enrollments as $enrollment) {
+                $maxSeq++;
+                $enrollment->exam_number = Enrollment::generateExamNumber($yearCode, $maxSeq);
+                $enrollment->save();
+                $generated++;
+            }
+        });
+
+        return $this->success(['generated' => $generated], "{$generated} numéro(s) anonymat généré(s).");
+    }
+
+    /**
+     * Return only the exam_number for a single enrollment.
+     */
+    public function showExamNumber(Enrollment $enrollment): JsonResponse
+    {
+        return $this->success([
+            'enrollment_id' => $enrollment->id,
+            'exam_number'   => $enrollment->exam_number,
+        ]);
     }
 
     /**

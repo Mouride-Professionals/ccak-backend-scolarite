@@ -26,6 +26,7 @@ class StoreGradeRequest extends FormRequest
             'course_enrollment_id' => 'required|string|exists:course_enrollments,id',
             'student_id' => 'required|string|exists:students,id',
             'course_id' => 'required|string|exists:courses,id',
+            'assessment_id' => 'nullable|string|exists:assessments,id',
             'type' => 'required|string|in:CC,EXAM,TP,ORAL',
             'score' => 'required|numeric|min:0',
             'max_score' => 'required|numeric|min:0|gt:0',
@@ -65,12 +66,16 @@ class StoreGradeRequest extends FormRequest
             }
 
             // Validate no duplicate grade type for the same enrollment
+            // Exception: multiple CC grades are allowed when each has a distinct assessment_id
             if (isset($data['course_enrollment_id'], $data['type'])) {
-                $existingGrade = \App\Models\Grade::where('course_enrollment_id', $data['course_enrollment_id'])
-                    ->where('type', $data['type'])
-                    ->first();
+                $query = \App\Models\Grade::where('course_enrollment_id', $data['course_enrollment_id'])
+                    ->where('type', $data['type']);
 
-                if ($existingGrade) {
+                if (! empty($data['assessment_id'])) {
+                    $query->where('assessment_id', $data['assessment_id']);
+                }
+
+                if ($query->exists()) {
                     $validator->errors()->add(
                         'type',
                         "Une note de type {$data['type']} existe déjà pour cette inscription au cours."
