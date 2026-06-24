@@ -13,9 +13,11 @@ use App\Models\AcademicYear;
 use App\Models\Address;
 use App\Models\DegreeCycle;
 use App\Models\Department;
+use App\Models\Enrollment;
 use App\Models\Faculty;
 use App\Models\Guardian;
 use App\Models\Level;
+use App\Models\PriorDiploma;
 use App\Models\SocialProfile;
 use App\Models\Student;
 use App\Models\StudentBacInfo;
@@ -25,6 +27,8 @@ use Illuminate\Support\Facades\Log;
 
 class SyncService
 {
+    private const NULL_UUID = '00000000-0000-0000-0000-000000000000';
+
     public function __construct(private readonly CcakApiClient $client) {}
 
     // -------------------------------------------------------------------------
@@ -164,6 +168,17 @@ class SyncService
         });
     }
 
+    public function syncEnrollments(?int $limit = null): SyncLog
+    {
+        return $this->runSync('enrollments', function () use ($limit) {
+            $items = $this->client->getRegistrationsBulk();
+
+            return $limit !== null ? array_slice($items, 0, $limit) : $items;
+        }, function (array $raw) {
+            $this->upsertEnrollment($raw);
+        });
+    }
+
     /**
      * Run all syncs in dependency order.
      *
@@ -180,7 +195,8 @@ class SyncService
             // 'departements'  => $this->syncDepartements(),
             // 'programmes'    => $this->syncProgrammes(),
             // 'academic_years' => $this->syncAcademicYears(),
-            'students' => $this->syncStudents(),
+            'students'    => $this->syncStudents(),
+            'enrollments' => $this->syncEnrollments(),
         ];
     }
 
@@ -441,6 +457,91 @@ class SyncService
                 'relationship' => $s['emergencyContactRelation'] ?? null,
                 'phone' => $phone,
                 'phone_2' => $s['emergencyContactPhone2'] ?? null,
+            ]
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Enrollment-specific helpers
+    // -------------------------------------------------------------------------
+
+    private function upsertEnrollment(array $raw): void
+    {
+        $registrationId = $raw['registrationId'];
+        $studentUuid    = $raw['studentUuid'];
+        $programId      = $raw['programId'] ?? null;
+        $levelId        = $raw['levelId'] ?? null;
+        $academicYearId = $raw['academicYearId'];
+
+        if (! $programId || $programId === self::NULL_UUID) {
+            throw new \InvalidArgumentException(
+                "Registration {$registrationId} has no academic program — skipped"
+            );
+        }
+
+        if (! AcademicProgram::find($programId)) {
+            throw new \InvalidArgumentException(
+                "Registration {$registrationId} references unknown academic_program {$programId} — skipped (program not synced)"
+            );
+        }
+
+        if (! Student::find($studentUuid)) {
+            throw new \InvalidArgumentException(
+                "Student {$studentUuid} not found — run syncStudents first"
+            );
+        }
+
+        if (! AcademicYear::find($academicYearId)) {
+            throw new \InvalidArgumentException(
+                "AcademicYear {$academicYearId} not found"
+            );
+        }
+
+        Enrollment::updateOrCreate(
+            ['id' => $registrationId],
+            [
+                'student_id'                              => $studentUuid,
+                'academic_program_id'                     => $programId,
+                'academic_year_id'                        => $academicYearId,
+                'level_id'                                => ($levelId && $levelId !== self::NULL_UUID) ? $levelId : null,
+                'enrollment_date'                         => $raw['registrationDate'],
+                'status'                                  => CcakEnumMapper::registrationStatus((int) $raw['status'])->value,
+                'registration_number'                     => $raw['registrationNumber'] ?? null,
+                'notes'                                   => $raw['notes'] ?? null,
+                'is_repeating'                            => $raw['isRepeating'] ?? false,
+                'is_medically_fit'                        => $raw['isMedicallyFit'] ?? null,
+                'is_scholarship_holder'                   => $raw['isScholarshipHolder'] ?? false,
+                'scholarship_type'                        => $raw['scholarshipType'] ?? null,
+                'scholarship_amount'                      => $raw['scholarshipAmount'] ?? null,
+                'is_registered_elsewhere'                 => $raw['isRegisteredElsewhere'] ?? false,
+                'is_willing_to_cancel_other_registration' => $raw['isWillingToCancelOtherRegistration'] ?? null,
+                'certification_file_url'                  => $raw['certificationFileUrl'] ?? null,
+                'synced_from'                             => 'CCAK',
+                'last_synced_at'                          => now(),
+            ]
+        );
+
+        $this->upsertRegistrationDiploma($studentUuid, $raw);
+    }
+
+    private function upsertRegistrationDiploma(string $studentId, array $raw): void
+    {
+        $name = $raw['diplomaName'] ?? null;
+
+        if (! $name) {
+            return;
+        }
+
+        PriorDiploma::updateOrCreate(
+            [
+                'diplomable_type' => Student::class,
+                'diplomable_id'   => $studentId,
+                'name'            => $name,
+            ],
+            [
+                'year'        => $raw['diplomaYear'] ?? null,
+                'mention'     => $raw['diplomaMention'] ?? null,
+                'institution' => $raw['diplomaInstitution'] ?? null,
             ]
         );
     }

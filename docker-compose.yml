@@ -162,9 +162,12 @@ services:
       dockerfile: Dockerfile
     container_name: ccak-backend-queue
     working_dir: /var/www/html
-    command: php artisan queue:work --tries=3 --timeout=120
+    command: php artisan queue:work --tries=3 --timeout=660
     volumes:
       - .:/var/www/html
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini:ro
+    env_file:
+      - .env
     depends_on:
       - pgsql
       - redis

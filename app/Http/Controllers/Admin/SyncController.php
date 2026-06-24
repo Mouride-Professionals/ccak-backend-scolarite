@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exceptions\CcakApiException;
 use App\Http\Controllers\BaseApiController;
+use App\Jobs\SyncJob;
 use App\Models\SyncLog;
 use App\Services\SyncService;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +27,7 @@ class SyncController extends BaseApiController
 
     public function stats(): JsonResponse
     {
-        $apiEntities = ['students'];
+        $apiEntities = ['students', 'enrollments'];
         $staticEntities = ['degree_cycles', 'niveaux', 'ufr', 'departements', 'programmes', 'academic_years'];
 
         $result = [];
@@ -56,23 +56,14 @@ class SyncController extends BaseApiController
     {
         $entityType = $request->input('entity_type');
 
-        try {
-            if ($entityType) {
-                $log = match ($entityType) {
-                    'students' => $this->syncService->syncStudents(),
-                    default => throw new \InvalidArgumentException("Entité inconnue : {$entityType}"),
-                };
-
-                return $this->success([$log], 'Synchronisation déclenchée avec succès.');
-            }
-
-            $logs = $this->syncService->syncAll();
-
-            return $this->success(array_values($logs), 'Synchronisation déclenchée avec succès.');
-        } catch (CcakApiException $e) {
-            return $this->error("Erreur API CCAK : {$e->getMessage()}", 502);
-        } catch (\Throwable $e) {
-            return $this->error("Erreur inattendue : {$e->getMessage()}", 500);
+        if ($entityType && ! in_array($entityType, ['students', 'enrollments'], true)) {
+            return $this->error("Entité inconnue : {$entityType}", 422);
         }
+
+        SyncJob::dispatch($entityType);
+
+        $label = $entityType ?? 'toutes les entités';
+
+        return $this->success(null, "Synchronisation de « {$label} » lancée en arrière-plan. Consultez l'historique pour suivre l'avancement.", 202);
     }
 }

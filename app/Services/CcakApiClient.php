@@ -33,6 +33,45 @@ class CcakApiClient
         return $all;
     }
 
+    /**
+     * Fetches all pages from /Student/with-registrations and returns a flat array
+     * of registration objects, each augmented with 'studentUuid' (the student CCAK UUID).
+     */
+    public function getRegistrationsBulk(): array
+    {
+        $all = [];
+        $page = 1;
+
+        do {
+            $response = $this->get('/api/admin-service/Student/with-registrations', 120, [
+                'page' => $page,
+                'pageSize' => 100,
+            ]);
+
+            foreach ($response['data'] ?? [] as $student) {
+                $studentUuid = $student['id'];
+                foreach ($student['registrations'] ?? [] as $registration) {
+                    $all[] = array_merge($registration, ['studentUuid' => $studentUuid]);
+                }
+            }
+
+            $hasNext = $response['hasNextPage'] ?? false;
+            $page++;
+        } while ($hasNext);
+
+        return $all;
+    }
+
+    /**
+     * Fetches registrations for a single student by their CCAK UUID.
+     */
+    public function getStudentRegistrations(string $studentUuid): array
+    {
+        $response = $this->get("/api/admin-service/Student/{$studentUuid}/registrations");
+
+        return $response['registrations'] ?? [];
+    }
+
     public function getGrades(): array
     {
         return $this->get('/api/v1/grades');
