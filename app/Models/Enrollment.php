@@ -20,6 +20,7 @@ class Enrollment extends Model
     protected $table = 'enrollments';
 
     protected $fillable = [
+        'id',
         'student_id',
         'academic_program_id',
         'academic_year_id',
@@ -39,6 +40,8 @@ class Enrollment extends Model
         'is_willing_to_cancel_other_registration',
         'certification_file_url',
         'exam_number',
+        'synced_from',
+        'last_synced_at',
     ];
 
     protected $casts = [
@@ -57,6 +60,7 @@ class Enrollment extends Model
         'is_registered_elsewhere' => 'boolean',
         'is_willing_to_cancel_other_registration' => 'boolean',
         'exam_number' => 'string',
+        'last_synced_at' => 'datetime',
     ];
 
     public static function generateExamNumber(string $yearCode, int $sequence): string
