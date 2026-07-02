@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 class SyncCcakStudents extends Command
 {
     protected $signature = 'sync:ccak-students
-                            {--entity= : Sync only one entity (degree_cycles|niveaux|ufr|departements|programmes|academic_years|students)}
+                            {--entity= : Sync only one entity (degree_cycles|niveaux|ufr|departements|programmes|academic_years|students|enrollments)}
                             {--dry : Fetch and map records without writing to the database}
                             {--limit= : Process only the first N records}';
 
@@ -21,13 +21,14 @@ class SyncCcakStudents extends Command
     }
 
     private array $entityMap = [
-        'degree_cycles' => 'syncDegreeCycles',
-        'niveaux' => 'syncNiveaux',
-        'ufr' => 'syncUfr',
-        'departements' => 'syncDepartements',
-        'programmes' => 'syncProgrammes',
+        'degree_cycles'  => 'syncDegreeCycles',
+        'niveaux'        => 'syncNiveaux',
+        'ufr'            => 'syncUfr',
+        'departements'   => 'syncDepartements',
+        'programmes'     => 'syncProgrammes',
         'academic_years' => 'syncAcademicYears',
-        'students' => 'syncStudents',
+        'students'       => 'syncStudents',
+        'enrollments'    => 'syncEnrollments',
     ];
 
     private function runDry(?string $entity): int

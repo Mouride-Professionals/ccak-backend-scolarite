@@ -38,7 +38,7 @@ class SyncService
     public function syncDegreeCycles(): SyncLog
     {
         return $this->runSync('degree_cycles', fn () => $this->client->getGrades(), function (array $raw) {
-            DegreeCycle::updateOrCreate(
+            $model = DegreeCycle::updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'name' => $raw['name'],
@@ -48,13 +48,15 @@ class SyncService
                     'last_synced_at' => now(),
                 ]
             );
+
+            return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
     }
 
     public function syncNiveaux(): SyncLog
     {
         return $this->runSync('niveaux', fn () => $this->client->getNiveaux(), function (array $raw) {
-            Level::updateOrCreate(
+            $model = Level::updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'name' => $raw['name'],
@@ -65,13 +67,15 @@ class SyncService
                     'last_synced_at' => now(),
                 ]
             );
+
+            return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
     }
 
     public function syncUfr(): SyncLog
     {
         return $this->runSync('ufr', fn () => $this->client->getUfr(), function (array $raw) {
-            Faculty::updateOrCreate(
+            $model = Faculty::updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'name' => $raw['name'],
@@ -80,6 +84,8 @@ class SyncService
                     'last_synced_at' => now(),
                 ]
             );
+
+            return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
     }
 
@@ -88,7 +94,7 @@ class SyncService
         return $this->runSync('departements', fn () => $this->client->getDepartements(), function (array $raw) {
             $facultyId = $raw['ufrId'] ?? $raw['ufr_id'] ?? $raw['facultyId'] ?? $raw['faculty_id'] ?? null;
 
-            Department::withTrashed()->updateOrCreate(
+            $model = Department::withTrashed()->updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'faculty_id' => $facultyId,
@@ -98,23 +104,26 @@ class SyncService
                     'last_synced_at' => now(),
                 ]
             );
+
+            return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
     }
 
     public function syncProgrammes(): SyncLog
     {
-        $validLevels = ['LICENCE', 'MASTER', 'DOCTORAT'];
-
-        return $this->runSync('programmes', fn () => $this->client->getProgrammes(), function (array $raw) use ($validLevels) {
-            $level = $raw['level'] ?? $raw['grade'] ?? null;
-
-            if (! in_array($level, $validLevels, true)) {
-                throw new \InvalidArgumentException("Unsupported programme level: '{$level}' (id={$raw['id']})");
-            }
+        return $this->runSync('programmes', fn () => $this->client->getProgrammes(), function (array $raw) {
+            // CCAK programs endpoint does not expose a level field — infer from name.
+            $name = $raw['name'] ?? '';
+            $level = match (true) {
+                (bool) preg_match('/master/i', $name)                    => 'MASTER',
+                (bool) preg_match('/doctorat/i', $name)                  => 'DOCTORAT',
+                (bool) preg_match('/pr[eé]paratoire/i', $name)           => 'CLASSE_PREPARATOIRE',
+                default                                                   => 'LICENCE',
+            };
 
             $departmentId = $raw['departmentId'] ?? $raw['department_id'] ?? null;
 
-            AcademicProgram::updateOrCreate(
+            $model = AcademicProgram::updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'department_id' => $departmentId,
@@ -126,6 +135,8 @@ class SyncService
                     'last_synced_at' => now(),
                 ]
             );
+
+            return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
     }
 
@@ -138,7 +149,7 @@ class SyncService
                 DB::table('academic_years')->where('id', '!=', $raw['id'])->update(['is_current' => false]);
             }
 
-            AcademicYear::updateOrCreate(
+            $model = AcademicYear::updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'name' => $raw['name'],
@@ -149,6 +160,8 @@ class SyncService
                     'last_synced_at' => now(),
                 ]
             );
+
+            return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
     }
 
@@ -160,11 +173,13 @@ class SyncService
             return $limit !== null ? array_slice($items, 0, $limit) : $items;
         }, function (array $raw) {
             $studentId = $raw['id'];
-            $this->upsertStudent($this->mapCcakStudentToMp($raw));
+            $result = $this->upsertStudent($this->mapCcakStudentToMp($raw));
             $this->upsertStudentBacInfo($studentId, $raw);
             $this->upsertSocialProfile($studentId, $raw);
             $this->upsertStudentAddresses($studentId, $raw);
             $this->upsertGuardian($studentId, $raw);
+
+            return $result;
         });
     }
 
@@ -175,7 +190,7 @@ class SyncService
 
             return $limit !== null ? array_slice($items, 0, $limit) : $items;
         }, function (array $raw) {
-            $this->upsertEnrollment($raw);
+            return $this->upsertEnrollment($raw);
         });
     }
 
@@ -187,16 +202,16 @@ class SyncService
     public function syncAll(): array
     {
         return [
-            // Referential data is seeded statically (CcakReferentialSeeder).
-            // Uncomment when CCAK exposes these endpoints:
+            // degree_cycles and niveaux: no CCAK endpoint yet — seeded statically.
+            // Uncomment both together once the grades endpoint is available:
             // 'degree_cycles' => $this->syncDegreeCycles(),
             // 'niveaux'       => $this->syncNiveaux(),
-            // 'ufr'           => $this->syncUfr(),
-            // 'departements'  => $this->syncDepartements(),
-            // 'programmes'    => $this->syncProgrammes(),
-            // 'academic_years' => $this->syncAcademicYears(),
-            'students'    => $this->syncStudents(),
-            'enrollments' => $this->syncEnrollments(),
+            'academic_years' => $this->syncAcademicYears(),
+            'ufr'            => $this->syncUfr(),
+            'departements'   => $this->syncDepartements(), // depends on ufr
+            'programmes'     => $this->syncProgrammes(),   // depends on departements
+            'students'       => $this->syncStudents(),
+            'enrollments'    => $this->syncEnrollments(),  // depends on students + programmes + academic_years
         ];
     }
 
@@ -497,7 +512,7 @@ class SyncService
             );
         }
 
-        Enrollment::updateOrCreate(
+        $enrollment = Enrollment::updateOrCreate(
             ['id' => $registrationId],
             [
                 'student_id'                              => $studentUuid,
@@ -522,6 +537,8 @@ class SyncService
         );
 
         $this->upsertRegistrationDiploma($studentUuid, $raw);
+
+        return $enrollment->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
     }
 
     private function upsertRegistrationDiploma(string $studentId, array $raw): void
@@ -578,10 +595,12 @@ class SyncService
 
             foreach ($items as $raw) {
                 try {
-                    $processFn($raw);
-                    // Distinguish created/updated via wasRecentlyCreated on the model if needed;
-                    // for simplicity we count all successful ops as updated
-                    $updated++;
+                    $result = $processFn($raw);
+                    if ($result === 'CREATED') {
+                        $created++;
+                    } else {
+                        $updated++;
+                    }
                 } catch (\Throwable $e) {
                     $errors++;
                     $errorDetails[] = [

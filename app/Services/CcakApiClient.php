@@ -72,34 +72,38 @@ class CcakApiClient
         return $response['registrations'] ?? [];
     }
 
-    public function getGrades(): array
-    {
-        return $this->get('/api/v1/grades');
-    }
+    // No endpoint available yet — degree cycles are seeded statically.
+    // public function getGrades(): array {}
 
-    public function getNiveaux(): array
-    {
-        return $this->get('/api/v1/niveaux');
-    }
+    // Depends on degree_cycles FK — kept commented until getGrades() is available.
+    // public function getNiveaux(): array {}
 
     public function getUfr(): array
     {
-        return $this->get('/api/v1/ufr');
+        $response = $this->get('/api/admin-service/pedagogique/ufrs');
+
+        return $response['data'] ?? [];
     }
 
     public function getDepartements(): array
     {
-        return $this->get('/api/v1/departements');
+        $response = $this->get('/api/admin-service/pedagogique/departments');
+
+        return $response['data'] ?? [];
     }
 
     public function getProgrammes(): array
     {
-        return $this->get('/api/v1/programmes');
+        $response = $this->get('/api/admin-service/pedagogique/programs');
+
+        return $response['data'] ?? [];
     }
 
     public function getAcademicYears(): array
     {
-        return $this->get('/api/v1/academic-years');
+        $response = $this->get('/api/admin-service/pedagogique/accademic-years');
+
+        return $response['data'] ?? [];
     }
 
     private function get(string $path, int $timeout = 30, array $query = []): array
