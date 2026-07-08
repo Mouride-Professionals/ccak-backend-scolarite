@@ -84,6 +84,27 @@ class ExamScheduleController extends BaseApiController
         return $this->success(null, 'Examen supprimé');
     }
 
+    public function listAll(Request $request): JsonResponse
+    {
+        $query = ExamSchedule::with(['course', 'room', 'invigilators', 'examSession']);
+
+        if ($request->filled('academic_year_id')) {
+            $query->whereHas('examSession', fn ($q) => $q->where('academic_year_id', $request->academic_year_id));
+        }
+
+        if ($request->filled('exam_session_id')) {
+            $query->where('exam_session_id', $request->exam_session_id);
+        }
+
+        if ($request->filled('course_id')) {
+            $query->where('course_id', $request->course_id);
+        }
+
+        $perPage = min((int) $request->query('limit', 50), 100);
+
+        return $this->success(ExamScheduleResource::collection($query->paginate($perPage)));
+    }
+
     public function checkConflicts(Request $request): JsonResponse
     {
         $request->validate([
