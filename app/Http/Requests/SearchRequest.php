@@ -14,10 +14,10 @@ class SearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'q'       => ['required', 'string', 'min:2', 'max:100'],
-            'types'   => ['sometimes', 'array'],
+            'q' => ['required', 'string', 'min:2', 'max:100'],
+            'types' => ['sometimes', 'array'],
             'types.*' => ['string'],
-            'limit'   => ['sometimes', 'integer', 'min:1', 'max:20'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:20'],
         ];
     }
 }

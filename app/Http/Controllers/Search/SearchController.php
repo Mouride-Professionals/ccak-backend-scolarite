@@ -13,7 +13,7 @@ class SearchController extends BaseApiController
 
     public function __invoke(SearchRequest $request): JsonResponse
     {
-        $term  = $request->string('q')->toString();
+        $term = $request->string('q')->toString();
         $types = $request->has('types') ? $request->input('types') : null;
         $limit = (int) $request->input('limit', 5);
 

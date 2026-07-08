@@ -24,11 +24,11 @@ class AcademicProgramSearcher implements SearcherInterface
             ->limit($limit)
             ->get(['id', 'name', 'level'])
             ->map(fn (AcademicProgram $p) => [
-                'id'       => $p->id,
-                'type'     => 'academic_program',
-                'label'    => $p->name,
+                'id' => $p->id,
+                'type' => 'academic_program',
+                'label' => $p->name,
                 'sublabel' => $p->level,
-                'url_hint' => '/programmes/' . $p->id,
+                'url_hint' => '/programmes/'.$p->id,
             ]);
     }
 }

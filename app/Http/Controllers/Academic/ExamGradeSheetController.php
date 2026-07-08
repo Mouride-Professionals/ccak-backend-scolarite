@@ -36,18 +36,18 @@ class ExamGradeSheetController extends BaseApiController
             $grade = $grades->get($ce->id);
 
             $row = [
-                'student_id'           => $ce->student_id,
+                'student_id' => $ce->student_id,
                 'course_enrollment_id' => $ce->id,
-                'grade_id'             => $grade?->id,
-                'score'                => $grade?->score,
-                'max_score'            => $grade?->max_score ?? 20,
-                'status'               => $grade?->status?->value,
+                'grade_id' => $grade?->id,
+                'score' => $grade?->score,
+                'max_score' => $grade?->max_score ?? 20,
+                'status' => $grade?->status?->value,
             ];
 
             if ($useAnonyma) {
                 $row['exam_number'] = $ce->enrollment?->exam_number;
             } else {
-                $row['full_name']      = $ce->student?->full_name;
+                $row['full_name'] = $ce->student?->full_name;
                 $row['student_number'] = $ce->student?->student_number;
             }
 
@@ -60,17 +60,17 @@ class ExamGradeSheetController extends BaseApiController
 
         return $this->success([
             'exam_schedule' => [
-                'id'               => $examSchedule->id,
-                'course_id'        => $examSchedule->course_id,
-                'course_code'      => $examSchedule->course?->code,
-                'course_name'      => $examSchedule->course?->name,
-                'session_id'       => $session->id,
-                'session_name'     => $session->name,
-                'date'             => $examSchedule->date?->toDateString(),
-                'start_time'       => $examSchedule->start_time,
-                'end_time'         => $examSchedule->end_time,
-                'room'             => $examSchedule->room?->name,
-                'semester_number'  => $session->semester_number,
+                'id' => $examSchedule->id,
+                'course_id' => $examSchedule->course_id,
+                'course_code' => $examSchedule->course?->code,
+                'course_name' => $examSchedule->course?->name,
+                'session_id' => $session->id,
+                'session_name' => $session->name,
+                'date' => $examSchedule->date?->toDateString(),
+                'start_time' => $examSchedule->start_time,
+                'end_time' => $examSchedule->end_time,
+                'room' => $examSchedule->room?->name,
+                'semester_number' => $session->semester_number,
                 'use_exam_number' => $useAnonyma,
             ],
             'students' => $sheet,
@@ -81,9 +81,9 @@ class ExamGradeSheetController extends BaseApiController
     {
         $validated = $request->validate([
             'course_enrollment_id' => 'required|uuid|exists:course_enrollments,id',
-            'score'                => 'required|numeric|min:0',
-            'max_score'            => 'sometimes|numeric|min:1',
-            'weight'               => 'sometimes|numeric|min:0',
+            'score' => 'required|numeric|min:0',
+            'max_score' => 'sometimes|numeric|min:1',
+            'weight' => 'sometimes|numeric|min:0',
         ]);
 
         $ce = CourseEnrollment::find($validated['course_enrollment_id']);
@@ -91,15 +91,15 @@ class ExamGradeSheetController extends BaseApiController
         $grade = Grade::updateOrCreate(
             [
                 'course_enrollment_id' => $validated['course_enrollment_id'],
-                'exam_schedule_id'     => $examSchedule->id,
-                'type'                 => 'EXAM',
+                'exam_schedule_id' => $examSchedule->id,
+                'type' => 'EXAM',
             ],
             [
                 'student_id' => $ce->student_id,
-                'course_id'  => $examSchedule->course_id,
-                'score'      => $validated['score'],
-                'max_score'  => $validated['max_score'] ?? 20,
-                'weight'     => $validated['weight'] ?? 1,
+                'course_id' => $examSchedule->course_id,
+                'score' => $validated['score'],
+                'max_score' => $validated['max_score'] ?? 20,
+                'weight' => $validated['weight'] ?? 1,
                 'entered_by' => auth()->id(),
                 'entered_at' => now(),
             ]

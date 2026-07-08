@@ -25,11 +25,11 @@ class FacultyMemberSearcher implements SearcherInterface
             ->limit($limit)
             ->get(['id', 'full_name', 'staff_number', 'department_id'])
             ->map(fn (FacultyMember $m) => [
-                'id'       => $m->id,
-                'type'     => 'faculty_member',
-                'label'    => $m->full_name,
+                'id' => $m->id,
+                'type' => 'faculty_member',
+                'label' => $m->full_name,
                 'sublabel' => $m->staff_number,
-                'url_hint' => '/faculty-members/' . $m->id,
+                'url_hint' => '/faculty-members/'.$m->id,
             ]);
     }
 }

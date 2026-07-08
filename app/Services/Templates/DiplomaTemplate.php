@@ -337,9 +337,9 @@ class DiplomaTemplate implements DocumentTemplateInterface
     private function getFrenchDegreeLevel(string $degreeType): string
     {
         $degreeMap = [
-            'LICENCE'             => 'LICENCE',
-            'MASTER'              => 'MASTER',
-            'DOCTORAT'            => 'DOCTORAT',
+            'LICENCE' => 'LICENCE',
+            'MASTER' => 'MASTER',
+            'DOCTORAT' => 'DOCTORAT',
             'CLASSE_PREPARATOIRE' => 'CYCLE PRÉPARATOIRE',
         ];
 

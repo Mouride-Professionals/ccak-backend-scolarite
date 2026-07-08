@@ -24,11 +24,11 @@ class CourseUnitSearcher implements SearcherInterface
             ->limit($limit)
             ->get(['id', 'name', 'code'])
             ->map(fn (CourseUnit $u) => [
-                'id'       => $u->id,
-                'type'     => 'course_unit',
-                'label'    => $u->name,
+                'id' => $u->id,
+                'type' => 'course_unit',
+                'label' => $u->name,
                 'sublabel' => $u->code,
-                'url_hint' => '/course-units/' . $u->id,
+                'url_hint' => '/course-units/'.$u->id,
             ]);
     }
 }

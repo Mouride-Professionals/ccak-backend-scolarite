@@ -1,28 +1,28 @@
 <?php
 
 use App\Http\Controllers\Academic\AcademicCalendarController;
-use App\Http\Controllers\Academic\AssessmentController;
 use App\Http\Controllers\Academic\AcademicProgramController;
 use App\Http\Controllers\Academic\AcademicYearController;
 use App\Http\Controllers\Academic\ActivityTypeController;
+use App\Http\Controllers\Academic\AssessmentController;
 use App\Http\Controllers\Academic\AttendanceController;
 use App\Http\Controllers\Academic\CourseController;
 use App\Http\Controllers\Academic\CourseEnrollmentController;
 use App\Http\Controllers\Academic\CourseLogController;
 use App\Http\Controllers\Academic\CourseUnitController;
-use App\Http\Controllers\Academic\DeliberationSessionController;
 use App\Http\Controllers\Academic\DegreeCycleController;
+use App\Http\Controllers\Academic\DeliberationSessionController;
 use App\Http\Controllers\Academic\DepartmentController;
 use App\Http\Controllers\Academic\EnrollmentController;
 use App\Http\Controllers\Academic\EvaluationController;
 use App\Http\Controllers\Academic\EvaluationResponseController;
 use App\Http\Controllers\Academic\ExamGradeSheetController;
-use App\Http\Controllers\Academic\GradeSheetController;
 use App\Http\Controllers\Academic\ExamScheduleController;
 use App\Http\Controllers\Academic\ExamSessionController;
 use App\Http\Controllers\Academic\FacultyContractController;
 use App\Http\Controllers\Academic\FacultyController;
 use App\Http\Controllers\Academic\FacultyDocumentController;
+use App\Http\Controllers\Academic\GradeSheetController;
 use App\Http\Controllers\Academic\GradeStatisticsController;
 use App\Http\Controllers\Academic\HolidayController;
 use App\Http\Controllers\Academic\MaquetteController;

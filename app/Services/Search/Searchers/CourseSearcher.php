@@ -24,11 +24,11 @@ class CourseSearcher implements SearcherInterface
             ->limit($limit)
             ->get(['id', 'name', 'code'])
             ->map(fn (Course $c) => [
-                'id'       => $c->id,
-                'type'     => 'course',
-                'label'    => $c->name,
+                'id' => $c->id,
+                'type' => 'course',
+                'label' => $c->name,
                 'sublabel' => $c->code,
-                'url_hint' => '/courses/' . $c->id . '/detail',
+                'url_hint' => '/courses/'.$c->id.'/detail',
             ]);
     }
 }

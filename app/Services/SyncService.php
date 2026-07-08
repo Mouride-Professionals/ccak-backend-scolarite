@@ -115,10 +115,10 @@ class SyncService
             // CCAK programs endpoint does not expose a level field — infer from name.
             $name = $raw['name'] ?? '';
             $level = match (true) {
-                (bool) preg_match('/master/i', $name)                    => 'MASTER',
-                (bool) preg_match('/doctorat/i', $name)                  => 'DOCTORAT',
-                (bool) preg_match('/pr[eé]paratoire/i', $name)           => 'CLASSE_PREPARATOIRE',
-                default                                                   => 'LICENCE',
+                (bool) preg_match('/master/i', $name) => 'MASTER',
+                (bool) preg_match('/doctorat/i', $name) => 'DOCTORAT',
+                (bool) preg_match('/pr[eé]paratoire/i', $name) => 'CLASSE_PREPARATOIRE',
+                default => 'LICENCE',
             };
 
             $departmentId = $raw['departmentId'] ?? $raw['department_id'] ?? null;
@@ -207,11 +207,11 @@ class SyncService
             // 'degree_cycles' => $this->syncDegreeCycles(),
             // 'niveaux'       => $this->syncNiveaux(),
             'academic_years' => $this->syncAcademicYears(),
-            'ufr'            => $this->syncUfr(),
-            'departements'   => $this->syncDepartements(), // depends on ufr
-            'programmes'     => $this->syncProgrammes(),   // depends on departements
-            'students'       => $this->syncStudents(),
-            'enrollments'    => $this->syncEnrollments(),  // depends on students + programmes + academic_years
+            'ufr' => $this->syncUfr(),
+            'departements' => $this->syncDepartements(), // depends on ufr
+            'programmes' => $this->syncProgrammes(),   // depends on departements
+            'students' => $this->syncStudents(),
+            'enrollments' => $this->syncEnrollments(),  // depends on students + programmes + academic_years
         ];
     }
 
@@ -483,9 +483,9 @@ class SyncService
     private function upsertEnrollment(array $raw): void
     {
         $registrationId = $raw['registrationId'];
-        $studentUuid    = $raw['studentUuid'];
-        $programId      = $raw['programId'] ?? null;
-        $levelId        = $raw['levelId'] ?? null;
+        $studentUuid = $raw['studentUuid'];
+        $programId = $raw['programId'] ?? null;
+        $levelId = $raw['levelId'] ?? null;
         $academicYearId = $raw['academicYearId'];
 
         if (! $programId || $programId === self::NULL_UUID) {
@@ -515,24 +515,24 @@ class SyncService
         $enrollment = Enrollment::updateOrCreate(
             ['id' => $registrationId],
             [
-                'student_id'                              => $studentUuid,
-                'academic_program_id'                     => $programId,
-                'academic_year_id'                        => $academicYearId,
-                'level_id'                                => ($levelId && $levelId !== self::NULL_UUID) ? $levelId : null,
-                'enrollment_date'                         => $raw['registrationDate'],
-                'status'                                  => CcakEnumMapper::registrationStatus((int) $raw['status'])->value,
-                'registration_number'                     => $raw['registrationNumber'] ?? null,
-                'notes'                                   => $raw['notes'] ?? null,
-                'is_repeating'                            => $raw['isRepeating'] ?? false,
-                'is_medically_fit'                        => $raw['isMedicallyFit'] ?? null,
-                'is_scholarship_holder'                   => $raw['isScholarshipHolder'] ?? false,
-                'scholarship_type'                        => $raw['scholarshipType'] ?? null,
-                'scholarship_amount'                      => $raw['scholarshipAmount'] ?? null,
-                'is_registered_elsewhere'                 => $raw['isRegisteredElsewhere'] ?? false,
+                'student_id' => $studentUuid,
+                'academic_program_id' => $programId,
+                'academic_year_id' => $academicYearId,
+                'level_id' => ($levelId && $levelId !== self::NULL_UUID) ? $levelId : null,
+                'enrollment_date' => $raw['registrationDate'],
+                'status' => CcakEnumMapper::registrationStatus((int) $raw['status'])->value,
+                'registration_number' => $raw['registrationNumber'] ?? null,
+                'notes' => $raw['notes'] ?? null,
+                'is_repeating' => $raw['isRepeating'] ?? false,
+                'is_medically_fit' => $raw['isMedicallyFit'] ?? null,
+                'is_scholarship_holder' => $raw['isScholarshipHolder'] ?? false,
+                'scholarship_type' => $raw['scholarshipType'] ?? null,
+                'scholarship_amount' => $raw['scholarshipAmount'] ?? null,
+                'is_registered_elsewhere' => $raw['isRegisteredElsewhere'] ?? false,
                 'is_willing_to_cancel_other_registration' => $raw['isWillingToCancelOtherRegistration'] ?? null,
-                'certification_file_url'                  => $raw['certificationFileUrl'] ?? null,
-                'synced_from'                             => 'CCAK',
-                'last_synced_at'                          => now(),
+                'certification_file_url' => $raw['certificationFileUrl'] ?? null,
+                'synced_from' => 'CCAK',
+                'last_synced_at' => now(),
             ]
         );
 
@@ -552,12 +552,12 @@ class SyncService
         PriorDiploma::updateOrCreate(
             [
                 'diplomable_type' => Student::class,
-                'diplomable_id'   => $studentId,
-                'name'            => $name,
+                'diplomable_id' => $studentId,
+                'name' => $name,
             ],
             [
-                'year'        => $raw['diplomaYear'] ?? null,
-                'mention'     => $raw['diplomaMention'] ?? null,
+                'year' => $raw['diplomaYear'] ?? null,
+                'mention' => $raw['diplomaMention'] ?? null,
                 'institution' => $raw['diplomaInstitution'] ?? null,
             ]
         );

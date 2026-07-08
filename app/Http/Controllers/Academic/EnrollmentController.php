@@ -221,7 +221,7 @@ class EnrollmentController extends BaseApiController
     {
         return $this->success([
             'enrollment_id' => $enrollment->id,
-            'exam_number'   => $enrollment->exam_number,
+            'exam_number' => $enrollment->exam_number,
         ]);
     }
 
