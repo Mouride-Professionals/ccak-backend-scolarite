@@ -61,4 +61,6 @@ jobs:
             docker compose up -d --build
             docker compose restart web
             docker compose exec -T app composer install --no-interaction --prefer-dist
+            docker compose exec -T app php artisan config:clear
+            docker compose exec -T app php artisan route:clear
             docker compose exec -T app php artisan migrate --force
