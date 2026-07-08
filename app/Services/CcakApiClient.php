@@ -72,11 +72,19 @@ class CcakApiClient
         return $response['registrations'] ?? [];
     }
 
-    // No endpoint available yet — degree cycles are seeded statically.
-    // public function getGrades(): array {}
+    public function getGrades(): array
+    {
+        $response = $this->get('/api/admin-service/pedagogique/grades');
 
-    // Depends on degree_cycles FK — kept commented until getGrades() is available.
-    // public function getNiveaux(): array {}
+        return $response['data'] ?? [];
+    }
+
+    public function getNiveaux(): array
+    {
+        $response = $this->get('/api/admin-service/pedagogique/levels');
+
+        return $response['data'] ?? [];
+    }
 
     public function getUfr(): array
     {

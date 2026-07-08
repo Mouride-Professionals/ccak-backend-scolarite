@@ -35,6 +35,8 @@ class SyncJob implements ShouldQueue
 
         if ($this->entityType) {
             match ($this->entityType) {
+                'degree_cycles'  => $syncService->syncDegreeCycles(),
+                'niveaux'        => $syncService->syncNiveaux(),
                 'academic_years' => $syncService->syncAcademicYears(),
                 'ufr'            => $syncService->syncUfr(),
                 'departements'   => $syncService->syncDepartements(),

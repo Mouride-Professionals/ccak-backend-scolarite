@@ -38,12 +38,15 @@ class SyncService
     public function syncDegreeCycles(): SyncLog
     {
         return $this->runSync('degree_cycles', fn () => $this->client->getGrades(), function (array $raw) {
+            // API has no 'type' field — derive from name ("CLASSE PREPARATOIRE" → "CLASSE_PREPARATOIRE")
+            $type = str_replace(' ', '_', strtoupper($raw['name']));
+
             $model = DegreeCycle::updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'name' => $raw['name'],
                     'code' => $raw['code'],
-                    'type' => $raw['type'],
+                    'type' => $type,
                     'synced_from' => 'CCAK',
                     'last_synced_at' => now(),
                 ]
@@ -56,13 +59,16 @@ class SyncService
     public function syncNiveaux(): SyncLog
     {
         return $this->runSync('niveaux', fn () => $this->client->getNiveaux(), function (array $raw) {
+            // API has no degree_cycle_id — infer from level code prefix (L1→L, M2→M, CP1→CP)
+            $prefix = rtrim($raw['code'], '0123456789');
+            $cycle = DegreeCycle::where('code', $prefix)->first();
+
             $model = Level::updateOrCreate(
                 ['id' => $raw['id']],
                 [
                     'name' => $raw['name'],
                     'code' => $raw['code'],
-                    'degree_cycle_id' => $raw['gradeId'] ?? $raw['grade_id'] ?? $raw['degreeCycleId'] ?? $raw['degree_cycle_id'] ?? null,
-                    'numero' => $raw['numero'] ?? null,
+                    'degree_cycle_id' => $cycle?->id,
                     'synced_from' => 'CCAK',
                     'last_synced_at' => now(),
                 ]
@@ -202,10 +208,8 @@ class SyncService
     public function syncAll(): array
     {
         return [
-            // degree_cycles and niveaux: no CCAK endpoint yet — seeded statically.
-            // Uncomment both together once the grades endpoint is available:
-            // 'degree_cycles' => $this->syncDegreeCycles(),
-            // 'niveaux'       => $this->syncNiveaux(),
+            'degree_cycles' => $this->syncDegreeCycles(),
+            'niveaux'       => $this->syncNiveaux(), // depends on degree_cycles
             'academic_years' => $this->syncAcademicYears(),
             'ufr' => $this->syncUfr(),
             'departements' => $this->syncDepartements(), // depends on ufr
