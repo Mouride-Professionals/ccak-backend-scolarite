@@ -41,16 +41,15 @@ class SyncService
             // API has no 'type' field — derive from name ("CLASSE PREPARATOIRE" → "CLASSE_PREPARATOIRE")
             $type = str_replace(' ', '_', strtoupper($raw['name']));
 
-            $model = DegreeCycle::updateOrCreate(
-                ['id' => $raw['id']],
-                [
-                    'name' => $raw['name'],
-                    'code' => $raw['code'],
-                    'type' => $type,
-                    'synced_from' => 'CCAK',
-                    'last_synced_at' => now(),
-                ]
-            );
+            $model = DegreeCycle::findOrNew($raw['id']);
+            $model->forceFill([
+                'id' => $raw['id'],
+                'name' => $raw['name'],
+                'code' => $raw['code'],
+                'type' => $type,
+                'synced_from' => 'CCAK',
+                'last_synced_at' => now(),
+            ])->save();
 
             return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
@@ -63,16 +62,15 @@ class SyncService
             $prefix = rtrim($raw['code'], '0123456789');
             $cycle = DegreeCycle::where('code', $prefix)->first();
 
-            $model = Level::updateOrCreate(
-                ['id' => $raw['id']],
-                [
-                    'name' => $raw['name'],
-                    'code' => $raw['code'],
-                    'degree_cycle_id' => $cycle?->id,
-                    'synced_from' => 'CCAK',
-                    'last_synced_at' => now(),
-                ]
-            );
+            $model = Level::findOrNew($raw['id']);
+            $model->forceFill([
+                'id' => $raw['id'],
+                'name' => $raw['name'],
+                'code' => $raw['code'],
+                'degree_cycle_id' => $cycle?->id,
+                'synced_from' => 'CCAK',
+                'last_synced_at' => now(),
+            ])->save();
 
             return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
@@ -81,15 +79,14 @@ class SyncService
     public function syncUfr(): SyncLog
     {
         return $this->runSync('ufr', fn () => $this->client->getUfr(), function (array $raw) {
-            $model = Faculty::updateOrCreate(
-                ['id' => $raw['id']],
-                [
-                    'name' => $raw['name'],
-                    'code' => $raw['code'],
-                    'synced_from' => 'CCAK',
-                    'last_synced_at' => now(),
-                ]
-            );
+            $model = Faculty::findOrNew($raw['id']);
+            $model->forceFill([
+                'id' => $raw['id'],
+                'name' => $raw['name'],
+                'code' => $raw['code'],
+                'synced_from' => 'CCAK',
+                'last_synced_at' => now(),
+            ])->save();
 
             return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
@@ -100,16 +97,15 @@ class SyncService
         return $this->runSync('departements', fn () => $this->client->getDepartements(), function (array $raw) {
             $facultyId = $raw['ufrId'] ?? $raw['ufr_id'] ?? $raw['facultyId'] ?? $raw['faculty_id'] ?? null;
 
-            $model = Department::withTrashed()->updateOrCreate(
-                ['id' => $raw['id']],
-                [
-                    'faculty_id' => $facultyId,
-                    'name' => $raw['name'],
-                    'code' => $raw['code'],
-                    'synced_from' => 'CCAK',
-                    'last_synced_at' => now(),
-                ]
-            );
+            $model = Department::withTrashed()->find($raw['id']) ?? new Department();
+            $model->forceFill([
+                'id' => $raw['id'],
+                'faculty_id' => $facultyId,
+                'name' => $raw['name'],
+                'code' => $raw['code'],
+                'synced_from' => 'CCAK',
+                'last_synced_at' => now(),
+            ])->save();
 
             return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
@@ -129,18 +125,17 @@ class SyncService
 
             $departmentId = $raw['departmentId'] ?? $raw['department_id'] ?? null;
 
-            $model = AcademicProgram::updateOrCreate(
-                ['id' => $raw['id']],
-                [
-                    'department_id' => $departmentId,
-                    'name' => $raw['name'],
-                    'level' => $level,
-                    'duration_semesters' => $raw['durationSemesters'] ?? $raw['duration_semesters'] ?? 0,
-                    'total_credits_required' => $raw['totalCreditsRequired'] ?? $raw['total_credits_required'] ?? 0,
-                    'synced_from' => 'CCAK',
-                    'last_synced_at' => now(),
-                ]
-            );
+            $model = AcademicProgram::findOrNew($raw['id']);
+            $model->forceFill([
+                'id' => $raw['id'],
+                'department_id' => $departmentId,
+                'name' => $raw['name'],
+                'level' => $level,
+                'duration_semesters' => $raw['durationSemesters'] ?? $raw['duration_semesters'] ?? 0,
+                'total_credits_required' => $raw['totalCreditsRequired'] ?? $raw['total_credits_required'] ?? 0,
+                'synced_from' => 'CCAK',
+                'last_synced_at' => now(),
+            ])->save();
 
             return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
@@ -155,17 +150,16 @@ class SyncService
                 DB::table('academic_years')->where('id', '!=', $raw['id'])->update(['is_current' => false]);
             }
 
-            $model = AcademicYear::updateOrCreate(
-                ['id' => $raw['id']],
-                [
-                    'name' => $raw['name'],
-                    'code' => $raw['code'] ?? null,
-                    'status' => $raw['status'] ?? null,
-                    'is_current' => $isCurrent,
-                    'synced_from' => 'CCAK',
-                    'last_synced_at' => now(),
-                ]
-            );
+            $model = AcademicYear::findOrNew($raw['id']);
+            $model->forceFill([
+                'id' => $raw['id'],
+                'name' => $raw['name'],
+                'code' => $raw['code'] ?? null,
+                'status' => $raw['status'] ?? null,
+                'is_current' => $isCurrent,
+                'synced_from' => 'CCAK',
+                'last_synced_at' => now(),
+            ])->save();
 
             return $model->wasRecentlyCreated ? 'CREATED' : 'UPDATED';
         });
