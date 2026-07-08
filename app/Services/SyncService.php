@@ -209,7 +209,7 @@ class SyncService
     {
         return [
             'degree_cycles' => $this->syncDegreeCycles(),
-            'niveaux'       => $this->syncNiveaux(), // depends on degree_cycles
+            'niveaux' => $this->syncNiveaux(), // depends on degree_cycles
             'academic_years' => $this->syncAcademicYears(),
             'ufr' => $this->syncUfr(),
             'departements' => $this->syncDepartements(), // depends on ufr

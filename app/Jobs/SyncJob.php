@@ -35,15 +35,15 @@ class SyncJob implements ShouldQueue
 
         if ($this->entityType) {
             match ($this->entityType) {
-                'degree_cycles'  => $syncService->syncDegreeCycles(),
-                'niveaux'        => $syncService->syncNiveaux(),
+                'degree_cycles' => $syncService->syncDegreeCycles(),
+                'niveaux' => $syncService->syncNiveaux(),
                 'academic_years' => $syncService->syncAcademicYears(),
-                'ufr'            => $syncService->syncUfr(),
-                'departements'   => $syncService->syncDepartements(),
-                'programmes'     => $syncService->syncProgrammes(),
-                'students'       => $syncService->syncStudents(),
-                'enrollments'    => $syncService->syncEnrollments(),
-                default          => throw new \InvalidArgumentException("Entité inconnue : {$this->entityType}"),
+                'ufr' => $syncService->syncUfr(),
+                'departements' => $syncService->syncDepartements(),
+                'programmes' => $syncService->syncProgrammes(),
+                'students' => $syncService->syncStudents(),
+                'enrollments' => $syncService->syncEnrollments(),
+                default => throw new \InvalidArgumentException("Entité inconnue : {$this->entityType}"),
             };
         } else {
             $syncService->syncAll();
