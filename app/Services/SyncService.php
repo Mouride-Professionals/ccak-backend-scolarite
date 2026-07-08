@@ -480,7 +480,7 @@ class SyncService
     // Enrollment-specific helpers
     // -------------------------------------------------------------------------
 
-    private function upsertEnrollment(array $raw): void
+    private function upsertEnrollment(array $raw): string
     {
         $registrationId = $raw['registrationId'];
         $studentUuid = $raw['studentUuid'];
