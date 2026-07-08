@@ -27,12 +27,14 @@ class SyncController extends BaseApiController
 
     public function stats(): JsonResponse
     {
-        $apiEntities = ['students', 'enrollments'];
-        $staticEntities = ['degree_cycles', 'niveaux', 'ufr', 'departements', 'programmes', 'academic_years'];
+        $entities = [
+            'students', 'enrollments',
+            'degree_cycles', 'niveaux', 'ufr', 'departements', 'programmes', 'academic_years',
+        ];
 
         $result = [];
 
-        foreach ($apiEntities as $entity) {
+        foreach ($entities as $entity) {
             $log = SyncLog::where('entity_type', $entity)
                 ->latest('completed_at')
                 ->first(['status', 'total_received', 'total_updated', 'completed_at']);
@@ -45,10 +47,6 @@ class SyncController extends BaseApiController
             ];
         }
 
-        foreach ($staticEntities as $entity) {
-            $result[$entity] = ['is_static' => true];
-        }
-
         return $this->success($result);
     }
 
@@ -56,7 +54,12 @@ class SyncController extends BaseApiController
     {
         $entityType = $request->input('entity_type');
 
-        if ($entityType && ! in_array($entityType, ['students', 'enrollments'], true)) {
+        $allowed = [
+            'students', 'enrollments',
+            'degree_cycles', 'niveaux', 'ufr', 'departements', 'programmes', 'academic_years',
+        ];
+
+        if ($entityType && ! in_array($entityType, $allowed, true)) {
             return $this->error("Entité inconnue : {$entityType}", 422);
         }
 
