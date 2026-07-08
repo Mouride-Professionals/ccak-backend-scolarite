@@ -76,6 +76,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'show']);
     Route::put('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'update']);
     Route::delete('exam-sessions/{examSession}/schedules/{examSchedule}', [ExamScheduleController::class, 'destroy']);
+    Route::get('exam-schedules', [ExamScheduleController::class, 'listAll']);
     Route::post('exam-schedules/check-conflicts', [ExamScheduleController::class, 'checkConflicts']);
     Route::get('exam-schedules/{examSchedule}/grade-sheet', [ExamGradeSheetController::class, 'gradeSheet']);
     Route::post('exam-schedules/{examSchedule}/grade-sheet', [ExamGradeSheetController::class, 'storeGrade']);
