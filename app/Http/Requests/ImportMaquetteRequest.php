@@ -17,7 +17,7 @@ class ImportMaquetteRequest extends FormRequest
             'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:20480'],
             'department_id' => ['required', 'uuid', 'exists:departments,id'],
             'program_name' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'program_level' => ['sometimes', 'in:LICENCE,MASTER,DOCTORAT'],
+            'program_level' => ['sometimes', 'in:LICENCE,MASTER,DOCTORAT,CLASSE_PREPARATOIRE'],
             'dry_run' => ['sometimes', 'boolean'],
         ];
     }

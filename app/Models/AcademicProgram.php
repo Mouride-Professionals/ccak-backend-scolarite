@@ -14,7 +14,7 @@ class AcademicProgram extends Model
     use HasFactory;
     use UsesUuidV7;
 
-    public const LEVELS = ['LICENCE', 'MASTER', 'DOCTORAT'];
+    public const LEVELS = ['LICENCE', 'MASTER', 'DOCTORAT', 'CLASSE_PREPARATOIRE'];
 
     protected $fillable = [
         'department_id',
