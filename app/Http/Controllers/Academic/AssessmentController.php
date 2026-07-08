@@ -109,20 +109,20 @@ class AssessmentController extends BaseApiController
             $grade = $grades->get($enrollment->student_id);
 
             return [
-                'student_id'         => $enrollment->student_id,
-                'student_number'     => $enrollment->student?->student_number,
-                'full_name'          => $enrollment->student?->full_name,
-                'grade_id'           => $grade?->id,
-                'score'              => $grade?->score,
-                'max_score'          => $grade?->max_score ?? 20,
-                'status'             => $grade?->status?->value,
+                'student_id' => $enrollment->student_id,
+                'student_number' => $enrollment->student?->student_number,
+                'full_name' => $enrollment->student?->full_name,
+                'grade_id' => $grade?->id,
+                'score' => $grade?->score,
+                'max_score' => $grade?->max_score ?? 20,
+                'status' => $grade?->status?->value,
                 'course_enrollment_id' => $enrollment->id,
             ];
         })->sortBy('full_name')->values();
 
         return $this->success([
             'assessment' => new AssessmentResource($assessment->load(['course', 'facultyMember', 'academicYear'])),
-            'students'   => $sheet,
+            'students' => $sheet,
         ]);
     }
 }

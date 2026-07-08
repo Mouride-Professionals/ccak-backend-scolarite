@@ -21,14 +21,14 @@ class SyncCcakStudents extends Command
     }
 
     private array $entityMap = [
-        'degree_cycles'  => 'syncDegreeCycles',
-        'niveaux'        => 'syncNiveaux',
-        'ufr'            => 'syncUfr',
-        'departements'   => 'syncDepartements',
-        'programmes'     => 'syncProgrammes',
+        'degree_cycles' => 'syncDegreeCycles',
+        'niveaux' => 'syncNiveaux',
+        'ufr' => 'syncUfr',
+        'departements' => 'syncDepartements',
+        'programmes' => 'syncProgrammes',
         'academic_years' => 'syncAcademicYears',
-        'students'       => 'syncStudents',
-        'enrollments'    => 'syncEnrollments',
+        'students' => 'syncStudents',
+        'enrollments' => 'syncEnrollments',
     ];
 
     private function runDry(?string $entity): int

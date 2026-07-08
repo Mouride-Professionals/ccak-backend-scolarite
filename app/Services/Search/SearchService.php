@@ -28,8 +28,8 @@ class SearchService
         }
 
         return [
-            'query'   => $term,
-            'total'   => count($results),
+            'query' => $term,
+            'total' => count($results),
             'results' => $results,
         ];
     }

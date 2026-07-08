@@ -17,10 +17,10 @@ class GradeResource extends JsonResource
             'course_id' => $this->course_id,
             'assessment_id' => $this->assessment_id,
             'assessment' => $this->when($this->relationLoaded('assessment') && $this->assessment, fn () => [
-                'id'    => $this->assessment->id,
+                'id' => $this->assessment->id,
                 'title' => $this->assessment->title,
-                'type'  => $this->assessment->type?->value,
-                'date'  => $this->assessment->date?->toDateString(),
+                'type' => $this->assessment->type?->value,
+                'date' => $this->assessment->date?->toDateString(),
             ]),
             'type' => $this->type,
             'score' => $this->score,

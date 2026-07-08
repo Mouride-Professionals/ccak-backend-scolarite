@@ -24,11 +24,11 @@ class ExamSessionSearcher implements SearcherInterface
             ->limit($limit)
             ->get(['id', 'name', 'type', 'status'])
             ->map(fn (ExamSession $e) => [
-                'id'       => $e->id,
-                'type'     => 'exam_session',
-                'label'    => $e->name,
+                'id' => $e->id,
+                'type' => 'exam_session',
+                'label' => $e->name,
                 'sublabel' => $e->type instanceof \BackedEnum ? $e->type->value : (string) $e->type,
-                'url_hint' => '/exams/' . $e->id,
+                'url_hint' => '/exams/'.$e->id,
             ]);
     }
 }

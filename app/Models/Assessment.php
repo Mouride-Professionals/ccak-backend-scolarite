@@ -31,14 +31,14 @@ class Assessment extends Model
     ];
 
     protected $casts = [
-        'id'                  => 'string',
-        'course_id'           => 'string',
-        'faculty_member_id'   => 'string',
-        'academic_year_id'    => 'string',
-        'type'                => AssessmentType::class,
-        'date'                => 'date',
-        'duration_minutes'    => 'integer',
-        'coefficient'         => 'decimal:2',
+        'id' => 'string',
+        'course_id' => 'string',
+        'faculty_member_id' => 'string',
+        'academic_year_id' => 'string',
+        'type' => AssessmentType::class,
+        'date' => 'date',
+        'duration_minutes' => 'integer',
+        'coefficient' => 'decimal:2',
         'is_grades_published' => 'boolean',
     ];
 

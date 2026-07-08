@@ -24,11 +24,11 @@ class StudentSearcher implements SearcherInterface
             ->limit($limit)
             ->get(['id', 'full_name', 'student_number'])
             ->map(fn (Student $s) => [
-                'id'        => $s->id,
-                'type'      => 'student',
-                'label'     => $s->full_name,
-                'sublabel'  => $s->student_number,
-                'url_hint'  => '/students/' . $s->id,
+                'id' => $s->id,
+                'type' => 'student',
+                'label' => $s->full_name,
+                'sublabel' => $s->student_number,
+                'url_hint' => '/students/'.$s->id,
             ]);
     }
 }

@@ -25,11 +25,11 @@ class DepartmentSearcher implements SearcherInterface
             ->limit($limit)
             ->get(['id', 'name', 'code'])
             ->map(fn (Department $d) => [
-                'id'       => $d->id,
-                'type'     => 'department',
-                'label'    => $d->name,
+                'id' => $d->id,
+                'type' => 'department',
+                'label' => $d->name,
                 'sublabel' => $d->code,
-                'url_hint' => '/departments/' . $d->id,
+                'url_hint' => '/departments/'.$d->id,
             ]);
     }
 }

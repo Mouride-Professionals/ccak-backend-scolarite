@@ -38,10 +38,10 @@ class GradeSheetExport implements FromArray, WithColumnWidths, WithEvents, WithT
 
         // ── 5 university block rows ─────────────────────────────────────
         $rows[] = ['UNIVERSITÉ CHEIKH AHMADOU KABS (UCAK) — FICHE DE NOTES', null, null, null, null, null, null];
-        $rows[] = ['Matière : ' . ($this->headerMeta['course_code'] ?? '') . ' — ' . ($this->headerMeta['course_name'] ?? ''), null, null, null, null, null, null];
-        $rows[] = ['Session : ' . ($this->headerMeta['session_label'] ?? ''), null, null, null, null, null, null];
-        $rows[] = ['Année académique : ' . ($this->headerMeta['academic_year_name'] ?? '') . ($this->headerMeta['semester_number'] ? '  |  Semestre : S' . $this->headerMeta['semester_number'] : ''), null, null, null, null, null, null];
-        $rows[] = ['Date : ' . ($this->headerMeta['date'] ?? ''), null, null, null, null, null, null];
+        $rows[] = ['Matière : '.($this->headerMeta['course_code'] ?? '').' — '.($this->headerMeta['course_name'] ?? ''), null, null, null, null, null, null];
+        $rows[] = ['Session : '.($this->headerMeta['session_label'] ?? ''), null, null, null, null, null, null];
+        $rows[] = ['Année académique : '.($this->headerMeta['academic_year_name'] ?? '').($this->headerMeta['semester_number'] ? '  |  Semestre : S'.$this->headerMeta['semester_number'] : ''), null, null, null, null, null, null];
+        $rows[] = ['Date : '.($this->headerMeta['date'] ?? ''), null, null, null, null, null, null];
 
         // ── Column header row ────────────────────────────────────────────
         $rows[] = [
@@ -99,11 +99,11 @@ class GradeSheetExport implements FromArray, WithColumnWidths, WithEvents, WithT
                 $sheet->getColumnDimension('A')->setVisible(false);
 
                 // ── Style university block (rows 1–5) ──────────────────
-                $sheet->mergeCells("B1:G1");
-                $sheet->mergeCells("B2:G2");
-                $sheet->mergeCells("B3:G3");
-                $sheet->mergeCells("B4:G4");
-                $sheet->mergeCells("B5:G5");
+                $sheet->mergeCells('B1:G1');
+                $sheet->mergeCells('B2:G2');
+                $sheet->mergeCells('B3:G3');
+                $sheet->mergeCells('B4:G4');
+                $sheet->mergeCells('B5:G5');
 
                 $sheet->getStyle('B1:G1')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 13, 'color' => ['argb' => 'FFFFFFFF']],
@@ -129,7 +129,7 @@ class GradeSheetExport implements FromArray, WithColumnWidths, WithEvents, WithT
 
                 // ── Style data rows (rows 7+) ──────────────────────────
                 if (count($this->students) > 0) {
-                    $dataRange = 'B7:G' . $totalRows;
+                    $dataRange = 'B7:G'.$totalRows;
 
                     $sheet->getStyle($dataRange)->applyFromArray([
                         'borders' => [

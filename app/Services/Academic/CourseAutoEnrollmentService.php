@@ -29,14 +29,14 @@ class CourseAutoEnrollmentService
                 foreach ($unit->courses as $course) {
                     $key = [
                         'enrollment_id' => $enrollment->id,
-                        'course_id'     => $course->id,
+                        'course_id' => $course->id,
                     ];
 
                     $attributes = [
-                        'student_id'      => $enrollment->student_id,
-                        'academic_year_id'=> $enrollment->academic_year_id,
-                        'semester'        => $unit->semester_number,
-                        'status'          => CourseEnrollment::STATUS_ENROLLED,
+                        'student_id' => $enrollment->student_id,
+                        'academic_year_id' => $enrollment->academic_year_id,
+                        'semester' => $unit->semester_number,
+                        'status' => CourseEnrollment::STATUS_ENROLLED,
                         'enrollment_date' => $enrollment->enrollment_date ?? now(),
                     ];
 

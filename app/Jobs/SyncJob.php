@@ -35,9 +35,9 @@ class SyncJob implements ShouldQueue
 
         if ($this->entityType) {
             match ($this->entityType) {
-                'students'    => $syncService->syncStudents(),
+                'students' => $syncService->syncStudents(),
                 'enrollments' => $syncService->syncEnrollments(),
-                default       => throw new \InvalidArgumentException("Entité inconnue : {$this->entityType}"),
+                default => throw new \InvalidArgumentException("Entité inconnue : {$this->entityType}"),
             };
         } else {
             $syncService->syncAll();
@@ -50,7 +50,7 @@ class SyncJob implements ShouldQueue
     {
         Log::error('SyncJob failed', [
             'entity_type' => $this->entityType ?? 'all',
-            'error'       => $exception->getMessage(),
+            'error' => $exception->getMessage(),
         ]);
     }
 }
