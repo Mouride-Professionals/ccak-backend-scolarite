@@ -311,6 +311,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('enrollments/{enrollment}/courses', [CourseEnrollmentController::class, 'getCourses']);
     Route::delete('enrollments/{enrollment}/courses/{courseEnrollment}', [CourseEnrollmentController::class, 'dropCourse']);
     Route::get('courses/{course}/availability', [CourseEnrollmentController::class, 'checkAvailability']);
+    Route::get('programs/{program}/course-enrollment-matrix', [CourseEnrollmentController::class, 'getCourseEnrollmentMatrix']);
+    Route::post('programs/{program}/course-enrollment-matrix', [CourseEnrollmentController::class, 'saveCourseEnrollmentMatrix']);
     Route::get('programs/{program}/available-courses', [CourseEnrollmentController::class, 'getAvailableCoursesByProgram']);
 });
 

@@ -97,7 +97,7 @@ class SyncService
         return $this->runSync('departements', fn () => $this->client->getDepartements(), function (array $raw) {
             $facultyId = $raw['ufrId'] ?? $raw['ufr_id'] ?? $raw['facultyId'] ?? $raw['faculty_id'] ?? null;
 
-            $model = Department::withTrashed()->find($raw['id']) ?? new Department();
+            $model = Department::withTrashed()->find($raw['id']) ?? new Department;
             $model->forceFill([
                 'id' => $raw['id'],
                 'faculty_id' => $facultyId,
