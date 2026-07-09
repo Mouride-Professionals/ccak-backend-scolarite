@@ -335,6 +335,7 @@ final class PermissionCatalog
                 'evaluation_responses.view',
                 'course_enrollments.view',
                 'course_enrollments.create',
+                'course_enrollments.update',
                 'faculty_members.view',
                 'guardians.view',
                 'reports.view',
