@@ -27,9 +27,9 @@ class CourseEnrollmentController extends BaseApiController
         private readonly CourseEnrollmentRepository $repository,
         private readonly CourseEnrollmentService $service
     ) {
-        $this->middleware('permission:course_enrollments.view')->only(['index', 'show', 'getCourses', 'checkAvailability', 'getAvailableCoursesByProgram']);
-        $this->middleware('permission:course_enrollments.create')->only(['store', 'enrollCourse']);
-        $this->middleware('permission:course_enrollments.update')->only(['update', 'dropCourse']);
+        $this->middleware('permission:course_enrollments.view')->only(['index', 'show', 'getCourses', 'checkAvailability', 'getAvailableCoursesByProgram', 'getCourseEnrollmentMatrix']);
+        $this->middleware('permission:course_enrollments.create')->only(['store', 'enrollCourse', 'saveCourseEnrollmentMatrix']);
+        $this->middleware('permission:course_enrollments.update')->only(['update', 'dropCourse', 'saveCourseEnrollmentMatrix']);
         $this->middleware('permission:course_enrollments.delete')->only('destroy');
     }
 
@@ -175,6 +175,52 @@ class CourseEnrollmentController extends BaseApiController
             'search',
         ]));
 
+        if (isset($result['error'])) {
+            return $this->error(
+                $result['error']['message'],
+                $result['error']['status'],
+                $result['error']['errors'] ?? []
+            );
+        }
+
+        return $this->success($result);
+    }
+
+    public function getCourseEnrollmentMatrix(Request $request, AcademicProgram $program): JsonResponse
+    {
+        $payload = $request->validate([
+            'academic_year_id' => ['required', 'uuid', 'exists:academic_years,id'],
+            'semester' => ['required', 'integer', 'min:1', 'max:12'],
+            'status' => ['nullable', 'string'],
+            'search' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $result = $this->service->getCourseEnrollmentMatrix($program, $payload);
+        if (isset($result['error'])) {
+            return $this->error(
+                $result['error']['message'],
+                $result['error']['status'],
+                $result['error']['errors'] ?? []
+            );
+        }
+
+        return $this->success($result);
+    }
+
+    public function saveCourseEnrollmentMatrix(Request $request, AcademicProgram $program): JsonResponse
+    {
+        $payload = $request->validate([
+            'academic_year_id' => ['required', 'uuid', 'exists:academic_years,id'],
+            'semester' => ['required', 'integer', 'min:1', 'max:12'],
+            'enrollment_date' => ['nullable', 'date'],
+            'creates' => ['array'],
+            'creates.*.enrollment_id' => ['required_with:creates', 'uuid', 'exists:enrollments,id'],
+            'creates.*.course_id' => ['required_with:creates', 'uuid', 'exists:courses,id'],
+            'drops' => ['array'],
+            'drops.*.course_enrollment_id' => ['required_with:drops', 'uuid', 'exists:course_enrollments,id'],
+        ]);
+
+        $result = $this->service->saveCourseEnrollmentMatrix($program, $payload);
         if (isset($result['error'])) {
             return $this->error(
                 $result['error']['message'],
