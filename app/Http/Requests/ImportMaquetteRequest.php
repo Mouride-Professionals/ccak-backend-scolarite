@@ -15,9 +15,7 @@ class ImportMaquetteRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:20480'],
-            'department_id' => ['required', 'uuid', 'exists:departments,id'],
-            'program_name' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'program_level' => ['sometimes', 'in:LICENCE,MASTER,DOCTORAT,CLASSE_PREPARATOIRE'],
+            'program_id' => ['required', 'uuid', 'exists:academic_programs,id'],
             'dry_run' => ['sometimes', 'boolean'],
         ];
     }
@@ -28,8 +26,8 @@ class ImportMaquetteRequest extends FormRequest
             'file.required' => 'Un fichier Excel est requis.',
             'file.mimes' => 'Le fichier doit être au format Excel (.xlsx ou .xls).',
             'file.max' => 'Le fichier ne doit pas dépasser 20 Mo.',
-            'department_id.required' => 'Le département est requis.',
-            'department_id.exists' => 'Le département sélectionné est invalide.',
+            'program_id.required' => 'Le programme est requis.',
+            'program_id.exists' => 'Le programme sélectionné est invalide.',
         ];
     }
 }

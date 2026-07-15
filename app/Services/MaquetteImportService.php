@@ -11,7 +11,7 @@ class MaquetteImportService
 {
     /**
      * @param  array  $parsed  Output of MaquetteParserService::parse()
-     * @param  array  $options  {department_id, program_name?, program_level?, dry_run?}
+     * @param  array  $options  {program_id, dry_run?}
      */
     public function import(array $parsed, array $options): array
     {
@@ -20,7 +20,6 @@ class MaquetteImportService
         $result = [
             'dry_run' => $dryRun,
             'program_id' => null,
-            'programs_created' => 0,
             'programs_found' => 0,
             'units_created' => 0,
             'units_skipped' => 0,
@@ -37,47 +36,18 @@ class MaquetteImportService
         DB::beginTransaction();
 
         try {
-            $programName = $options['program_name']
-                ?? $parsed['program']['name']
-                ?? null;
-
-            if (! $programName) {
-                throw new \InvalidArgumentException(
-                    'Le nom du programme est requis. Ajoutez-le dans le champ dédié ou inscrivez-le dans la cellule titre du fichier (ex: "MAQUETTE PÉDAGOGIQUE — Licence en Sciences").'
-                );
-            }
-
-            $program = AcademicProgram::where('name', $programName)->first();
-            $programIsNew = $program === null;
+            $program = AcademicProgram::find($options['program_id']);
 
             if (! $program) {
-                $program = new AcademicProgram([
-                    'department_id' => $options['department_id'],
-                    'level' => $options['program_level'] ?? 'LICENCE',
-                    'duration_semesters' => count($parsed['semesters']) * 2,
-                    'total_credits_required' => $this->totalCredits($parsed['semesters']),
-                    'is_active' => true,
-                ]);
-                $program->name = $programName;
-                // Don't save yet — only persist if at least one unit is created
-            } else {
-                $result['program_id'] = $program->id;
-                $result['programs_found']++;
+                throw new \InvalidArgumentException('Programme introuvable.');
             }
+
+            $result['program_id'] = $program->id;
+            $result['programs_found']++;
 
             foreach ($parsed['semesters'] as $semesterNum => $semester) {
                 foreach ($semester['course_units'] as $unitData) {
-                    // Lazily persist new program on first unit that will be created
-                    if ($programIsNew && ! $program->exists) {
-                        $unitExists = CourseUnit::where('code', $unitData['code'])->exists();
-                        if (! $unitExists) {
-                            $program->save();
-                            $result['program_id'] = $program->id;
-                            $result['programs_created'] = 1;
-                        }
-                    }
-
-                    [$unit, $created, $unitWarn] = $this->upsertUnit($program->exists ? $program->id : '', $semesterNum, $unitData);
+                    [$unit, $created, $unitWarn] = $this->upsertUnit($program->id, $semesterNum, $unitData);
 
                     if ($unitWarn) {
                         $result['warnings'][] = $unitWarn;
@@ -108,13 +78,6 @@ class MaquetteImportService
                         }
                     }
                 }
-            }
-
-            if ($programIsNew && ! $program->exists) {
-                $result['errors'][] = 'Aucune UE n\'a pu être importée dans ce programme : tous les codes existent déjà dans d\'autres programmes. Le programme n\'a pas été créé.';
-                DB::rollBack();
-
-                return $result;
             }
 
             if ($dryRun) {
@@ -210,17 +173,5 @@ class MaquetteImportService
         ]));
 
         return [$course, true, null];
-    }
-
-    private function totalCredits(array $semesters): int
-    {
-        $total = 0;
-        foreach ($semesters as $semester) {
-            foreach ($semester['course_units'] as $unit) {
-                $total += (int) ($unit['credits'] ?? 0);
-            }
-        }
-
-        return $total;
     }
 }
