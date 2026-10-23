@@ -1,4 +1,7 @@
-FROM php:8.2-fpm-alpine
+# Pinned to a patched release rather than the floating 8.2 tag: CVE-2026-109618
+# and CVE-2026-109619 (critical RCE, published 2026-10-21) are fixed in 8.2.35.
+# A floating tag can be satisfied by a cached older base layer; a pinned one cannot.
+FROM php:8.2.35-fpm-alpine
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 

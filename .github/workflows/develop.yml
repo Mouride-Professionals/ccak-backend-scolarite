@@ -58,7 +58,10 @@ jobs:
             git fetch origin develop
             git checkout -B develop origin/develop
             git reset --hard origin/develop
-            docker compose up -d --build
+            # --pull: compose otherwise builds on whatever base image this server cached
+            # long ago, so a redeploy would silently keep a vulnerable PHP.
+            docker compose build --pull
+            docker compose up -d
             docker compose restart web
             docker compose exec -T app composer install --no-interaction --prefer-dist
             docker compose exec -T app php artisan config:clear
